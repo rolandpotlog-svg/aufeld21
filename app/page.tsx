@@ -855,14 +855,18 @@ function BookingApp({ demo }: { demo: boolean }) {
       return;
     }
     const { data } = await supabase.auth.getSession();
-    const nextMonth = format(addMonths(startOfMonth(toZonedTime(new Date(), TZ)), 1), "yyyy-MM-01");
+    const viennaNow = toZonedTime(new Date(), TZ);
+    const billingMonth = format(
+      viennaNow.getDate() >= 29 ? addMonths(startOfMonth(viennaNow), 1) : startOfMonth(viennaNow),
+      "yyyy-MM-01",
+    );
     const response = await fetch("/api/admin/invoices/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${data.session?.access_token ?? ""}`,
       },
-      body: JSON.stringify({ billingMonth: nextMonth }),
+      body: JSON.stringify({ billingMonth }),
     });
     const result = await response.json().catch(() => ({}));
     setGeneratingInvoices(false);

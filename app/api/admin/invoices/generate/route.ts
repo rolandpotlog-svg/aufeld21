@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { addDays } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 const TZ = "Europe/Vienna";
@@ -46,19 +45,32 @@ export async function POST(request: Request) {
     return Response.json({ error: "Ungültiger Abrechnungsmonat." }, { status: 400 });
   }
 
+  const currentMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM-01");
+  const currentDay = Number(formatInTimeZone(new Date(), TZ, "d"));
+  const currentMonthDate = new Date(`${currentMonth}T00:00:00Z`);
+  const nextMonth = new Date(Date.UTC(currentMonthDate.getUTCFullYear(), currentMonthDate.getUTCMonth() + 1, 1));
+  const latestAllowedBillingMonth = currentDay >= 29 ? isoDate(nextMonth) : currentMonth;
+  if (body.billingMonth > latestAllowedBillingMonth) {
+    return Response.json({ error: "Der Folgemonat kann erst ab dem 29. abgerechnet werden." }, { status: 409 });
+  }
+
   const monthStart = new Date(`${body.billingMonth}T00:00:00Z`);
   const monthEndExclusive = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1));
   const monthEnd = new Date(monthEndExclusive.getTime() - 86_400_000);
+  const billingPeriodEnd = new Date(Date.UTC(
+    monthStart.getUTCFullYear(),
+    monthStart.getUTCMonth(),
+    Math.min(30, monthEnd.getUTCDate()),
+  ));
   // The invoice is created on the 29th for the following month's rent. Meeting-room
   // extras use the last fully completed month so bookings on the 30th/31st are never lost.
   const usageMonthStart = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 2, 1));
   const usageMonthEnd = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 1));
   const usageStartVienna = fromZonedTime(`${isoDate(usageMonthStart)} 00:00:00`, TZ);
   const usageEndVienna = fromZonedTime(`${isoDate(usageMonthEnd)} 00:00:00`, TZ);
-  const daysInMonth = monthEnd.getUTCDate();
-  const today = new Date();
-  const issueDate = formatInTimeZone(today, TZ, "yyyy-MM-dd");
-  const dueDate = formatInTimeZone(addDays(fromZonedTime(`${issueDate} 12:00:00`, TZ), 14), TZ, "yyyy-MM-dd");
+  const daysInMonth = billingPeriodEnd.getUTCDate();
+  const issueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 29)));
+  const dueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), 10)));
 
   const { data: members, error: membersError } = await admin
     .from("members")
@@ -92,9 +104,9 @@ export async function POST(request: Request) {
     }
     const items: Array<{ description: string; quantity: number; unit: string; unit_price_net: number; vat_rate: number; sort_order: number }> = [];
     const contractStart = member.contract_start ? new Date(`${member.contract_start}T00:00:00Z`) : monthStart;
-    const contractEnd = member.contract_end ? new Date(`${member.contract_end}T00:00:00Z`) : monthEnd;
+    const contractEnd = member.contract_end ? new Date(`${member.contract_end}T00:00:00Z`) : billingPeriodEnd;
     const activeStart = contractStart > monthStart ? contractStart : monthStart;
-    const activeEnd = contractEnd < monthEnd ? contractEnd : monthEnd;
+    const activeEnd = contractEnd < billingPeriodEnd ? contractEnd : billingPeriodEnd;
     if (member.monthly_rent_net != null && activeStart <= activeEnd) {
       const activeDays = Math.floor((activeEnd.getTime() - activeStart.getTime()) / 86_400_000) + 1;
       const monthlyRent = Number(member.monthly_rent_net);
@@ -158,8 +170,8 @@ export async function POST(request: Request) {
         invoice_number: invoiceNumber,
         issue_date: issueDate,
         billing_month: body.billingMonth,
-        service_period_start: isoDate(usageMonthStart),
-        service_period_end: isoDate(monthEnd),
+        service_period_start: isoDate(monthStart),
+        service_period_end: isoDate(billingPeriodEnd),
         due_date: dueDate,
         finalized_at: new Date().toISOString(),
         created_by: creatorId,
