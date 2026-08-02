@@ -432,10 +432,11 @@ function BookingApp({ demo }: { demo: boolean }) {
     if (!member || !supabase) return;
     supabase
       .from("invoices")
-      .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members(name,email,billing_name),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
+      .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members!invoices_member_id_fkey(name,email),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
       .order("issue_date", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) setInvoices(data as unknown as Invoice[]);
+        if (error) setToast("Die Rechnungen konnten nicht geladen werden. Bitte die Seite neu laden.");
       });
   }, [member, supabase]);
 
@@ -866,7 +867,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     if (response.ok && supabase) {
       const { data: refreshedInvoices } = await supabase
         .from("invoices")
-        .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members(name,email,billing_name),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
+        .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members!invoices_member_id_fkey(name,email),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
         .order("issue_date", { ascending: false });
       if (refreshedInvoices) setInvoices(refreshedInvoices as unknown as Invoice[]);
     }
