@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.vercel/
+.vinext/
+.wrangler/
+
+.env
+.env.*
+!.env.example
+
+work/
+tmp/
+outputs/
+
+*.log
+.DS_Store
