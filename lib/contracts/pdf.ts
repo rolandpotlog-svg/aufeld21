@@ -86,7 +86,7 @@ export async function createContractPdf(data: ContractPdfData) {
   field("Nutzer", data.tenantName);
   field("Anschrift", data.tenantAddress.replace(/\n/g, ", "));
   field("UID", data.tenantUid ?? "-");
-  field("Firmenbuchnummer", data.companyRegister);
+  if (data.companyRegister) field("Firmenbuchnummer", data.companyRegister);
   if (data.representative) field("Vertreten durch", data.representative);
   field("E-Mail / Telefon", `${data.email}${data.phone ? ` / ${data.phone}` : ""}`);
 
