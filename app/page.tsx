@@ -369,7 +369,9 @@ function BookingApp({ demo }: { demo: boolean }) {
   const selectedDossier = managedMembers.find((item) => item.id === selectedDossierId)
     ?? managedMembers.find((item) => item.role === "member" || item.role === "partner")
     ?? managedMembers[0];
-  const dossierInvoices = selectedDossier ? invoices.filter((invoice) => invoice.member_id === selectedDossier.id) : [];
+  const dossierInvoices = selectedDossier
+    ? invoices.filter((invoice) => invoice.member_id === selectedDossier.id && invoice.status !== "cancelled")
+    : [];
   const dossierDocuments = selectedDossier ? documents.filter((document) => document.member_id === selectedDossier.id) : [];
   const dossierDeposit = selectedDossier ? deposits.find((deposit) => deposit.member_id === selectedDossier.id) : undefined;
 
@@ -1285,10 +1287,10 @@ function BookingApp({ demo }: { demo: boolean }) {
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-stone-100 text-stone-700"><FileText size={20} /></div>
             </div>
             <div className="mt-5 divide-y divide-stone-100">
-              {invoices.filter((invoice) => invoice.member_id === member.id && invoice.status !== "draft").length === 0 ? (
+              {invoices.filter((invoice) => invoice.member_id === member.id && invoice.status !== "draft" && invoice.status !== "cancelled").length === 0 ? (
                 <p className="py-4 text-sm text-stone-500">Noch keine Rechnungen verfügbar.</p>
               ) : (
-                invoices.filter((invoice) => invoice.member_id === member.id && invoice.status !== "draft").slice(0, 4).map((invoice) => (
+                invoices.filter((invoice) => invoice.member_id === member.id && invoice.status !== "draft" && invoice.status !== "cancelled").slice(0, 4).map((invoice) => (
                   <div key={invoice.id} className="flex flex-col justify-between gap-3 py-4 first:pt-0 sm:flex-row sm:items-center">
                     <div>
                       <p className="font-semibold">{invoice.invoice_number}</p>
