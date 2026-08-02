@@ -49,9 +49,12 @@ export async function POST(request: Request) {
   const monthStart = new Date(`${body.billingMonth}T00:00:00Z`);
   const monthEndExclusive = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1));
   const monthEnd = new Date(monthEndExclusive.getTime() - 86_400_000);
-  const previousStart = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 1));
-  const previousStartVienna = fromZonedTime(`${isoDate(previousStart)} 00:00:00`, TZ);
-  const previousEndVienna = fromZonedTime(`${body.billingMonth} 00:00:00`, TZ);
+  // The invoice is created on the 29th for the following month's rent. Meeting-room
+  // extras use the last fully completed month so bookings on the 30th/31st are never lost.
+  const usageMonthStart = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 2, 1));
+  const usageMonthEnd = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 1));
+  const usageStartVienna = fromZonedTime(`${isoDate(usageMonthStart)} 00:00:00`, TZ);
+  const usageEndVienna = fromZonedTime(`${isoDate(usageMonthEnd)} 00:00:00`, TZ);
   const daysInMonth = monthEnd.getUTCDate();
   const today = new Date();
   const issueDate = formatInTimeZone(today, TZ, "yyyy-MM-dd");
@@ -70,6 +73,15 @@ export async function POST(request: Request) {
     .eq("billing_month", body.billingMonth)
     .neq("status", "cancelled");
   const existingIds = new Set((existing ?? []).map((invoice) => invoice.member_id));
+  const invoiceYear = issueDate.slice(0, 4);
+  const { data: latestNumber } = await admin
+    .from("invoices")
+    .select("invoice_number")
+    .like("invoice_number", `A21-${invoiceYear}-%`)
+    .order("invoice_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  let nextInvoiceSequence = Number(latestNumber?.invoice_number?.split("-").at(-1) ?? 0) + 1;
   let created = 0;
   let skipped = 0;
 
@@ -104,13 +116,13 @@ export async function POST(request: Request) {
         .from("bookings")
         .select("start_at,end_at")
         .eq("member_id", member.id)
-        .gte("start_at", previousStartVienna.toISOString())
-        .lt("start_at", previousEndVienna.toISOString()),
+        .gte("start_at", usageStartVienna.toISOString())
+        .lt("start_at", usageEndVienna.toISOString()),
       admin
         .from("quota_adjustments")
         .select("hours")
         .eq("member_id", member.id)
-        .eq("valid_month", isoDate(previousStart)),
+        .eq("valid_month", isoDate(usageMonthStart)),
     ]);
     const usedHours = (bookings ?? []).reduce(
       (sum, booking) => sum + (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000,
@@ -120,7 +132,7 @@ export async function POST(request: Request) {
     const extraHours = Math.max(usedHours - 12 - bonusHours, 0);
     if (extraHours > 0) {
       items.push({
-        description: `Meetingraum Zusatznutzung ${isoDate(previousStart).slice(0, 7)}`,
+        description: `Meetingraum Zusatznutzung ${isoDate(usageMonthStart).slice(0, 7)}`,
         quantity: extraHours,
         unit: "Std.",
         unit_price_net: 12,
@@ -133,16 +145,19 @@ export async function POST(request: Request) {
       skipped += 1;
       continue;
     }
+    const invoiceNumber = `A21-${invoiceYear}-${String(nextInvoiceSequence).padStart(4, "0")}`;
     const { data: invoice, error: invoiceError } = await admin
       .from("invoices")
       .insert({
         member_id: member.id,
-        status: "draft",
+        status: "final",
+        invoice_number: invoiceNumber,
         issue_date: issueDate,
         billing_month: body.billingMonth,
-        service_period_start: isoDate(previousStart),
+        service_period_start: isoDate(usageMonthStart),
         service_period_end: isoDate(monthEnd),
         due_date: dueDate,
+        finalized_at: new Date().toISOString(),
         created_by: creatorId,
       })
       .select("id")
@@ -159,6 +174,7 @@ export async function POST(request: Request) {
       skipped += 1;
       continue;
     }
+    nextInvoiceSequence += 1;
     created += 1;
   }
 

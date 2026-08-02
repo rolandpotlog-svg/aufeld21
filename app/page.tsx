@@ -273,6 +273,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     },
   ] : []);
   const [generatingInvoices, setGeneratingInvoices] = useState(false);
+  const [invoiceMemberFilter, setInvoiceMemberFilter] = useState("all");
   const [billingMember, setBillingMember] = useState<ManagedMember | null>(null);
   const [selectedDossierId, setSelectedDossierId] = useState(demo ? "demo-anna" : "");
   const [deposits, setDeposits] = useState<Deposit[]>(demo ? [
@@ -349,6 +350,15 @@ function BookingApp({ demo }: { demo: boolean }) {
   const openInvoiceGross = openInvoices.reduce((sum, invoice) => sum + invoiceGross(invoice), 0);
   const overdueInvoices = openInvoices.filter((invoice) => new Date(`${invoice.due_date}T23:59:59`) < new Date());
   const draftInvoices = invoices.filter((invoice) => invoice.status === "draft");
+  const visibleAdminInvoices = invoices.filter(
+    (invoice) => invoice.status !== "cancelled" && (invoiceMemberFilter === "all" || invoice.member_id === invoiceMemberFilter),
+  );
+  const invoiceGroups = managedMembers
+    .map((managedMember) => ({
+      member: managedMember,
+      invoices: visibleAdminInvoices.filter((invoice) => invoice.member_id === managedMember.id),
+    }))
+    .filter((group) => group.invoices.length > 0);
   const missingBillingProfiles = billingMembers.filter((item) => !item.billing_address || item.monthly_rent_net == null || !item.contract_start);
   const tenantDepositIssues = managedMembers.filter((item) => item.role === "member" || item.role === "admin").filter((item) => {
     const deposit = deposits.find((entry) => entry.member_id === item.id);
@@ -422,7 +432,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     if (!member || !supabase) return;
     supabase
       .from("invoices")
-      .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members(name,email),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
+      .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members(name,email,billing_name),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
       .order("issue_date", { ascending: false })
       .then(({ data }) => {
         if (data) setInvoices(data as unknown as Invoice[]);
@@ -838,7 +848,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     if (!supabase) {
       await new Promise((resolve) => window.setTimeout(resolve, 450));
       setGeneratingInvoices(false);
-      setToast("Die Demo-Monatsentwürfe wurden vorbereitet.");
+      setToast("Die Demo-Monatsrechnungen wurden erstellt.");
       return;
     }
     const { data } = await supabase.auth.getSession();
@@ -853,7 +863,14 @@ function BookingApp({ demo }: { demo: boolean }) {
     });
     const result = await response.json().catch(() => ({}));
     setGeneratingInvoices(false);
-    setToast(response.ok ? `${result.created} Rechnungsentwürfe erstellt, ${result.skipped} übersprungen.` : result.error ?? "Erstellung fehlgeschlagen.");
+    if (response.ok && supabase) {
+      const { data: refreshedInvoices } = await supabase
+        .from("invoices")
+        .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members(name,email,billing_name),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
+        .order("issue_date", { ascending: false });
+      if (refreshedInvoices) setInvoices(refreshedInvoices as unknown as Invoice[]);
+    }
+    setToast(response.ok ? `${result.created} fertige Rechnungen erstellt, ${result.skipped} bereits vorhanden oder unvollständig.` : result.error ?? "Erstellung fehlgeschlagen.");
   }
 
   async function finalizeInvoice(invoice: Invoice) {
@@ -1430,7 +1447,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               <p className="mt-2 text-stone-500">Zentrale Verwaltung · {format(new Date(), "MMMM yyyy", { locale: de })}</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <button onClick={generateMonthlyInvoices} disabled={generatingInvoices} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold hover:bg-stone-50 disabled:opacity-60"><FileText size={17} /> Monatsrechnungen</button>
+              <button onClick={() => setAdminTab("invoices")} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold hover:bg-stone-50"><FileText size={17} /> Rechnungen prüfen</button>
               <button onClick={() => setInviteDraft({ name: "", email: "", role: "employee" })} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#17231c] px-4 text-sm font-semibold text-white"><Plus size={18} /> Person einladen</button>
             </div>
           </div>
@@ -1469,7 +1486,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Prioritäten</p><h2 className="mt-1 text-xl font-semibold">Was jetzt zu tun ist</h2></div><CircleAlert className="text-emerald-700" /></div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <button onClick={() => setAdminTab("invoices")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{overdueInvoices.length}</span><span className="ml-2 text-sm text-stone-600">überfällige Rechnungen</span></button>
-                <button onClick={() => setAdminTab("invoices")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{draftInvoices.length}</span><span className="ml-2 text-sm text-stone-600">Entwürfe finalisieren</span></button>
+                <button onClick={() => setAdminTab("invoices")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{invoices.filter((invoice) => invoice.status === "paid").length}</span><span className="ml-2 text-sm text-stone-600">Zahlungen bestätigt</span></button>
                 <button onClick={() => setAdminTab("people")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{missingBillingProfiles.length}</span><span className="ml-2 text-sm text-stone-600">Abrechnungsprofile offen</span></button>
                 <button onClick={() => setAdminTab("documents")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{tenantDepositIssues.length}</span><span className="ml-2 text-sm text-stone-600">Kautionen prüfen</span></button>
                 <button onClick={() => document.getElementById("admin-issues")?.scrollIntoView({ behavior: "smooth" })} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{openIssueReports.length}</span><span className="ml-2 text-sm text-stone-600">offene Meldungen</span></button>
@@ -1632,42 +1649,69 @@ function BookingApp({ demo }: { demo: boolean }) {
             </section>
           </div>
 
-          <div id="admin-invoices" className={`${adminTab !== "invoices" ? "hidden " : ""}mt-6 scroll-mt-6 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm`}>
-            <div className="flex flex-col justify-between gap-4 border-b border-stone-100 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight">Rechnungen</h2>
-                <p className="mt-1 text-sm text-stone-500">PDF herunterladen; „E-Mail“ öffnet einen fertigen Text. Die PDF wird anschließend manuell angehängt.</p>
-              </div>
-              <button onClick={generateMonthlyInvoices} disabled={generatingInvoices} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">
-                <FileText size={17} /> {generatingInvoices ? "Wird vorbereitet …" : "Monatsentwürfe erstellen"}
-              </button>
-            </div>
-            <div className="divide-y divide-stone-100">
-              {invoices.length === 0 ? (
-                <p className="px-7 py-8 text-sm text-stone-500">Noch keine Rechnungen vorhanden.</p>
-              ) : invoices.map((invoice) => (
-                <div key={invoice.id} className="flex flex-col justify-between gap-4 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-stone-100 text-stone-700"><FileText size={19} /></div>
-                    <div>
-                      <p className="font-semibold">{invoice.members?.billing_name ?? invoice.members?.name ?? "Mitglied"} · {invoice.invoice_number ?? "Entwurf"}</p>
-                      <p className="mt-1 text-sm text-stone-500">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ""}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${invoice.status === "draft" ? "bg-amber-50 text-amber-800" : invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : invoice.status === "cancelled" ? "bg-red-50 text-red-700" : "bg-stone-100 text-stone-600"}`}>
-                      {invoice.status === "draft" ? "Entwurf" : invoice.status === "paid" ? "Bezahlt" : invoice.status === "cancelled" ? "Storniert" : "Offen"}
-                    </span>
-                    {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Finalisieren</button>}
-                    {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-10 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">Zahlung erfassen</button>}
-                    {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Zahlung korrigieren</button>}
-                    {(invoice.status === "draft" || invoice.status === "final") && <button onClick={() => cancelInvoice(invoice)} className="h-10 rounded-xl border border-red-100 px-3 text-sm font-semibold text-red-700 hover:bg-red-50">Stornieren</button>}
-                    {(invoice.status === "final" || invoice.status === "paid") && <button onClick={() => prepareInvoiceEmail(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100"><Send size={16} /> E-Mail</button>}
-                    <button onClick={() => downloadInvoice(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100" aria-label="Rechnung herunterladen"><Download size={16} /> PDF</button>
-                  </div>
+          <div id="admin-invoices" className={`${adminTab !== "invoices" ? "hidden " : ""}mt-6 scroll-mt-6`}>
+            <section className="rounded-3xl bg-[#17231c] p-5 text-white shadow-sm sm:p-7">
+              <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#c9ff70]">Automatische Abrechnung</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Nur noch Zahlung kontrollieren.</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-300">Am 29. jedes Monats werden die Rechnungen für den Folgemonat automatisch erstellt, nummeriert und im Portal des jeweiligen Mieters abgelegt.</p>
                 </div>
-              ))}
+                <button onClick={generateMonthlyInvoices} disabled={generatingInvoices} className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-stone-900 hover:bg-stone-100 disabled:opacity-60">
+                  <FileText size={17} /> {generatingInvoices ? "Wird erstellt …" : "Jetzt prüfen & erstellen"}
+                </button>
+              </div>
+            </section>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"><p className="text-sm text-stone-500">Offen</p><p className="mt-1 text-2xl font-semibold">{openInvoices.length}</p><p className="mt-1 text-xs text-stone-400">{openInvoiceGross.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} ausständig</p></article>
+              <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"><p className="text-sm text-stone-500">Überfällig</p><p className={`mt-1 text-2xl font-semibold ${overdueInvoices.length ? "text-red-700" : "text-stone-900"}`}>{overdueInvoices.length}</p><p className="mt-1 text-xs text-stone-400">benötigen deine Kontrolle</p></article>
+              <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"><p className="text-sm text-stone-500">Bezahlt</p><p className="mt-1 text-2xl font-semibold text-emerald-700">{invoices.filter((invoice) => invoice.status === "paid").length}</p><p className="mt-1 text-xs text-stone-400">Zahlungseingänge bestätigt</p></article>
             </div>
+
+            <section className="mt-4 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div><p className="text-sm font-medium text-emerald-700">Mieterübersicht</p><h3 className="mt-1 text-xl font-semibold">Rechnungen nach Person</h3></div>
+                <select value={invoiceMemberFilter} onChange={(event) => setInvoiceMemberFilter(event.target.value)} className="h-11 min-w-56 rounded-xl border border-stone-300 bg-white px-3 text-sm font-semibold outline-none focus:border-emerald-700" aria-label="Mieter auswählen">
+                  <option value="all">Alle Mieter</option>
+                  {billingMembers.map((billingMemberItem) => <option key={billingMemberItem.id} value={billingMemberItem.id}>{billingMemberItem.billing_name || billingMemberItem.name}{billingMemberItem.office_name ? ` · ${billingMemberItem.office_name}` : ""}</option>)}
+                </select>
+              </div>
+              {draftInvoices.length > 0 && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{draftInvoices.length} älterer Entwurf ist noch vorhanden und kann einmalig finalisiert werden. Neue Rechnungen werden automatisch fertig erstellt.</p>}
+
+              <div className="mt-5 space-y-4">
+                {invoiceGroups.length === 0 ? <p className="rounded-2xl bg-stone-50 p-6 text-sm text-stone-500">Für diese Auswahl sind noch keine Rechnungen vorhanden.</p> : invoiceGroups.map((group) => {
+                  const groupOpen = group.invoices.filter((invoice) => invoice.status === "final");
+                  return (
+                    <article key={group.member.id} className="overflow-hidden rounded-2xl border border-stone-200">
+                      <div className="flex flex-col justify-between gap-3 bg-stone-50 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+                        <div><p className="font-semibold">{group.member.billing_name || group.member.name}</p><p className="mt-1 text-xs text-stone-500">{group.member.office_name || group.member.email}</p></div>
+                        <div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${groupOpen.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{groupOpen.length ? `${groupOpen.length} offen` : "Alles bezahlt"}</span><span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-500">{group.invoices.length} Rechnungen</span></div>
+                      </div>
+                      <div className="divide-y divide-stone-100">
+                        {group.invoices.map((invoice) => (
+                          <div key={invoice.id} className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:px-5">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${invoice.status === "paid" ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-700"}`}><FileText size={18} /></div>
+                              <div className="min-w-0"><p className="truncate font-semibold">{invoice.invoice_number || "Alter Entwurf"} · {new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })}</p><p className="mt-1 text-sm text-stone-500">{invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${invoice.status === "draft" ? "bg-amber-50 text-amber-800" : invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-700"}`}>{invoice.status === "draft" ? "Alter Entwurf" : invoice.status === "paid" ? "Bezahlt" : "Offen"}</span>
+                              {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Einmalig finalisieren</button>}
+                              {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-10 rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800">Als bezahlt markieren</button>}
+                              {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Korrigieren</button>}
+                              {(invoice.status === "final" || invoice.status === "paid") && <button onClick={() => prepareInvoiceEmail(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100"><Send size={15} /> E-Mail</button>}
+                              <button onClick={() => downloadInvoice(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100" aria-label="Rechnung herunterladen"><Download size={15} /> PDF</button>
+                              {(invoice.status === "draft" || invoice.status === "final") && <button onClick={() => cancelInvoice(invoice)} className="h-10 rounded-xl px-2 text-xs font-medium text-stone-400 hover:bg-red-50 hover:text-red-700">Stornieren</button>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 md:hidden">
             <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Startseite</button>

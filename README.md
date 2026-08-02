@@ -82,10 +82,11 @@ Danach die angezeigte lokale URL öffnen.
 - Der Pro-Tarif enthält 12 Meetingraum-Stunden je Kalendermonat. Weitere Nutzung wird in 30-Minuten-Schritten zu 12 € netto pro Stunde berechnet.
 - Für Mitarbeiter gelten ebenfalls 12 Stunden plus freigegebene Bonusstunden. Eine Buchung über dieses Kontingent hinaus wird direkt in der Datenbank abgelehnt und nicht verrechnet.
 - Admin-Gutschriften gelten für genau einen Kalendermonat und werden mit Admin, Grund und Zeitpunkt protokolliert.
-- Am ersten Tag jedes Monats erzeugt ein geschützter Vercel-Cronjob automatisch Rechnungsentwürfe. Er kombiniert die Grundmiete des aktuellen Monats mit den abrechenbaren Meetingraum-Zusatzstunden des abgeschlossenen Vormonats.
+- Am 29. jedes Monats erzeugt ein geschützter Vercel-Cronjob automatisch die fertigen, fortlaufend nummerierten Rechnungen für die Grundmiete des Folgemonats. Sie erscheinen sofort im persönlichen Portal des jeweiligen Mieters.
+- Meetingraum-Zusatzstunden werden aus dem zuletzt vollständig abgeschlossenen Kalendermonat übernommen. Dadurch gehen Buchungen am 30. oder 31. nicht verloren und bereits ausgestellte Rechnungen müssen nicht nachträglich verändert werden.
 - Die automatische Rechnungserstellung berücksichtigt Mieter und Nutzungspartner; Mitarbeiter werden vollständig von der Abrechnung ausgeschlossen.
 - Beginnt oder endet ein Vertrag während eines Monats, wird die Grundmiete nach den tatsächlichen Kalendertagen aliquotiert.
-- Rechnungsentwürfe erhalten erst beim manuellen Finalisieren eine fortlaufende Nummer im Format `A21-YYYY-NNNN`. Finalisierte Rechnungen können von Mietern im persönlichen Portal als PDF heruntergeladen und vom Admin als bezahlt markiert werden.
+- Automatisch erzeugte Rechnungen erhalten sofort eine fortlaufende Nummer im Format `A21-YYYY-NNNN`. Mieter können sie im persönlichen Portal als PDF herunterladen; der Admin kontrolliert nur noch den Kontoeingang und markiert sie als bezahlt.
 - Beim Erfassen einer Zahlung wählt der Admin den tatsächlichen Zahlungstag. Offene und bezahlte Rechnungen sowie das Zahlungsdatum bleiben damit nachvollziehbar dokumentiert.
 - Der Admin kann fehlerhafte Zahlungseingänge zurücksetzen und offene Rechnungen beziehungsweise Entwürfe stornieren.
 - Monatspreise werden intern netto gespeichert. Bei einem vereinbarten Endpreis von 150 € inklusive 20 % USt sind daher 125 € netto zu hinterlegen.
