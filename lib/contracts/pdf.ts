@@ -87,7 +87,7 @@ export async function createContractPdf(data: ContractPdfData) {
   field("Anschrift", data.tenantAddress.replace(/\n/g, ", "));
   field("UID", data.tenantUid ?? "-");
   field("Firmenbuchnummer", data.companyRegister);
-  field("Vertreten durch", data.representative);
+  if (data.representative) field("Vertreten durch", data.representative);
   field("E-Mail / Telefon", `${data.email}${data.phone ? ` / ${data.phone}` : ""}`);
 
   heading("1. Vertragsgegenstand");
@@ -132,7 +132,7 @@ export async function createContractPdf(data: ContractPdfData) {
   page.drawText(`Erstellt am ${data.createdOn}`, { x: 42, y, size: 8.5, font: regular, color: gray }); y -= 38;
   page.drawLine({ start: { x: 42, y }, end: { x: 250, y }, thickness: 0.8, color: dark });
   page.drawLine({ start: { x: 345, y }, end: { x: 553, y }, thickness: 0.8, color: dark });
-  page.drawText(`${data.tenantName} / ${data.representative}`, { x: 42, y: y - 16, size: 8, font: regular, color: gray });
+  page.drawText(data.representative ? `${data.tenantName} / ${data.representative}` : data.tenantName, { x: 42, y: y - 16, size: 8, font: regular, color: gray });
   page.drawText("POTLOG Immobilien KG / Roland Potlog", { x: 345, y: y - 16, size: 8, font: regular, color: gray });
   page.drawText("Ort, Datum, Unterschrift Nutzer", { x: 42, y: y - 29, size: 8, font: bold, color: dark });
   page.drawText("Ort, Datum, Unterschrift Vermieter", { x: 345, y: y - 29, size: 8, font: bold, color: dark });

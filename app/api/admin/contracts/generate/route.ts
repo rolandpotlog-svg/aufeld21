@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   if (requester?.role !== "admin" || !requester.active) return Response.json({ error: "Nur Administratoren dürfen Verträge erzeugen." }, { status: 403 });
 
   const body = await request.json() as { memberId?: string; representative?: string; companyRegister?: string; phone?: string; contractEnd?: string; officeArea?: string };
-  if (!body.memberId || !body.representative?.trim() || !body.companyRegister?.trim() || !body.contractEnd?.match(/^\d{4}-\d{2}-\d{2}$/)) {
+  if (!body.memberId || !body.companyRegister?.trim() || !body.contractEnd?.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return Response.json({ error: "Vertretung, Firmenbuchnummer und Vertragsende sind erforderlich." }, { status: 400 });
   }
   const { data: member } = await admin.from("members").select("id,email,name,role,office_name,billing_name,billing_address,billing_uid,monthly_rent_net,contract_start").eq("id", body.memberId).single();
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     tenantName: member.billing_name || member.name,
     tenantAddress: member.billing_address,
     tenantUid: member.billing_uid,
-    representative: body.representative.trim(),
+    representative: body.representative?.trim() ?? "",
     companyRegister: body.companyRegister.trim(),
     phone: body.phone?.trim(),
     email: member.email,
