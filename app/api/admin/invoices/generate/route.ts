@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
   const { data: members, error: membersError } = await admin
     .from("members")
-    .select("id,name,billing_name,billing_address,monthly_rent_net,contract_start,contract_end")
+    .select("id,name,role,office_name,billing_name,billing_address,monthly_rent_net,contract_start,contract_end")
     .eq("active", true)
     .in("role", ["member", "partner", "admin"]);
   if (membersError) return Response.json({ error: "Mitglieder konnten nicht geladen werden." }, { status: 500 });
@@ -101,8 +101,12 @@ export async function POST(request: Request) {
       items.push({
         description:
           activeDays === daysInMonth
-            ? `Grundmiete AUFELD21 ${body.billingMonth.slice(0, 7)}`
-            : `Grundmiete aliquot ${isoDate(activeStart)} bis ${isoDate(activeEnd)} (${activeDays}/${daysInMonth} Tage)`,
+            ? member.role === "partner"
+              ? `Spezialtarif Flexbüro inkl. 12 Std. Meetingraum ${body.billingMonth.slice(0, 7)}`
+              : `Grundmiete ${member.office_name || "AUFELD21"} ${body.billingMonth.slice(0, 7)}`
+            : member.role === "partner"
+              ? `Spezialtarif Flexbüro aliquot ${isoDate(activeStart)} bis ${isoDate(activeEnd)} (${activeDays}/${daysInMonth} Tage)`
+              : `Grundmiete aliquot ${isoDate(activeStart)} bis ${isoDate(activeEnd)} (${activeDays}/${daysInMonth} Tage)`,
         quantity: 1,
         unit: "Monat",
         unit_price_net: roundMoney(monthlyRent * (activeDays / daysInMonth)),
