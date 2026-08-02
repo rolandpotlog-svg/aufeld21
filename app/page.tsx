@@ -194,7 +194,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
   const [view, setView] = useState<"dashboard" | "calendar" | "tour" | "about" | "admin">("dashboard");
-  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents">("overview");
+  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues">("overview");
   const [issueDraft, setIssueDraft] = useState<IssueDraft | null>(null);
   const [sendingIssue, setSendingIssue] = useState(false);
   const [issueError, setIssueError] = useState("");
@@ -366,6 +366,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   });
   const totalUsedHours = managedMembers.reduce((sum, item) => sum + Number(item.usedHours), 0);
   const openIssueReports = issueReports.filter((item) => item.status === "open");
+  const resolvedIssueReports = issueReports.filter((item) => item.status === "resolved");
   const selectedDossier = managedMembers.find((item) => item.id === selectedDossierId)
     ?? managedMembers.find((item) => item.role === "member" || item.role === "partner")
     ?? managedMembers[0];
@@ -710,16 +711,16 @@ function BookingApp({ demo }: { demo: boolean }) {
     setToast("Danke! Deine Meldung wurde aufgenommen.");
   }
 
-  async function resolveIssue(report: IssueReport) {
+  async function updateIssueStatus(report: IssueReport, status: IssueReport["status"]) {
     if (supabase) {
-      const { error } = await supabase.from("issue_reports").update({ status: "resolved" }).eq("id", report.id);
+      const { error } = await supabase.from("issue_reports").update({ status }).eq("id", report.id);
       if (error) {
-        setToast("Die Meldung konnte nicht abgeschlossen werden.");
+        setToast("Der Status der Meldung konnte nicht geändert werden.");
         return;
       }
     }
-    setIssueReports((current) => current.map((item) => item.id === report.id ? { ...item, status: "resolved" } : item));
-    setToast("Meldung als erledigt markiert.");
+    setIssueReports((current) => current.map((item) => item.id === report.id ? { ...item, status } : item));
+    setToast(status === "resolved" ? "Meldung als erledigt markiert." : "Meldung wieder geöffnet.");
   }
 
   async function grantBonusHours(event: React.FormEvent) {
@@ -1459,8 +1460,8 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </div>
 
-          <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-4" aria-label="Adminbereiche">
-            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen']] as const).map(([tabValue, label]) => (
+          <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-5" aria-label="Adminbereiche">
+            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen']] as const).map(([tabValue, label]) => (
               <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`h-11 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}</button>
             ))}
           </nav>
@@ -1496,7 +1497,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <button onClick={() => setAdminTab("invoices")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{invoices.filter((invoice) => invoice.status === "paid").length}</span><span className="ml-2 text-sm text-stone-600">Zahlungen bestätigt</span></button>
                 <button onClick={() => setAdminTab("people")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{missingBillingProfiles.length}</span><span className="ml-2 text-sm text-stone-600">Abrechnungsprofile offen</span></button>
                 <button onClick={() => setAdminTab("documents")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{tenantDepositIssues.length}</span><span className="ml-2 text-sm text-stone-600">Kautionen prüfen</span></button>
-                <button onClick={() => document.getElementById("admin-issues")?.scrollIntoView({ behavior: "smooth" })} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{openIssueReports.length}</span><span className="ml-2 text-sm text-stone-600">offene Meldungen</span></button>
+                <button onClick={() => setAdminTab("issues")} className="rounded-2xl bg-stone-50 p-4 text-left hover:bg-stone-100"><span className="text-2xl font-semibold">{openIssueReports.length}</span><span className="ml-2 text-sm text-stone-600">offene Meldungen</span></button>
               </div>
             </section>
             <section className="rounded-3xl bg-emerald-50 p-6 sm:p-7">
@@ -1505,18 +1506,18 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <button onClick={() => setAdminTab("people")} className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 text-left font-semibold"><Users size={18} className="text-emerald-700" /> Personen & Stunden</button>
                 <button onClick={() => setAdminTab("invoices")} className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 text-left font-semibold"><FileText size={18} className="text-emerald-700" /> Rechnungen & Zahlungen</button>
                 <button onClick={() => setAdminTab("documents")} className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 text-left font-semibold"><ShieldCheck size={18} className="text-emerald-700" /> Kautionen & Unterlagen</button>
-                <button onClick={() => document.getElementById("admin-issues")?.scrollIntoView({ behavior: "smooth" })} className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 text-left font-semibold"><CircleAlert size={18} className="text-emerald-700" /> Meldungen aus dem Space</button>
+                <button onClick={() => setAdminTab("issues")} className="flex h-12 items-center gap-3 rounded-xl bg-white px-4 text-left font-semibold"><CircleAlert size={18} className="text-emerald-700" /> Meldungen aus dem Space</button>
               </div>
             </section>
           </div>
 
-          <section id="admin-issues" className={`${adminTab !== "overview" ? "hidden " : ""}mt-6 scroll-mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7`}>
-            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Aus dem Space</p><h2 className="mt-1 text-xl font-semibold">Offene Meldungen</h2></div><span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{openIssueReports.length} offen</span></div>
+          <section id="admin-issues" className={`${adminTab !== "issues" ? "hidden " : ""}mt-6 scroll-mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7`}>
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><p className="text-sm font-medium text-emerald-700">Aus dem Space</p><h2 className="mt-1 text-xl font-semibold">Alle Meldungen</h2><p className="mt-1 text-sm text-stone-500">Probleme zentral prüfen, bearbeiten und nachvollziehbar abschließen.</p></div><div className="flex gap-2"><span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{openIssueReports.length} offen</span><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">{resolvedIssueReports.length} erledigt</span></div></div>
             <div className="mt-5 divide-y divide-stone-100">
-              {openIssueReports.length === 0 ? <p className="py-3 text-sm text-stone-500">Aktuell ist nichts offen.</p> : openIssueReports.map((report) => (
+              {issueReports.length === 0 ? <p className="py-3 text-sm text-stone-500">Noch keine Meldungen vorhanden.</p> : [...openIssueReports, ...resolvedIssueReports].map((report) => (
                 <div key={report.id} className="flex flex-col justify-between gap-3 py-4 first:pt-0 sm:flex-row sm:items-center">
-                  <div><p className="font-semibold">{report.category} · {report.members?.name ?? "Mitglied"}</p><p className="mt-1 text-sm text-stone-500">{report.note || "Keine weitere Beschreibung"} · {formatInTimeZone(report.created_at, TZ, "dd.MM.yyyy, HH:mm")}</p></div>
-                  <button onClick={() => resolveIssue(report)} className="h-10 shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800">Als erledigt markieren</button>
+                  <div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{report.category} · {report.members?.name ?? "Mitglied"}</p><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${report.status === "open" ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>{report.status === "open" ? "Offen" : "Erledigt"}</span></div><p className="mt-1 text-sm text-stone-500">{report.note || "Keine weitere Beschreibung"} · {formatInTimeZone(report.created_at, TZ, "dd.MM.yyyy, HH:mm")}</p></div>
+                  <button onClick={() => updateIssueStatus(report, report.status === "open" ? "resolved" : "open")} className={`h-10 shrink-0 rounded-xl border px-4 text-sm font-semibold ${report.status === "open" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-stone-200 bg-white text-stone-600"}`}>{report.status === "open" ? "Als erledigt markieren" : "Wieder öffnen"}</button>
                 </div>
               ))}
             </div>
@@ -1525,7 +1526,7 @@ function BookingApp({ demo }: { demo: boolean }) {
           <div id="admin-people" className={`${adminTab !== "people" ? "hidden " : ""}mt-6 scroll-mt-6 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm`}>
             <div className="border-b border-stone-100 px-5 py-5 sm:px-7">
               <h2 className="text-xl font-semibold tracking-tight">Mieter, Büros & Kontingente</h2>
-              <p className="mt-1 text-sm text-stone-500">Ein Dossier pro Person: Rechnungen, Vertrag, Kaution und Meetingstunden an einem Ort.</p>
+              <p className="mt-1 text-sm text-stone-500">Eine Mieterakte pro Person: Rechnungen, Vertrag, Kaution und Meetingstunden an einem Ort.</p>
             </div>
             {selectedDossier && (
               <section className="border-b border-stone-200 bg-stone-50/70 p-5 sm:p-7" aria-label="Mieter- und Bürodossier">
@@ -1613,7 +1614,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                         <td className="px-5 py-5 font-medium text-emerald-700">+{item.bonusHours.toLocaleString("de-AT")} h</td>
                         <td className="px-5 py-5 font-semibold">{item.role === "employee" ? "–" : (extra * 12).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}</td>
                         <td className="px-7 py-5 text-right">
-                          <button onClick={() => { setSelectedDossierId(item.id); document.getElementById("admin-people")?.scrollIntoView({ behavior: "smooth" }); }} className="mr-2 h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Dossier</button>
+                          <button onClick={() => { setSelectedDossierId(item.id); document.getElementById("admin-people")?.scrollIntoView({ behavior: "smooth" }); }} className="mr-2 h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Mieterakte</button>
                           {(item.role === "member" || item.role === "partner" || item.role === "admin") && <button onClick={() => setBillingMember(item)} className="mr-2 h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">
                             Abrechnung
                           </button>}
