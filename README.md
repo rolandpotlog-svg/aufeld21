@@ -7,7 +7,7 @@ Minimaler Meetingraum-Kalender für einen kleinen Co-Working-Space. Gebaut mit N
 1. Auf [supabase.com](https://supabase.com) ein neues Projekt erstellen.
 2. Im Projekt unter **SQL Editor** eine neue Query öffnen.
 3. Den vollständigen Inhalt von `supabase/migrations/001_initial_schema.sql` einfügen und ausführen.
-4. Unter **Authentication → Providers → Email** den E-Mail-Provider aktivieren.
+4. Unter **Authentication → Providers → Email** den E-Mail-Provider aktivieren. Der Standardzugang erfolgt mit E-Mail und Passwort; Magic Link bleibt als Alternative verfügbar.
 5. Öffentliche Registrierung deaktivieren: Unter **Authentication → Settings** die Option **Allow new users to sign up** ausschalten. Die App setzt zusätzlich `shouldCreateUser: false`.
 6. Unter **Authentication → URL Configuration** die lokale URL `http://localhost:3000` und später die Vercel-URL als Redirect URL ergänzen.
 
@@ -38,7 +38,7 @@ Weitere Personen können danach direkt im Admin-Bereich als **Mieter**, **Nutzun
 
 Bei einer bereits eingerichteten Datenbank werden anschließend die Migrationen `002_employee_role.sql` bis `008_admin_is_tenant.sql` in numerischer Reihenfolge ausgeführt. Bei einem komplett neuen Projekt genügt die aktuelle `001_initial_schema.sql`, da sie bereits alle Ergänzungen enthält.
 
-Mitarbeiter wie Kylian und Romeo erhalten einen eigenen Magic-Link-Zugang und ein persönliches Meetingraum-Kontingent von 12 Stunden je Kalendermonat. Der Admin kann ihnen monatsweise Bonusstunden geben. Mitarbeiter sehen keine Rechnungen, Kautionen oder Mietverträge; Hausordnung und allgemeine Informationen können ihnen weiterhin bereitgestellt werden. Nutzungspartner wie Daniel und Slavin erhalten ebenfalls 12 Stunden plus Bonus, werden regulär abgerechnet, erscheinen aber nicht in den Bereichen Mietvertrag und Kaution.
+Neue Personen erhalten einen Einladungslink, legen einmalig ihr eigenes Passwort fest und melden sich danach mit E-Mail und Passwort an. Über **Passwort vergessen?** kann jederzeit ein sicherer Reset-Link angefordert werden. Mitarbeiter wie Kylian und Romeo erhalten einen eigenen Zugang und ein persönliches Meetingraum-Kontingent von 12 Stunden je Kalendermonat. Der Admin kann ihnen monatsweise Bonusstunden geben. Mitarbeiter sehen keine Rechnungen, Kautionen oder Mietverträge; Hausordnung und allgemeine Informationen können ihnen weiterhin bereitgestellt werden. Nutzungspartner wie Daniel und Slavin erhalten ebenfalls 12 Stunden plus Bonus, werden regulär abgerechnet, erscheinen aber nicht in den Bereichen Mietvertrag und Kaution.
 
 ## 3. Umgebungsvariablen
 
