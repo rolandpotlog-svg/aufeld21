@@ -77,6 +77,7 @@ type Booking = {
 
 type Draft = { date: string; start: string; end: string; note: string };
 type IssueDraft = { category: string; note: string };
+type ContractDraft = { member: ManagedMember; representative: string; companyRegister: string; phone: string; officeArea: string; contractEnd: string };
 type IssueReport = { id: string; member_id: string; category: string; note: string | null; status: "open" | "resolved"; created_at: string; members?: { name: string } | null };
 type Invoice = {
   id: string;
@@ -218,6 +219,8 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [monthlyBonusHours, setMonthlyBonusHours] = useState(demo ? 2 : 0);
   const [inviteDraft, setInviteDraft] = useState<{ name: string; email: string; role: "member" | "partner" | "employee" } | null>(null);
   const [paymentDraft, setPaymentDraft] = useState<{ invoice: Invoice; paidOn: string } | null>(null);
+  const [contractDraft, setContractDraft] = useState<ContractDraft | null>(null);
+  const [generatingContract, setGeneratingContract] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviting, setInviting] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>(demo ? [
@@ -1008,6 +1011,43 @@ function BookingApp({ demo }: { demo: boolean }) {
     setToast(`${record.title} wurde sicher hinterlegt.`);
   }
 
+  async function generateContract(event: React.FormEvent) {
+    event.preventDefault();
+    if (!contractDraft || !supabase) return;
+    setGeneratingContract(true);
+    const { data } = await supabase.auth.getSession();
+    const response = await fetch("/api/admin/contracts/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+      body: JSON.stringify({
+        memberId: contractDraft.member.id,
+        representative: contractDraft.representative,
+        companyRegister: contractDraft.companyRegister,
+        phone: contractDraft.phone,
+        officeArea: contractDraft.officeArea,
+        contractEnd: contractDraft.contractEnd,
+      }),
+    });
+    setGeneratingContract(false);
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      setToast(result.error ?? "Der Vertragsentwurf konnte nicht erstellt werden.");
+      return;
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `Nutzungsvereinbarung-${contractDraft.member.name.replace(/[^A-Za-z0-9-]/g, "-")}-Entwurf.pdf`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    const { data: refreshedDocuments } = await supabase.from("member_documents").select("id,member_id,document_type,title,storage_path,visible_to_member,valid_until,created_at").order("created_at", { ascending: false });
+    if (refreshedDocuments) setDocuments(refreshedDocuments as MemberDocument[]);
+    setManagedMembers((items) => items.map((item) => item.id === contractDraft.member.id ? { ...item, contract_end: contractDraft.contractEnd } : item));
+    setContractDraft(null);
+    setToast("Vertragsentwurf erstellt, heruntergeladen und in der Mieterakte abgelegt.");
+  }
+
   async function downloadMemberDocument(document: MemberDocument) {
     if (!supabase) { setToast("Der Dokumentdownload wird mit Supabase Storage aktiv."); return; }
     const { data, error } = await supabase.storage.from("member-documents").createSignedUrl(document.storage_path, 60);
@@ -1572,7 +1612,8 @@ function BookingApp({ demo }: { demo: boolean }) {
                       <div className="mt-4 rounded-2xl border border-stone-100 p-4">
                         {dossierDocuments.length === 0 ? <p className="text-sm text-stone-500">Noch keine Unterlagen hinterlegt.</p> : dossierDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex w-full items-center gap-2 border-b border-stone-100 py-3 text-left text-sm font-medium last:border-0"><FileText size={16} className="text-emerald-700" />{document.title}<Download size={14} className="ml-auto text-stone-400" /></button>)}
                         <div className="mt-4 flex flex-wrap gap-2">
-                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-stone-100 px-3 text-sm font-semibold"><Upload size={15} /> Mietvertrag hochladen<input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(selectedDossier, file, "mietvertrag"); event.target.value = ""; }} /></label>}
+                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => setContractDraft({ member: selectedDossier, representative: "", companyRegister: "", phone: "", officeArea: selectedDossier.office_name === "Büro 1" ? "16,31" : selectedDossier.office_name === "Büro 2" ? "12,62" : selectedDossier.office_name === "Büro 3" ? "14,13" : "", contractEnd: selectedDossier.contract_end || (selectedDossier.contract_start ? format(addDays(addMonths(new Date(`${selectedDossier.contract_start}T12:00:00`), 36), -1), "yyyy-MM-dd") : "") })} className="flex h-10 items-center gap-2 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white"><FileText size={15} /> Nutzungsvertrag erstellen</button>}
+                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-stone-100 px-3 text-sm font-semibold"><Upload size={15} /> Original hochladen<input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(selectedDossier, file, "mietvertrag"); event.target.value = ""; }} /></label>}
                           {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => { if (!dossierDeposit) setDeposits((current) => [...current, { member_id: selectedDossier.id, agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: null }]); setDepositMember(selectedDossier); }} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold">Kaution bearbeiten</button>}
                         </div>
                       </div>
@@ -2069,6 +2110,24 @@ function BookingApp({ demo }: { demo: boolean }) {
           </section>
         </div>
       )}
+      {contractDraft && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 sm:items-center sm:p-6" onMouseDown={(event) => event.target === event.currentTarget && !generatingContract && setContractDraft(null)}>
+          <section className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="contract-title">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Automatischer Entwurf</p><h2 id="contract-title" className="mt-1 text-2xl font-semibold">Nutzungsvertrag erstellen</h2><p className="mt-2 text-sm text-stone-500">{contractDraft.member.billing_name || contractDraft.member.name} · {contractDraft.member.office_name || "Büro"}</p></div><button disabled={generatingContract} onClick={() => setContractDraft(null)} className="grid h-11 w-11 place-items-center rounded-full bg-stone-100 disabled:opacity-40" aria-label="Schließen"><X size={19} /></button></div>
+            <div className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-950"><p className="font-semibold">Wird automatisch übernommen</p><p className="mt-1">Adresse, UID, Büro, Mietbeginn, Monatsmiete, USt, Kaution und 12 Stunden Meetingraum.</p></div>
+            <form onSubmit={generateContract} className="mt-6 grid gap-4 sm:grid-cols-2">
+              <label className="sm:col-span-2"><span className="mb-2 block text-sm font-medium">Vertretungsberechtigte Person</span><input required value={contractDraft.representative} onChange={(event) => setContractDraft({ ...contractDraft, representative: event.target.value })} placeholder="Vor- und Nachname" className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
+              <label><span className="mb-2 block text-sm font-medium">Firmenbuchnummer</span><input required value={contractDraft.companyRegister} onChange={(event) => setContractDraft({ ...contractDraft, companyRegister: event.target.value })} placeholder="z. B. FN 123456a" className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
+              <label><span className="mb-2 block text-sm font-medium">Telefon (optional)</span><input value={contractDraft.phone} onChange={(event) => setContractDraft({ ...contractDraft, phone: event.target.value })} placeholder="+43 …" className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
+              <label><span className="mb-2 block text-sm font-medium">Bürofläche in m²</span><input value={contractDraft.officeArea} onChange={(event) => setContractDraft({ ...contractDraft, officeArea: event.target.value })} placeholder="z. B. 16,31" className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
+              <label><span className="mb-2 block text-sm font-medium">Vertragsende</span><input required type="date" min={contractDraft.member.contract_start || undefined} value={contractDraft.contractEnd} onChange={(event) => setContractDraft({ ...contractDraft, contractEnd: event.target.value })} className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
+              <div className="sm:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950">Der erzeugte Vertrag ist ein Entwurf. Bitte Inhalt, steuerliche Behandlung und Befristung vor der Unterschrift fachlich prüfen.</div>
+              <button disabled={generatingContract} className="h-12 rounded-xl bg-emerald-700 font-semibold text-white disabled:opacity-60 sm:col-span-2">{generatingContract ? "Vertrag wird erstellt …" : "PDF erstellen & ablegen"}</button>
+            </form>
+          </section>
+        </div>
+      )}
+
       {paymentDraft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 sm:items-center sm:p-6">
           <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="payment-title">
