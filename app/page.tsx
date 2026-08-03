@@ -378,7 +378,9 @@ function BookingApp({ demo }: { demo: boolean }) {
   const dossierInvoices = selectedDossier
     ? invoices.filter((invoice) => invoice.member_id === selectedDossier.id && invoice.status !== "cancelled")
     : [];
-  const dossierDocuments = selectedDossier ? documents.filter((document) => document.member_id === selectedDossier.id) : [];
+  const dossierDocuments = selectedDossier
+    ? documents.filter((document) => document.member_id === selectedDossier.id && !document.title.toLowerCase().includes("entwurf"))
+    : [];
   const dossierDeposit = selectedDossier ? deposits.find((deposit) => deposit.member_id === selectedDossier.id) : undefined;
 
   useEffect(() => {
@@ -1653,7 +1655,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                     <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Ablage</p><h4 className="mt-1 text-lg font-semibold">Vertrag & Unterlagen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierDocuments.length}</span></div>
                       <div className="mt-4 rounded-2xl border border-stone-100 p-4">
-                        {dossierDocuments.length === 0 ? <p className="text-sm text-stone-500">Noch keine Unterlagen hinterlegt.</p> : dossierDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex w-full items-center gap-2 border-b border-stone-100 py-3 text-left text-sm font-medium last:border-0"><FileText size={16} className="text-emerald-700" />{document.title}<Download size={14} className="ml-auto text-stone-400" /></button>)}
+                        {dossierDocuments.length === 0 ? <p className="text-sm text-stone-500">Noch kein hochgeladenes Original hinterlegt.</p> : dossierDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex w-full items-center gap-2 border-b border-stone-100 py-3 text-left text-sm font-medium last:border-0"><FileText size={16} className="text-emerald-700" />{document.title}<Download size={14} className="ml-auto text-stone-400" /></button>)}
                         <div className="mt-4 flex flex-wrap gap-2">
                           {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => { const isNeugebauer = (selectedDossier.billing_name || selectedDossier.name).toLowerCase().includes("neugebauer"); setContractDraft({ member: selectedDossier, representative: "", companyRegister: isNeugebauer ? "FN 625636 d" : "", phone: "", officeArea: selectedDossier.office_name === "Büro 1" ? "16,31" : selectedDossier.office_name === "Büro 2" ? "12,62" : selectedDossier.office_name === "Büro 3" ? "14,13" : "", contractEnd: selectedDossier.contract_end || (selectedDossier.contract_start ? format(addDays(addMonths(new Date(`${selectedDossier.contract_start}T12:00:00`), isNeugebauer ? 60 : 36), -1), "yyyy-MM-dd") : "") }); }} className="flex h-10 items-center gap-2 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white"><FileText size={15} /> Nutzungsvertrag erstellen</button>}
                           {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-stone-100 px-3 text-sm font-semibold"><Upload size={15} /> Original hochladen<input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(selectedDossier, file, "mietvertrag"); event.target.value = ""; }} /></label>}
