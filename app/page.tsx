@@ -379,7 +379,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     ? invoices.filter((invoice) => invoice.member_id === selectedDossier.id && invoice.status !== "cancelled")
     : [];
   const dossierDocuments = selectedDossier
-    ? documents.filter((document) => document.member_id === selectedDossier.id && !document.title.toLowerCase().includes("entwurf"))
+    ? documents.filter((document) => document.member_id === selectedDossier.id && !document.storage_path.includes("/vertraege/nutzungsvereinbarung-entwurf-"))
     : [];
   const dossierDeposit = selectedDossier ? deposits.find((deposit) => deposit.member_id === selectedDossier.id) : undefined;
 
@@ -1004,8 +1004,9 @@ function BookingApp({ demo }: { demo: boolean }) {
   }
 
   async function uploadMemberDocument(target: ManagedMember, file: File, type: MemberDocument["document_type"]) {
-    if (!member || file.type !== "application/pdf") { setToast("Bitte ausschließlich PDF-Dateien auswählen."); return; }
-    const record: MemberDocument = { id: crypto.randomUUID(), member_id: target.id, document_type: type, title: file.name.replace(/\.pdf$/i, ""), storage_path: `${target.id}/${crypto.randomUUID()}-${file.name}`, visible_to_member: true, valid_until: null, created_at: new Date().toISOString() };
+    if (!member || (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf"))) { setToast("Bitte ausschließlich PDF-Dateien auswählen."); return; }
+    const safeFileName = file.name.replace(/[^A-Za-z0-9._-]/g, "-");
+    const record: MemberDocument = { id: crypto.randomUUID(), member_id: target.id, document_type: type, title: file.name.replace(/\.pdf$/i, ""), storage_path: `${target.id}/originale/${crypto.randomUUID()}-${safeFileName}`, visible_to_member: true, valid_until: null, created_at: new Date().toISOString() };
     if (supabase) {
       const upload = await supabase.storage.from("member-documents").upload(record.storage_path, file, { contentType: "application/pdf" });
       if (upload.error) { setToast("Dokument konnte nicht hochgeladen werden."); return; }
