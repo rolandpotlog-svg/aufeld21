@@ -17,6 +17,7 @@ import {
 import { de } from "date-fns/locale";
 import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 import {
+  Bell,
   CalendarPlus,
   ChevronLeft,
   ChevronRight,
@@ -1202,6 +1203,21 @@ function BookingApp({ demo }: { demo: boolean }) {
             )}
           </nav>
           <div className="flex items-center gap-2">
+            {member.role === "admin" && (
+              <button
+                onClick={() => { setView("admin"); setAdminTab("issues"); }}
+                className={`relative grid h-11 w-11 place-items-center rounded-xl border transition ${openIssueReports.length ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100" : "border-stone-200 bg-white text-stone-600 hover:bg-stone-100"}`}
+                aria-label={openIssueReports.length ? `${openIssueReports.length} offene Meldungen anzeigen` : "Meldungen anzeigen"}
+                title={openIssueReports.length ? `${openIssueReports.length} offene Meldungen` : "Keine offenen Meldungen"}
+              >
+                <Bell size={18} />
+                {openIssueReports.length > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                    {openIssueReports.length > 9 ? "9+" : openIssueReports.length}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={() => {
                 setView("calendar");
@@ -1232,6 +1248,20 @@ function BookingApp({ demo }: { demo: boolean }) {
               <span><strong>Lokale Vorschau</strong> · Anwesenheit und Buchungen sind Demo-Daten.</span>
               <span className="hidden rounded-full bg-white px-3 py-1 text-xs font-semibold sm:inline">Demo-Modus</span>
             </div>
+          )}
+
+          {member.role === "admin" && openIssueReports.length > 0 && (
+            <button
+              onClick={() => { setView("admin"); setAdminTab("issues"); }}
+              className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-left text-amber-950 shadow-sm transition hover:bg-amber-100 sm:px-5"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800"><Bell size={20} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{openIssueReports.length === 1 ? "Eine offene Meldung wartet auf dich" : `${openIssueReports.length} offene Meldungen warten auf dich`}</span>
+                <span className="mt-0.5 block text-sm text-amber-800">Antippen, prüfen und direkt als erledigt markieren.</span>
+              </span>
+              <ChevronRight className="shrink-0" size={20} />
+            </button>
           )}
 
           <div className="overflow-hidden rounded-[2rem] bg-[#17231c] px-6 py-8 text-white shadow-xl shadow-emerald-950/10 sm:px-10 sm:py-11">
@@ -1515,7 +1545,7 @@ function BookingApp({ demo }: { demo: boolean }) {
 
           <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-5" aria-label="Adminbereiche">
             {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen']] as const).map(([tabValue, label]) => (
-              <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`h-11 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}</button>
+              <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}{tabValue === "issues" && openIssueReports.length > 0 && <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{openIssueReports.length > 9 ? "9+" : openIssueReports.length}</span>}</button>
             ))}
           </nav>
 
@@ -1564,14 +1594,14 @@ function BookingApp({ demo }: { demo: boolean }) {
             </section>
           </div>
 
-          <section id="admin-issues" className={`${adminTab !== "issues" ? "hidden " : ""}mt-6 scroll-mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7`}>
+          <section id="admin-issues" className={`${adminTab !== "issues" ? "hidden " : ""}mt-6 scroll-mt-6 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-7`}>
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><p className="text-sm font-medium text-emerald-700">Aus dem Space</p><h2 className="mt-1 text-xl font-semibold">Alle Meldungen</h2><p className="mt-1 text-sm text-stone-500">Probleme zentral prüfen, bearbeiten und nachvollziehbar abschließen.</p></div><div className="flex gap-2"><span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{openIssueReports.length} offen</span><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">{resolvedIssueReports.length} erledigt</span></div></div>
-            <div className="mt-5 divide-y divide-stone-100">
+            <div className="mt-5 grid gap-3">
               {issueReports.length === 0 ? <p className="py-3 text-sm text-stone-500">Noch keine Meldungen vorhanden.</p> : [...openIssueReports, ...resolvedIssueReports].map((report) => (
-                <div key={report.id} className="flex flex-col justify-between gap-3 py-4 first:pt-0 sm:flex-row sm:items-center">
-                  <div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{report.category} · {report.members?.name ?? "Mitglied"}</p><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${report.status === "open" ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>{report.status === "open" ? "Offen" : "Erledigt"}</span></div><p className="mt-1 text-sm text-stone-500">{report.note || "Keine weitere Beschreibung"} · {formatInTimeZone(report.created_at, TZ, "dd.MM.yyyy, HH:mm")}</p></div>
-                  <button onClick={() => updateIssueStatus(report, report.status === "open" ? "resolved" : "open")} className={`h-10 shrink-0 rounded-xl border px-4 text-sm font-semibold ${report.status === "open" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-stone-200 bg-white text-stone-600"}`}>{report.status === "open" ? "Als erledigt markieren" : "Wieder öffnen"}</button>
-                </div>
+                <article key={report.id} className={`rounded-2xl border p-4 sm:flex sm:items-center sm:justify-between sm:gap-5 ${report.status === "open" ? "border-amber-200 bg-amber-50/50" : "border-stone-200 bg-stone-50/60"}`}>
+                  <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{report.category}</p><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${report.status === "open" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-800"}`}>{report.status === "open" ? "Offen" : "Erledigt"}</span></div><p className="mt-2 break-words text-sm leading-6 text-stone-700">{report.note || "Keine weitere Beschreibung"}</p><p className="mt-2 text-xs font-medium text-stone-500">{report.members?.name ?? "Mitglied"} · {formatInTimeZone(report.created_at, TZ, "dd.MM.yyyy, HH:mm")}</p></div>
+                  <button onClick={() => updateIssueStatus(report, report.status === "open" ? "resolved" : "open")} className={`mt-4 h-11 w-full shrink-0 rounded-xl border px-4 text-sm font-semibold sm:mt-0 sm:w-auto ${report.status === "open" ? "border-emerald-300 bg-emerald-700 text-white" : "border-stone-200 bg-white text-stone-600"}`}>{report.status === "open" ? "Als erledigt markieren" : "Wieder öffnen"}</button>
+                </article>
               ))}
             </div>
           </section>
