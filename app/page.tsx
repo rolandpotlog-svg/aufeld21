@@ -182,6 +182,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [sendingLink, setSendingLink] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [passwordSetup, setPasswordSetup] = useState(
     () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("setup") === "password",
   );
@@ -532,7 +533,8 @@ function BookingApp({ demo }: { demo: boolean }) {
     if (error) setAuthMessage("E-Mail-Adresse oder Passwort ist nicht richtig.");
   }
 
-  async function sendPasswordReset() {
+  async function sendPasswordReset(event: React.FormEvent) {
+    event.preventDefault();
     if (!supabase || !email.trim()) {
       setAuthMessage("Bitte gib zuerst deine E-Mail-Adresse ein.");
       return;
@@ -545,8 +547,8 @@ function BookingApp({ demo }: { demo: boolean }) {
     setAuthBusy(false);
     setAuthMessage(
       error
-        ? "Der Link konnte gerade nicht gesendet werden. Bitte versuche es später erneut."
-        : "Wenn die E-Mail freigeschaltet ist, erhältst du jetzt einen Link zum Zurücksetzen.",
+        ? "Der Reset-Link konnte gerade nicht gesendet werden. Bitte warte kurz und versuche es erneut."
+        : "Reset-Link angefordert. Bitte prüfe jetzt deinen Posteingang und auch den Spam-Ordner.",
     );
   }
 
@@ -1093,9 +1095,19 @@ function BookingApp({ demo }: { demo: boolean }) {
             A21
           </div>
           <p className="mb-2 text-sm font-bold tracking-[0.12em] text-emerald-700">AUFELD21</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-stone-900">Dein Raum. Deine Zeit.</h1>
-          <p className="mt-3 leading-7 text-stone-600">Schnell anmelden und den Meetingraum buchen.</p>
-          <form onSubmit={signInWithPassword} className="mt-8 space-y-4">
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900">{showPasswordReset ? "Passwort zurücksetzen" : "Dein Raum. Deine Zeit."}</h1>
+          <p className="mt-3 leading-7 text-stone-600">{showPasswordReset ? "Gib deine freigeschaltete E-Mail-Adresse ein. Wir senden dir einen sicheren Link zum Festlegen eines neuen Passworts." : "Schnell anmelden und den Meetingraum buchen."}</p>
+          {showPasswordReset ? (
+            <form onSubmit={sendPasswordReset} className="mt-8 space-y-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-stone-700">E-Mail-Adresse</span>
+                <input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="du@beispiel.at" className="h-13 w-full rounded-xl border border-stone-300 px-4 outline-none transition focus:border-emerald-700 focus:ring-3 focus:ring-emerald-700/10" />
+              </label>
+              <button className="h-13 w-full rounded-xl bg-emerald-700 px-5 font-medium text-white transition hover:bg-emerald-800 disabled:opacity-60" disabled={authBusy}>{authBusy ? "Link wird gesendet …" : "Reset-Link senden"}</button>
+              {authMessage && <p className="rounded-xl bg-stone-100 p-4 text-sm leading-6 text-stone-700" role="status">{authMessage}</p>}
+              <button type="button" onClick={() => { setShowPasswordReset(false); setAuthMessage(""); }} className="min-h-11 w-full text-sm font-medium text-stone-600 hover:text-stone-900">Zurück zur Anmeldung</button>
+            </form>
+          ) : <><form onSubmit={signInWithPassword} className="mt-8 space-y-4">
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-stone-700">E-Mail-Adresse</span>
               <input
@@ -1123,7 +1135,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               {authBusy ? "Wird angemeldet …" : "Anmelden"}
             </button>
           </form>
-          <button type="button" onClick={sendPasswordReset} disabled={authBusy} className="mt-4 min-h-11 w-full text-sm font-medium text-emerald-800 hover:text-emerald-950 disabled:opacity-60">Passwort vergessen?</button>
+          <button type="button" onClick={() => { setShowPasswordReset(true); setShowMagicLink(false); setAuthMessage(""); }} disabled={authBusy} className="mt-4 min-h-11 w-full text-sm font-medium text-emerald-800 hover:text-emerald-950 disabled:opacity-60">Passwort vergessen?</button>
           <div className="mt-5 border-t border-stone-200 pt-5">
             <button type="button" onClick={() => setShowMagicLink((value) => !value)} className="min-h-11 w-full text-sm font-medium text-stone-500 hover:text-stone-800">{showMagicLink ? "Magic Link ausblenden" : "Alternativ mit Magic Link anmelden"}</button>
             {showMagicLink && (
@@ -1137,6 +1149,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               {authMessage}
             </p>
           )}
+          </>}
           <p className="mt-7 text-xs leading-5 text-stone-500">Nur freigeschaltete Mitglieder können sich anmelden.</p>
         </section>
       </main>
