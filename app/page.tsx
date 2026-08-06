@@ -45,6 +45,7 @@ import { SpacePlan } from "./space-plan";
 
 const TZ = "Europe/Vienna";
 const SLOT_HEIGHT = 52;
+const MOBILE_SLOT_HEIGHT = 36;
 const START_HOUR = 7;
 const END_HOUR = 20;
 
@@ -190,6 +191,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(toZonedTime(new Date(), TZ), { weekStartsOn: 1 }),
   );
+  const [mobileDayOffset, setMobileDayOffset] = useState(() => (toZonedTime(new Date(), TZ).getDay() + 6) % 7);
   const [bookings, setBookings] = useState<Booking[]>(() => (demo ? makeDemoBookings() : []));
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -342,6 +344,7 @@ function BookingApp({ demo }: { demo: boolean }) {
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const mobileDay = days[mobileDayOffset] ?? days[0];
   const includedHours = 12;
   const availableHours = includedHours + monthlyBonusHours;
   const remainingHours = Math.max(availableHours - monthlyUsedHours, 0);
@@ -1858,7 +1861,80 @@ function BookingApp({ demo }: { demo: boolean }) {
           </div>
         </div>
 
-        <div className="-mx-4 overflow-x-auto px-4 pb-5 sm:-mx-6 sm:px-6">
+        <div className="md:hidden">
+          <div className="mb-3 grid grid-cols-7 gap-1 rounded-2xl bg-stone-100 p-1" aria-label="Tag auswählen">
+            {days.map((day, index) => {
+              const selected = index === mobileDayOffset;
+              const today = isSameDay(day, toZonedTime(new Date(), TZ));
+              return (
+                <button
+                  key={day.toISOString()}
+                  onClick={() => setMobileDayOffset(index)}
+                  className={`flex min-h-14 flex-col items-center justify-center rounded-xl text-xs font-semibold transition ${selected ? "bg-[#17231c] text-white shadow-sm" : "text-stone-600 hover:bg-white"}`}
+                  aria-pressed={selected}
+                  aria-label={format(day, "EEEE, d. MMMM", { locale: de })}
+                >
+                  <span className={`text-[10px] uppercase tracking-wide ${selected ? "text-[#c9ff70]" : today ? "text-emerald-700" : "text-stone-400"}`}>{format(day, "EE", { locale: de })}</span>
+                  <span className="mt-0.5 text-base leading-none">{format(day, "d")}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-stone-200 bg-emerald-50 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{format(mobileDay, "EEEE", { locale: de })}</p>
+                <p className="mt-0.5 font-semibold">{format(mobileDay, "d. MMMM yyyy", { locale: de })}</p>
+              </div>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-600">
+                {bookings.filter((booking) => isSameDay(toZonedTime(new Date(booking.start_at), TZ), mobileDay)).length} Buchungen
+              </span>
+            </div>
+            <div className="grid grid-cols-[46px_1fr]">
+              <div className="border-r border-stone-200 bg-stone-50">
+                {times.slice(0, -1).map((time) => (
+                  <div key={time} style={{ height: MOBILE_SLOT_HEIGHT }} className="relative pr-2 text-right text-[10px] text-stone-400">
+                    {time.endsWith(":00") && <span className="relative -top-1.5">{time}</span>}
+                  </div>
+                ))}
+              </div>
+              <div className="relative" style={{ height: (END_HOUR - START_HOUR) * 2 * MOBILE_SLOT_HEIGHT }}>
+                {times.slice(0, -1).map((time, index) => (
+                  <button
+                    key={time}
+                    onClick={() => openBooking(mobileDay, time)}
+                    className={`absolute left-0 right-0 border-b border-stone-100 text-left active:bg-emerald-100 focus:z-10 focus:bg-emerald-50 focus:outline-2 focus:outline-emerald-600 ${index % 2 === 0 ? "border-t border-t-stone-200" : ""}`}
+                    style={{ top: index * MOBILE_SLOT_HEIGHT, height: MOBILE_SLOT_HEIGHT }}
+                    aria-label={`${format(mobileDay, "EEEE, d. MMMM", { locale: de })}, ${time} buchen`}
+                  />
+                ))}
+                {bookings.filter((booking) => isSameDay(toZonedTime(new Date(booking.start_at), TZ), mobileDay)).map((booking) => {
+                  const start = toZonedTime(new Date(booking.start_at), TZ);
+                  const end = toZonedTime(new Date(booking.end_at), TZ);
+                  const top = ((start.getHours() * 60 + start.getMinutes() - START_HOUR * 60) / 30) * MOBILE_SLOT_HEIGHT;
+                  const height = Math.max(((end.getTime() - start.getTime()) / 1_800_000) * MOBILE_SLOT_HEIGHT, 34);
+                  const own = booking.member_id === member.id;
+                  return (
+                    <article
+                      key={booking.id}
+                      className={`absolute left-1.5 right-1.5 z-10 overflow-hidden rounded-lg border px-2.5 py-1.5 text-xs shadow-sm ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
+                      style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 32) }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0"><p className="truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</p><p className="whitespace-nowrap text-[11px] font-medium">{formatInTimeZone(booking.start_at, TZ, "HH:mm")}–{formatInTimeZone(booking.end_at, TZ, "HH:mm")}{booking.note ? ` · ${booking.note}` : ""}</p></div>
+                        {height >= 68 && <div className="flex shrink-0 gap-1"><a href={googleCalendarUrl(booking)} target="_blank" rel="noopener noreferrer" className="grid h-7 w-7 place-items-center rounded-md bg-white/80" aria-label="In Google Kalender öffnen"><CalendarPlus size={13} /></a>{own && <button onClick={() => cancelBooking(booking)} className="grid h-7 w-7 place-items-center rounded-md bg-white/80 text-red-700" aria-label="Buchung stornieren"><Trash2 size={13} /></button>}</div>}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-center text-xs text-stone-500">Freie Zeit antippen, um zu buchen</p>
+        </div>
+
+        <div className="-mx-4 hidden overflow-x-auto px-4 pb-5 sm:-mx-6 sm:px-6 md:block">
           <div className="grid min-w-[1120px] grid-cols-[56px_repeat(7,minmax(145px,1fr))] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
             <div className="sticky left-0 z-20 border-r border-stone-200 bg-white" />
             {days.map((day) => {
@@ -1947,7 +2023,6 @@ function BookingApp({ demo }: { demo: boolean }) {
             })}
           </div>
         </div>
-        <p className="text-center text-xs text-stone-500 sm:hidden">Seitlich wischen für weitere Tage</p>
         <div className="mt-4 grid grid-cols-2 gap-2 md:hidden">
           <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Startseite</button>
           <button onClick={() => setView("calendar")} className="h-12 rounded-xl bg-[#17231c] text-sm font-semibold text-white">Meetingraum</button>
