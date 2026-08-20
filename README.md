@@ -10,7 +10,7 @@
 ## 1. Supabase einrichten
 
 1. Auf [supabase.com](https://supabase.com) ein Projekt anlegen.
-2. Im **SQL Editor** die Dateien aus `supabase/migrations` in numerischer Reihenfolge ausführen (`001` bis aktuell `011`). Bei einer bestehenden AUFELD21-Datenbank nur die noch fehlenden Migrationen ausführen.
+2. Im **SQL Editor** die Dateien aus `supabase/migrations` in numerischer Reihenfolge ausführen (`001` bis aktuell `014`). Bei einer bestehenden AUFELD21-Datenbank nur die noch fehlenden Migrationen ausführen.
 3. Unter **Authentication → Providers → Email** E-Mail/Passwort aktivieren.
 4. Öffentliche Registrierung deaktivieren. Die App setzt zusätzlich `shouldCreateUser: false`; Zugang erhalten nur Personen, die ein Admin eingeladen hat und die in `public.members` vorhanden sind.
 5. Unter **Authentication → URL Configuration** eintragen:

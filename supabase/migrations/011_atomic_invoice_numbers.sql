@@ -31,39 +31,41 @@ end;
 $$;
 
 revoke all on function public.next_invoice_number(integer) from public;
+revoke all on function public.next_invoice_number(integer) from anon;
 grant execute on function public.next_invoice_number(integer) to authenticated, service_role;
 
 create or replace function public.finalize_invoice(target_invoice_id uuid)
-returns public.invoices
+returns text
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  finalized_invoice public.invoices;
+  generated_number text;
 begin
   if not public.is_admin() then
     raise exception 'admin_required';
   end if;
 
-  update public.invoices
-  set
-    status = 'final',
-    invoice_number = coalesce(
-      invoice_number,
-      public.next_invoice_number(extract(year from current_date)::integer)
-    ),
-    finalized_at = coalesce(finalized_at, now())
-  where id = target_invoice_id
-  returning * into finalized_invoice;
+  generated_number := public.next_invoice_number(
+    extract(year from current_date)::integer
+  );
 
-  if finalized_invoice.id is null then
-    raise exception 'invoice_not_found';
+  update public.invoices
+  set status = 'final',
+      invoice_number = generated_number,
+      finalized_at = now()
+  where id = target_invoice_id
+    and status = 'draft';
+
+  if not found then
+    raise exception 'invoice_not_draft';
   end if;
 
-  return finalized_invoice;
+  return generated_number;
 end;
 $$;
 
 revoke all on function public.finalize_invoice(uuid) from public;
+revoke all on function public.finalize_invoice(uuid) from anon;
 grant execute on function public.finalize_invoice(uuid) to authenticated;
