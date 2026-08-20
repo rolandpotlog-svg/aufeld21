@@ -229,6 +229,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [generatingContract, setGeneratingContract] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [passwordResetMemberId, setPasswordResetMemberId] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>(demo ? [
     {
       id: "demo-invoice-1",
@@ -971,6 +972,41 @@ function BookingApp({ demo }: { demo: boolean }) {
     setToast(nextActive ? `${target.name} ist wieder aktiv.` : `${target.name} wurde deaktiviert.`);
   }
 
+  async function sendMemberPasswordReset(target: ManagedMember) {
+    if (!target.active) {
+      setToast("Der Zugang ist deaktiviert. Aktiviere ihn zuerst wieder.");
+      return;
+    }
+    if (!window.confirm(`Passwort-Link an ${target.email} senden?`)) return;
+    if (!supabase) {
+      setToast(`Passwort-Link an ${target.email} versendet.`);
+      return;
+    }
+
+    setPasswordResetMemberId(target.id);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const response = await fetch("/api/admin/members/password-reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ memberId: target.id }),
+      });
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setToast(result.error ?? "Der Passwort-Link konnte nicht versendet werden.");
+        return;
+      }
+      setToast(`Passwort-Link an ${target.email} versendet.`);
+    } catch {
+      setToast("Der Passwort-Link konnte wegen eines Verbindungsfehlers nicht versendet werden.");
+    } finally {
+      setPasswordResetMemberId(null);
+    }
+  }
+
   async function saveBillingMember(event: React.FormEvent) {
     event.preventDefault();
     if (!billingMember) return;
@@ -1658,6 +1694,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {(selectedDossier.role === "member" || selectedDossier.role === "partner" || selectedDossier.role === "admin") && <button onClick={() => setBillingMember(selectedDossier)} className="h-11 rounded-xl bg-[#17231c] px-4 text-sm font-semibold text-white">Stammdaten bearbeiten</button>}
+                    <button disabled={passwordResetMemberId === selectedDossier.id} onClick={() => sendMemberPasswordReset(selectedDossier)} className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold disabled:opacity-50"><KeyRound size={16} /> {passwordResetMemberId === selectedDossier.id ? "Wird gesendet …" : "Passwort-Link senden"}</button>
                     <button onClick={() => { setBonusAmount("2"); setBonusTarget(selectedDossier); }} className="h-11 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold">Stunden schenken</button>
                   </div>
                 </div>
@@ -1753,6 +1790,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                           {(item.role === "member" || item.role === "partner" || item.role === "admin") && <button onClick={() => setBillingMember(item)} className="mr-2 h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">
                             Abrechnung
                           </button>}
+                          <button disabled={passwordResetMemberId === item.id} onClick={() => sendMemberPasswordReset(item)} className="mr-2 h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100 disabled:opacity-50">{passwordResetMemberId === item.id ? "Wird gesendet …" : "Passwort-Link"}</button>
                           <button
                             onClick={() => {
                               setBonusAmount("2");
