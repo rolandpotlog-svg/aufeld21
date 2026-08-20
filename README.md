@@ -1,99 +1,99 @@
-# Raumkalender
+# AUFELD21
 
-Minimaler Meetingraum-Kalender für einen kleinen Co-Working-Space. Gebaut mit Next.js, TypeScript, Supabase und Tailwind CSS.
+Öffentliche Website und geschütztes Mitgliederportal für den Co-Working-Space AUFELD21 in Traun. Gebaut mit Next.js (App Router, TypeScript), Supabase, Tailwind CSS und Vercel.
 
-## 1. Supabase-Projekt anlegen
+- Öffentliche Website: `/`
+- Mitgliederportal: `/portal`
+- Admin-Controlling: im Portal für Mitglieder mit der Rolle `admin`
+- Zeitzone: Speicherung in UTC, Darstellung in `Europe/Vienna`
 
-1. Auf [supabase.com](https://supabase.com) ein neues Projekt erstellen.
-2. Im Projekt unter **SQL Editor** eine neue Query öffnen.
-3. Den vollständigen Inhalt von `supabase/migrations/001_initial_schema.sql` einfügen und ausführen.
-4. Unter **Authentication → Providers → Email** den E-Mail-Provider aktivieren. Der Standardzugang erfolgt mit E-Mail und Passwort; Magic Link bleibt als Alternative verfügbar.
-5. Öffentliche Registrierung deaktivieren: Unter **Authentication → Settings** die Option **Allow new users to sign up** ausschalten. Die App setzt zusätzlich `shouldCreateUser: false`.
-6. Unter **Authentication → URL Configuration** die lokale URL `http://localhost:3000` und später die Vercel-URL als Redirect URL ergänzen.
+## 1. Supabase einrichten
 
-## 2. Ersten Nutzer anlegen
+1. Auf [supabase.com](https://supabase.com) ein Projekt anlegen.
+2. Im **SQL Editor** die Dateien aus `supabase/migrations` in numerischer Reihenfolge ausführen (`001` bis aktuell `011`). Bei einer bestehenden AUFELD21-Datenbank nur die noch fehlenden Migrationen ausführen.
+3. Unter **Authentication → Providers → Email** E-Mail/Passwort aktivieren.
+4. Öffentliche Registrierung deaktivieren. Die App setzt zusätzlich `shouldCreateUser: false`; Zugang erhalten nur Personen, die ein Admin eingeladen hat und die in `public.members` vorhanden sind.
+5. Unter **Authentication → URL Configuration** eintragen:
+   - Site URL Produktion: `https://aufeld21.vercel.app` (später die eigene Domain)
+   - Redirect URLs: `http://localhost:3000/**`, `https://aufeld21.vercel.app/**` und später `https://DEINE-DOMAIN/**`
+6. Für echte Einladungs- und Passwort-Reset-Mails unter **Authentication → SMTP Settings** ein eigenes SMTP-Postfach hinterlegen, beispielsweise `portal@aufeld21.at` von World4You. Der Supabase-Testversand ist kein verlässlicher Produktiv-Maildienst.
 
-1. Unter **Authentication → Users** mit **Add user** einen Nutzer anlegen. Die E-Mail muss bestätigt sein.
-2. Die UUID des neuen Nutzers kopieren.
-3. Im SQL Editor ausführen:
+### Ersten Admin anlegen
 
-```sql
-insert into public.members (id, email, name)
-values (
-  'UUID-AUS-AUTH-USERS',
-  'name@beispiel.at',
-  'Vorname'
-);
-```
-
-Den ersten Nutzer anschließend zum Admin machen:
+Unter **Authentication → Users** den Nutzer anlegen und dessen UUID kopieren. Danach im SQL Editor:
 
 ```sql
-update public.members
-set role = 'admin'
-where email = 'name@beispiel.at';
+insert into public.members (id, email, name, role)
+values ('UUID-AUS-AUTH-USERS', 'roland.potlog@gmail.com', 'Roland Potlog', 'admin');
 ```
 
-Weitere Personen können danach direkt im Admin-Bereich als **Mieter**, **Nutzungspartner** oder **Mitarbeiter** eingeladen werden. Nur Nutzer, die sowohl in `auth.users` als auch in `public.members` existieren, erhalten Zugriff.
+Weitere Mieter, Nutzungspartner und Mitarbeiter werden anschließend im Admin-Bereich eingeladen. Mitarbeiter erhalten ein eigenes 12-Stunden-Kontingent, sehen jedoch weder Rechnungen noch Mietunterlagen.
 
-Bei einer bereits eingerichteten Datenbank werden anschließend die Migrationen `002_employee_role.sql` bis `008_admin_is_tenant.sql` in numerischer Reihenfolge ausgeführt. Bei einem komplett neuen Projekt genügt die aktuelle `001_initial_schema.sql`, da sie bereits alle Ergänzungen enthält.
-
-Neue Personen erhalten einen Einladungslink, legen einmalig ihr eigenes Passwort fest und melden sich danach mit E-Mail und Passwort an. Über **Passwort vergessen?** kann jederzeit ein sicherer Reset-Link angefordert werden. Mitarbeiter wie Kylian und Romeo erhalten einen eigenen Zugang und ein persönliches Meetingraum-Kontingent von 12 Stunden je Kalendermonat. Der Admin kann ihnen monatsweise Bonusstunden geben. Mitarbeiter sehen keine Rechnungen, Kautionen oder Mietverträge; Hausordnung und allgemeine Informationen können ihnen weiterhin bereitgestellt werden. Nutzungspartner wie Daniel und Slavin erhalten ebenfalls 12 Stunden plus Bonus, werden regulär abgerechnet, erscheinen aber nicht in den Bereichen Mietvertrag und Kaution.
-
-## 3. Umgebungsvariablen
-
-`.env.example` als `.env.local` kopieren. Die Werte stehen in Supabase unter **Project Settings → API**:
+## 2. Umgebungsvariablen
 
 ```bash
 cp .env.example .env.local
 ```
 
-Benötigt werden:
+Werte aus **Supabase → Project Settings → API** einsetzen:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SECRET_KEY` (nur serverseitig, für Admin-Einladungen)
-- `CRON_SECRET` (langes zufälliges Geheimnis für die automatische Rechnungserstellung)
+- `SUPABASE_SECRET_KEY` – ausschließlich serverseitig
+- `CRON_SECRET` – langes, zufälliges Geheimnis für die Rechnungsautomatik
 
-Der Publishable Key darf im Browser verwendet werden; die Zugriffsregeln werden durch RLS erzwungen. Der Secret Key darf ausschließlich als serverseitige Umgebungsvariable verwendet und niemals mit `NEXT_PUBLIC_` benannt werden.
+Dieselben Variablen in Vercel unter **Project Settings → Environment Variables** für Production, Preview und Development hinterlegen. Geheimnisse niemals committen oder mit `NEXT_PUBLIC_` benennen.
 
-## 4. Lokal starten
+## 3. Lokal starten und prüfen
 
 ```bash
 npm install
 npm run dev
 ```
 
-Danach die angezeigte lokale URL öffnen.
+Danach `http://localhost:3000` beziehungsweise die von Next.js ausgegebene Adresse öffnen.
 
-## 5. Auf Vercel deployen
+Vor jedem Deployment:
 
-1. Das Projekt in ein Git-Repository pushen.
-2. In [vercel.com](https://vercel.com) **Add New → Project** wählen und das Repository importieren.
-3. Unter **Environment Variables** alle vier Variablen aus `.env.local` eintragen.
-4. Deploy auslösen.
-5. Die fertige `https://…vercel.app`-Adresse in Supabase unter **Authentication → URL Configuration** als **Site URL** und **Redirect URL** eintragen.
+```bash
+npm run lint
+npm run build
+npm audit
+```
 
-## Sicherheit und Zeit
+## 4. Vercel und Domain
 
-- Postgres verhindert Doppelbuchungen mit einem GiST-Exclusion-Constraint. Die App übersetzt den Postgres-Fehler `23P01` in eine verständliche Meldung.
-- RLS erlaubt Lesenzugriff nur angemeldeten Mitgliedern. Anlegen und Löschen ist nur für eigene Buchungen erlaubt.
-- Zeitpunkte werden als `timestamptz` in UTC gespeichert und mit `date-fns-tz` in `Europe/Vienna` dargestellt. Sommer- und Winterzeit werden von der IANA-Zeitzonendatenbank behandelt.
-- Der Pro-Tarif enthält 12 Meetingraum-Stunden je Kalendermonat. Weitere Nutzung wird in 30-Minuten-Schritten zu 12 € netto pro Stunde berechnet.
-- Für Mitarbeiter gelten ebenfalls 12 Stunden plus freigegebene Bonusstunden. Eine Buchung über dieses Kontingent hinaus wird direkt in der Datenbank abgelehnt und nicht verrechnet.
-- Admin-Gutschriften gelten für genau einen Kalendermonat und werden mit Admin, Grund und Zeitpunkt protokolliert.
-- Am 29. jedes Monats erzeugt ein geschützter Vercel-Cronjob automatisch die fertigen, fortlaufend nummerierten Rechnungen für die Grundmiete des Folgemonats. Sie erscheinen sofort im persönlichen Portal des jeweiligen Mieters.
-- Meetingraum-Zusatzstunden werden aus dem zuletzt vollständig abgeschlossenen Kalendermonat übernommen. Dadurch gehen Buchungen am 30. oder 31. nicht verloren und bereits ausgestellte Rechnungen müssen nicht nachträglich verändert werden.
-- Die automatische Rechnungserstellung berücksichtigt Mieter und Nutzungspartner; Mitarbeiter werden vollständig von der Abrechnung ausgeschlossen.
-- Beginnt oder endet ein Vertrag während eines Monats, wird die Grundmiete nach den tatsächlichen Kalendertagen aliquotiert.
-- Automatisch erzeugte Rechnungen erhalten sofort eine fortlaufende Nummer im Format `A21-YYYY-NNNN`. Mieter können sie im persönlichen Portal als PDF herunterladen; der Admin kontrolliert nur noch den Kontoeingang und markiert sie als bezahlt.
-- Beim Erfassen einer Zahlung wählt der Admin den tatsächlichen Zahlungstag. Offene und bezahlte Rechnungen sowie das Zahlungsdatum bleiben damit nachvollziehbar dokumentiert.
-- Der Admin kann fehlerhafte Zahlungseingänge zurücksetzen und offene Rechnungen beziehungsweise Entwürfe stornieren.
-- Monatspreise werden intern netto gespeichert. Bei einem vereinbarten Endpreis von 150 € inklusive 20 % USt sind daher 125 € netto zu hinterlegen.
-- Für Rechnungen werden 20 % USt verwendet. Da Geschäftsraumvermietung in Österreich grundsätzlich umsatzsteuerfrei sein kann und die Steuerpflicht von der konkreten Option abhängt, muss diese Einstellung vor Echtnutzung durch die Steuerberatung bestätigt werden.
-- Kautionen werden getrennt von Rechnungen mit vereinbartem Betrag, Zahlungseingang, Rückzahlung und interner Notiz geführt.
-- Mietverträge und Hausordnung liegen als private PDFs im Supabase-Storage-Bucket `member-documents`. Die Migration legt Bucket und Policies an; Mieter erhalten ausschließlich für eigene freigegebene Dokumente zeitlich begrenzte Download-Links.
-- Dokument-Uploads sind auf PDF und maximal 10 MB beschränkt.
-- Meldungen aus dem Space können im Admin-Controlling gelesen und als erledigt markiert werden.
-- Zugänge lassen sich deaktivieren und später wieder aktivieren, ohne Benutzer- oder Buchungsdaten zu löschen.
-- Die App ist installierbar. Browser bieten je nach Plattform im Menü **Zum Home-Bildschirm** oder **App installieren** an.
+1. GitHub-Repository in Vercel importieren.
+2. Umgebungsvariablen setzen und deployen.
+3. Unter **Settings → Domains** die gekaufte Domain hinzufügen und die von Vercel angezeigten DNS-Einträge beim Domain-Anbieter setzen.
+4. Danach Supabase Site URL und Redirect URLs auf die finale Domain ergänzen.
+5. Für den Cronjob in `vercel.json` wird Vercel Pro benötigt. Er ruft am 29. jedes Monats um 05:00 UTC die geschützte Rechnungsroute auf. Ohne Pro kann der Admin die gleiche Erzeugung im Controlling manuell starten.
+
+E-Mail bleibt sinnvollerweise beim Domain-/Mailanbieter; Vercel hostet die Web-App, nicht die normalen Postfächer.
+
+## Rechnungen und Verwaltung
+
+- Am 29. werden Rechnungen für den Folgemonat erstellt; Fälligkeit ist der 10. des Leistungsmonats.
+- Rechnungsnummern werden atomar in Postgres vergeben (`A21-YYYY-NNNN`). Eine Unique-Constraint verhindert Dubletten zusätzlich.
+- Grundmieten werden bei Vertragsbeginn oder -ende im laufenden Monat nach Kalendertagen aliquotiert.
+- 12 Meetingraum-Stunden sind je Kalendermonat inklusive; weitere Nutzung kostet 12 € netto je Stunde und wird in 30-Minuten-Schritten erfasst.
+- Admins markieren den tatsächlichen Zahlungseingang manuell als bezahlt; offene, überfällige und bezahlte Rechnungen bleiben nachvollziehbar.
+- PDFs und Verträge liegen privat im Storage-Bucket `member-documents`. Downloads erfolgen über kurzlebige signierte Links.
+- Mitarbeiter sehen keine Rechnungen, Kautionen oder Verträge. Partner werden regulär abgerechnet, aber ohne Mietvertrags-/Kautionsverwaltung.
+
+## Sicherheit und Betrieb
+
+- RLS ist für die geschäftlichen Tabellen aktiv.
+- Doppelbuchungen verhindert ein GiST-Exclusion-Constraint auf `tstzrange(start_at, end_at)`.
+- Buchungen werden in UTC gespeichert und mit `date-fns-tz` in `Europe/Vienna` angezeigt.
+- Dokument-Uploads sind auf PDF und 10 MB beschränkt.
+- Admin- und Service-Routen prüfen Rolle beziehungsweise Cron-Secret serverseitig.
+- Die PWA startet direkt im Mitgliederportal unter `/portal`.
+- Regelmäßig Datenbank-Backups beziehungsweise Exporte prüfen. Für verlässliche automatische Backups und einen nicht pausierenden Produktivbetrieb ist ein kostenpflichtiger Supabase-Tarif sinnvoll.
+
+## Offene Go-live-Punkte
+
+- Eigenes SMTP testen: Einladung, Passwort setzen und Passwort vergessen.
+- Firmenbuchgericht und zuständige Gewerbe-/Aufsichtsbehörde im Impressum anhand der offiziellen Unterlagen ergänzen.
+- Datenschutzerklärung und steuerliche Rechnungslogik vor öffentlicher Bewerbung einmal rechtlich beziehungsweise steuerlich prüfen lassen.
+- Nach Anschluss der finalen Domain alle Supabase-Redirects nochmals mit Mobilgerät testen.

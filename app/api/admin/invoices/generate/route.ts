@@ -85,15 +85,7 @@ export async function POST(request: Request) {
     .eq("billing_month", body.billingMonth)
     .neq("status", "cancelled");
   const existingIds = new Set((existing ?? []).map((invoice) => invoice.member_id));
-  const invoiceYear = issueDate.slice(0, 4);
-  const { data: latestNumber } = await admin
-    .from("invoices")
-    .select("invoice_number")
-    .like("invoice_number", `A21-${invoiceYear}-%`)
-    .order("invoice_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  let nextInvoiceSequence = Number(latestNumber?.invoice_number?.split("-").at(-1) ?? 0) + 1;
+  const invoiceYear = Number(issueDate.slice(0, 4));
   let created = 0;
   let skipped = 0;
 
@@ -161,7 +153,13 @@ export async function POST(request: Request) {
       skipped += 1;
       continue;
     }
-    const invoiceNumber = `A21-${invoiceYear}-${String(nextInvoiceSequence).padStart(4, "0")}`;
+    const { data: invoiceNumber, error: numberError } = await admin.rpc("next_invoice_number", {
+      invoice_year: invoiceYear,
+    });
+    if (numberError || !invoiceNumber) {
+      skipped += 1;
+      continue;
+    }
     const { data: invoice, error: invoiceError } = await admin
       .from("invoices")
       .insert({
@@ -190,7 +188,6 @@ export async function POST(request: Request) {
       skipped += 1;
       continue;
     }
-    nextInvoiceSequence += 1;
     created += 1;
   }
 

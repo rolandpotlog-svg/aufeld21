@@ -27,6 +27,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.homepage-grid {
+  background-image:
+    linear-gradient(rgb(112 99 170 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(112 99 170 / 0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
 button,
 a,
 input,

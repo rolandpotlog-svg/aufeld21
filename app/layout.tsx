@@ -2,11 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AUFELD21 · Raumkalender",
-  description: "Meetingraum im AUFELD21 Co-Working-Space buchen.",
+  title: {
+    default: "AUFELD21 · Co-Working in Traun",
+    template: "%s · AUFELD21",
+  },
+  description: "Persönlicher Co-Working-Space, Büros und Geschäftsadresse in Traun.",
   applicationName: "AUFELD21",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Raumkalender" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "AUFELD21" },
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },

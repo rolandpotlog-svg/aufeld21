@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
   const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { name },
-    redirectTo: `${new URL(request.url).origin}/?setup=password`,
+    redirectTo: `${new URL(request.url).origin}/portal?setup=password`,
   });
   if (inviteError || !inviteData.user) {
     return NextResponse.json(

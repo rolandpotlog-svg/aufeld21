@@ -1,8 +1,9 @@
 {
-  "name": "Raumkalender",
-  "short_name": "Raum",
-  "description": "Meetingraum im Co-Working-Space buchen",
-  "start_url": "/",
+  "name": "AUFELD21 Mitgliederportal",
+  "short_name": "AUFELD21",
+  "description": "Meetingraum und Mitgliederportal von AUFELD21",
+  "start_url": "/portal",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#fafaf9",
   "theme_color": "#047857",
