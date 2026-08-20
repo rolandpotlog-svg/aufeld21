@@ -26,6 +26,7 @@ import {
   DoorOpen,
   Download,
   FileText,
+  KeyRound,
   LogOut,
   Plus,
   Send,
@@ -100,6 +101,7 @@ type Invoice = {
   }>;
 };
 type Deposit = { member_id: string; agreed_amount: number; received_amount: number; returned_amount: number; received_at: string | null; note: string | null };
+type AccessInventory = { member_id: string; loxone_chip_count: number; entrance_key_count: number; office_key_count: number; issued_at: string | null; note: string | null };
 type MemberDocument = { id: string; member_id: string; document_type: "mietvertrag" | "hausordnung" | "sonstiges"; title: string; storage_path: string; visible_to_member: boolean; valid_until: string | null; created_at: string };
 
 function makeDemoBookings(): Booking[] {
@@ -293,6 +295,11 @@ function BookingApp({ demo }: { demo: boolean }) {
     { id: "doc-2", member_id: "demo-member", document_type: "hausordnung", title: "Hausordnung - Version 2026", storage_path: "demo", visible_to_member: true, valid_until: null, created_at: "2026-01-01" },
   ] : []);
   const [depositMember, setDepositMember] = useState<ManagedMember | null>(null);
+  const [accessInventory, setAccessInventory] = useState<AccessInventory[]>(demo ? [
+    { member_id: "demo-anna", loxone_chip_count: 1, entrance_key_count: 0, office_key_count: 0, issued_at: "2026-08-01", note: "Loxone-Chip ausgegeben" },
+    { member_id: "demo-romeo", loxone_chip_count: 1, entrance_key_count: 0, office_key_count: 0, issued_at: "2026-08-01", note: null },
+  ] : []);
+  const [accessMember, setAccessMember] = useState<ManagedMember | null>(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -385,6 +392,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     ? documents.filter((document) => document.member_id === selectedDossier.id && !document.storage_path.includes("/vertraege/nutzungsvereinbarung-entwurf-"))
     : [];
   const dossierDeposit = selectedDossier ? deposits.find((deposit) => deposit.member_id === selectedDossier.id) : undefined;
+  const dossierAccess = selectedDossier ? accessInventory.find((entry) => entry.member_id === selectedDossier.id) : undefined;
 
   useEffect(() => {
     if (!member || !supabase) return;
@@ -458,9 +466,11 @@ function BookingApp({ demo }: { demo: boolean }) {
     Promise.all([
       supabase.from("member_deposits").select("member_id,agreed_amount,received_amount,returned_amount,received_at,note"),
       supabase.from("member_documents").select("id,member_id,document_type,title,storage_path,visible_to_member,valid_until,created_at").order("created_at", { ascending: false }),
-    ]).then(([depositResult, documentResult]) => {
+      supabase.from("member_access_inventory").select("member_id,loxone_chip_count,entrance_key_count,office_key_count,issued_at,note"),
+    ]).then(([depositResult, documentResult, accessResult]) => {
       if (depositResult.data) setDeposits(depositResult.data as Deposit[]);
       if (documentResult.data) setDocuments(documentResult.data as MemberDocument[]);
+      if (accessResult.data) setAccessInventory(accessResult.data as AccessInventory[]);
     });
   }, [member, supabase]);
 
@@ -1004,6 +1014,26 @@ function BookingApp({ demo }: { demo: boolean }) {
     setDeposits((items) => [...items.filter((item) => item.member_id !== current.member_id), current]);
     setDepositMember(null);
     setToast("Kaution gespeichert.");
+  }
+
+  async function saveAccessInventory(event: React.FormEvent) {
+    event.preventDefault();
+    if (!accessMember) return;
+    const current = accessInventory.find((item) => item.member_id === accessMember.id) ?? {
+      member_id: accessMember.id,
+      loxone_chip_count: 0,
+      entrance_key_count: 0,
+      office_key_count: 0,
+      issued_at: null,
+      note: null,
+    };
+    if (supabase) {
+      const { error } = await supabase.from("member_access_inventory").upsert({ ...current, updated_at: new Date().toISOString() });
+      if (error) { setToast("Schlüssel und Chips konnten nicht gespeichert werden. Bitte Migration 010 prüfen."); return; }
+    }
+    setAccessInventory((items) => [...items.filter((item) => item.member_id !== current.member_id), current]);
+    setAccessMember(null);
+    setToast("Schlüssel und Chips gespeichert.");
   }
 
   async function uploadMemberDocument(target: ManagedMember, file: File, type: MemberDocument["document_type"]) {
@@ -1648,6 +1678,21 @@ function BookingApp({ demo }: { demo: boolean }) {
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Meetingraum</p><p className="mt-2 text-xl font-semibold">{selectedDossier.usedHours.toLocaleString("de-AT")} h</p><p className="mt-1 text-xs text-stone-400">12 h inklusive · +{selectedDossier.bonusHours.toLocaleString("de-AT")} h Bonus</p></div>
                   </div>
 
+                  <div className="border-t border-stone-200 bg-emerald-50/45 p-5 sm:p-7">
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-medium text-emerald-700"><KeyRound size={17} /> Schlüssel & Zutritt</div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">Loxone-Chips: {dossierAccess?.loxone_chip_count ?? 0}</span>
+                          <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">Eingangstür: {dossierAccess?.entrance_key_count ?? 0}</span>
+                          <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">Büroschlüssel: {dossierAccess?.office_key_count ?? 0}</span>
+                        </div>
+                        {dossierAccess?.note && <p className="mt-3 text-sm text-stone-600">{dossierAccess.note}</p>}
+                      </div>
+                      <button onClick={() => { if (!dossierAccess) setAccessInventory((items) => [...items, { member_id: selectedDossier.id, loxone_chip_count: 0, entrance_key_count: 0, office_key_count: 0, issued_at: null, note: null }]); setAccessMember(selectedDossier); }} className="h-11 shrink-0 rounded-xl bg-[#17231c] px-4 text-sm font-semibold text-white">Zutritt bearbeiten</button>
+                    </div>
+                  </div>
+
                   <div className="grid gap-6 p-5 sm:p-7 xl:grid-cols-2">
                     <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Finanzen</p><h4 className="mt-1 text-lg font-semibold">Alle Rechnungen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierInvoices.length}</span></div>
@@ -2260,6 +2305,29 @@ function BookingApp({ demo }: { demo: boolean }) {
           </section>
         </div>
       )}
+
+      {accessMember && (() => {
+        const access = accessInventory.find((item) => item.member_id === accessMember.id) ?? { member_id: accessMember.id, loxone_chip_count: 0, entrance_key_count: 0, office_key_count: 0, issued_at: null, note: null };
+        const update = (changes: Partial<AccessInventory>) => setAccessInventory((items) => [...items.filter((item) => item.member_id !== accessMember.id), { ...access, ...changes }]);
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setAccessMember(null)}>
+            <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="access-title">
+              <div className="flex items-start justify-between gap-4"><div><p className="flex items-center gap-2 text-sm font-medium text-emerald-700"><KeyRound size={16} /> Interne Ausgabeübersicht</p><h2 id="access-title" className="mt-1 text-2xl font-semibold">Schlüssel & Chips</h2><p className="mt-1 text-sm text-stone-500">{accessMember.name}</p></div><button onClick={() => setAccessMember(null)} className="grid h-11 w-11 place-items-center rounded-xl bg-stone-100" aria-label="Schließen"><X size={20} /></button></div>
+              <form onSubmit={saveAccessInventory} className="mt-6 space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <label><span className="mb-2 block text-xs font-medium leading-4">Loxone-Chips</span><input type="number" min="0" step="1" value={access.loxone_chip_count} onChange={(event) => update({ loxone_chip_count: Number(event.target.value) })} className="h-12 w-full rounded-xl border border-stone-300 px-3" /></label>
+                  <label><span className="mb-2 block text-xs font-medium leading-4">Eingangstür</span><input type="number" min="0" step="1" value={access.entrance_key_count} onChange={(event) => update({ entrance_key_count: Number(event.target.value) })} className="h-12 w-full rounded-xl border border-stone-300 px-3" /></label>
+                  <label><span className="mb-2 block text-xs font-medium leading-4">Büroschlüssel</span><input type="number" min="0" step="1" value={access.office_key_count} onChange={(event) => update({ office_key_count: Number(event.target.value) })} className="h-12 w-full rounded-xl border border-stone-300 px-3" /></label>
+                </div>
+                <label className="block"><span className="mb-2 block text-sm font-medium">Ausgabedatum (optional)</span><input type="date" value={access.issued_at ?? ""} onChange={(event) => update({ issued_at: event.target.value || null })} className="h-12 w-full rounded-xl border border-stone-300 px-4" /></label>
+                <label className="block"><span className="mb-2 block text-sm font-medium">Notiz</span><textarea rows={3} value={access.note ?? ""} onChange={(event) => update({ note: event.target.value || null })} placeholder="z. B. Loxone-Chip wird noch ausgegeben" className="w-full rounded-xl border border-stone-300 px-4 py-3" /></label>
+                <p className="rounded-xl bg-stone-50 p-3 text-xs leading-5 text-stone-500">Bei einer Rückgabe die jeweilige Anzahl einfach reduzieren und das Rückgabedatum in der Notiz festhalten.</p>
+                <button className="h-13 w-full rounded-xl bg-emerald-700 font-semibold text-white">Zutritt speichern</button>
+              </form>
+            </section>
+          </div>
+        );
+      })()}
 
       {depositMember && (() => {
         const deposit = deposits.find((item) => item.member_id === depositMember.id) ?? { member_id: depositMember.id, agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: null };
