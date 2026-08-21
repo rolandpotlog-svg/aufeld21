@@ -319,6 +319,32 @@ export default function HomepagePreview() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-[1440px] px-5 py-12 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
+        <div className="overflow-hidden rounded-[2.3rem] border border-stone-200 bg-white">
+          <div className="grid gap-7 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end lg:p-14">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">Unsere Community</p>
+              <h2 className="mt-4 max-w-3xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.06em] sm:text-6xl">Unternehmen, die AUFELD21 mit Leben füllen.</h2>
+              <p className="mt-5 max-w-2xl leading-7 text-stone-500">Vier Unternehmen, unterschiedliche Kompetenzen und kurze Wege für einen unkomplizierten Austausch.</p>
+            </div>
+            <Link href="/community" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#162119] px-6 font-bold text-white">Community entdecken <ArrowRight size={17} /></Link>
+          </div>
+          <div className="grid gap-px bg-stone-200 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["IK", "ImmoKredit", "Immobilienfinanzierung"],
+              ["PX", "Potlox", "Marketing Agentur"],
+              ["N", "Neugebauer GmbH", "Buchhandel"],
+              ["WA", "Wuff Academy", "Hundeschule"],
+            ].map(([initials, name, sector]) => (
+              <article key={name} className="flex min-h-[170px] flex-col justify-between bg-[#fafaf8] p-6 sm:min-h-[200px] sm:p-8">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-100 text-xs font-black text-violet-900">{initials}</span>
+                <div className="mt-9"><h3 className="text-xl font-bold tracking-[-0.035em]">{name}</h3><p className="mt-1 text-sm text-stone-500">{sector}</p></div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="about" className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
         <div className="grid items-center gap-10 overflow-hidden rounded-[2.4rem] bg-white p-5 shadow-[0_30px_100px_rgba(42,35,80,0.10)] lg:grid-cols-[0.9fr_1.1fr] lg:p-7">
           <div className="relative min-h-[340px] overflow-hidden rounded-[1.8rem] sm:min-h-[400px] lg:min-h-[500px]">
