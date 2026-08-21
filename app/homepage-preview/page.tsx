@@ -286,15 +286,22 @@ export default function HomepagePreview() {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c9ff70]">Ein Ort, alles da</p>
               <MapPin className="text-[#c9ff70]" size={26} />
             </div>
-            <h2 className="mt-10 max-w-xl text-[2rem] font-semibold tracking-[-0.055em] sm:mt-16 sm:text-6xl">Arbeiten, besprechen, ankommen.</h2>
-            <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-white/15">
+            <h2 className="mt-10 max-w-xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.055em] sm:mt-14 sm:text-6xl">Zentral gelegen. Schnell überall.</h2>
+            <p className="mt-5 max-w-xl leading-7 text-stone-300">Nah an Linz, schnell auf den wichtigsten Wegen und mit allem für den Alltag direkt in der Umgebung.</p>
+            <div className="mt-9 grid grid-cols-1 gap-px overflow-hidden rounded-2xl bg-white/15 sm:grid-cols-2">
               {[
-                ["4", "Büros"],
-                ["1", "Meetingraum"],
-                ["~100", "m² Space"],
-                ["6–10", "Menschen"],
-              ].map(([value, label]) => (
-                <div key={label} className="bg-[#1d2b21] p-5 sm:p-7"><p className="text-3xl font-semibold text-[#c9ff70] sm:text-4xl">{value}</p><p className="mt-1 text-sm text-stone-400">{label}</p></div>
+                ["6 Min.", "PlusCity", "mit dem Auto"],
+                ["15 Min.", "Linz", "mit dem Auto"],
+                ["8 Min.", "Marchtrenk", "mit dem Auto"],
+                ["5 Min.", "Trauner Hauptplatz", "mit dem Auto"],
+                ["3 Min.", "Oedter See", "mit dem Auto"],
+                ["3 Min.", "Bushaltestelle", "zu Fuß"],
+                ["5 Min.", "SPAR & Bäcker", "zu Fuß"],
+              ].map(([value, label, mode]) => (
+                <div key={label} className="flex items-center justify-between gap-4 bg-[#1d2b21] p-5 sm:p-6">
+                  <div><p className="font-semibold text-white">{label}</p><p className="mt-1 text-xs text-stone-400">{mode}</p></div>
+                  <p className="shrink-0 text-xl font-semibold text-[#c9ff70]">{value}</p>
+                </div>
               ))}
             </div>
           </div>
