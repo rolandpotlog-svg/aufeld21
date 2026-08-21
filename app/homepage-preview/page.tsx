@@ -331,7 +331,7 @@ export default function HomepagePreview() {
             <h2 className="mt-4 text-[2rem] font-semibold leading-[1.05] tracking-[-0.06em] sm:mt-5 sm:text-6xl">Aus einem eigenen Büro wurde eine gemeinsame Idee.</h2>
             <p className="mt-7 max-w-3xl text-lg leading-8 text-stone-600">Wir wollten einen Arbeitsplatz schaffen, den wir selbst jeden Tag gerne betreten. Modern, ruhig und unkompliziert. Dabei entstand ein Ort, den wir mit anderen Selbstständigen und kleinen Unternehmen teilen möchten – persönlich geführt und offen für echte Zusammenarbeit.</p>
             <p className="mt-7 font-semibold">Julia & Roland Potlog · Potlog Immobilien KG</p>
-            <Link href="/ueber-uns" className="mt-7 inline-flex items-center gap-2 font-bold text-violet-700">Unsere Geschichte lesen <ArrowRight size={17}/></Link>
+            <Link href="/ueber-uns" className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-violet-700">Unsere Geschichte lesen <ArrowRight size={17}/></Link>
           </div>
         </div>
       </section>
@@ -353,7 +353,7 @@ export default function HomepagePreview() {
 
       <footer className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-8 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
         <p>© 2026 POTLOG Immobilien KG · AUFELD21</p>
-        <div className="flex flex-wrap gap-6"><Link href="/community">Community</Link><Link href="/impressum">Impressum</Link><Link href="/datenschutz">Datenschutz</Link></div>
+        <div className="flex flex-wrap gap-x-6"><Link href="/community" className="inline-flex min-h-11 items-center">Community</Link><Link href="/impressum" className="inline-flex min-h-11 items-center">Impressum</Link><Link href="/datenschutz" className="inline-flex min-h-11 items-center">Datenschutz</Link></div>
       </footer>
     </main>
   );
