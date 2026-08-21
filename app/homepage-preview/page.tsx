@@ -295,6 +295,7 @@ export default function HomepagePreview() {
                 ["8 Min.", "Marchtrenk", "mit dem Auto"],
                 ["5 Min.", "Trauner Hauptplatz", "mit dem Auto"],
                 ["3 Min.", "Oedter See", "mit dem Auto"],
+                ["1 Min.", "Naturschutzgebiet & Spazierwege", "zu Fuß"],
                 ["3 Min.", "Bushaltestelle", "zu Fuß"],
                 ["5 Min.", "SPAR & Bäcker", "zu Fuß"],
               ].map(([value, label, mode]) => (
