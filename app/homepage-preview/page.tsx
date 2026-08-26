@@ -12,6 +12,7 @@ import {
   FileText,
   Fan,
   MapPin,
+  MessageCircle,
   Network,
   ParkingCircle,
   Presentation,
@@ -370,9 +371,23 @@ export default function HomepagePreview() {
               <h2 className="mt-4 max-w-3xl text-[2rem] font-semibold leading-[1] tracking-[-0.06em] sm:mt-5 sm:text-6xl">Lernen wir uns einfach kennen.</h2>
               <p className="mt-6 text-lg text-[#3a4a2d]">Aufeldstraße 21 · 4050 Traun · +43 664 35 17 810</p>
             </div>
-            <a href="mailto:roland@immo-kredit.net?subject=Interesse%20an%20AUFELD21" className="flex h-14 items-center justify-center gap-3 rounded-full bg-[#162119] px-7 font-bold text-white transition hover:-translate-y-0.5">
-              Verfügbarkeit anfragen <ArrowRight size={18} />
-            </a>
+            <div className="grid gap-3 sm:grid-cols-2 lg:flex">
+              <a
+                href="https://wa.me/436643517810?text=Hallo%20Roland%2C%20ich%20interessiere%20mich%20f%C3%BCr%20einen%20Arbeitsplatz%20oder%20ein%20B%C3%BCro%20im%20AUFELD21%20und%20w%C3%BCrde%20gerne%20einen%20Besichtigungstermin%20vereinbaren."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#162119] px-7 font-bold text-white transition hover:-translate-y-0.5"
+                aria-label="AUFELD21 über WhatsApp anfragen"
+              >
+                Per WhatsApp <MessageCircle size={19} />
+              </a>
+              <a
+                href="mailto:roland@immo-kredit.net?subject=Interesse%20an%20AUFELD21"
+                className="flex min-h-14 items-center justify-center gap-3 rounded-full border border-[#162119]/25 bg-white/45 px-7 font-bold text-[#162119] transition hover:-translate-y-0.5 hover:bg-white/65"
+              >
+                Per E-Mail <ArrowRight size={18} />
+              </a>
+            </div>
           </div>
         </div>
       </section>
