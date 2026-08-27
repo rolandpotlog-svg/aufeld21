@@ -282,6 +282,7 @@ function BookingApp({ demo }: { demo: boolean }) {
       invoice_items: [{ description: "Nutzung AUFELD21 2026-08", quantity: 1, unit: "Monat", unit_price_net: 125, vat_rate: 20 }],
     },
   ] : []);
+  const [invoiceNoticeId, setInvoiceNoticeId] = useState<string | null>(null);
   const [generatingInvoices, setGeneratingInvoices] = useState(false);
   const [invoiceMemberFilter, setInvoiceMemberFilter] = useState("all");
   const [billingMember, setBillingMember] = useState<ManagedMember | null>(null);
@@ -383,6 +384,9 @@ function BookingApp({ demo }: { demo: boolean }) {
   const totalUsedHours = managedMembers.reduce((sum, item) => sum + Number(item.usedHours), 0);
   const openIssueReports = issueReports.filter((item) => item.status === "open");
   const resolvedIssueReports = issueReports.filter((item) => item.status === "resolved");
+  const invoiceNotice = invoiceNoticeId
+    ? invoices.find((invoice) => invoice.id === invoiceNoticeId) ?? null
+    : null;
   const selectedDossier = managedMembers.find((item) => item.id === selectedDossierId)
     ?? managedMembers.find((item) => item.role === "member" || item.role === "partner")
     ?? managedMembers[0];
@@ -457,10 +461,39 @@ function BookingApp({ demo }: { demo: boolean }) {
       .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members!invoices_member_id_fkey(name,email),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
       .order("issue_date", { ascending: false })
       .then(({ data, error }) => {
-        if (data) setInvoices(data as unknown as Invoice[]);
+        if (data) {
+          const loadedInvoices = data as unknown as Invoice[];
+          setInvoices(loadedInvoices);
+          setInvoiceNoticeId(null);
+          if (member.role !== "employee") {
+            const today = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
+            const latestAvailableInvoice = loadedInvoices
+              .filter((invoice) =>
+                invoice.member_id === member.id
+                && invoice.status !== "draft"
+                && invoice.status !== "cancelled"
+                && invoice.issue_date <= today,
+              )
+              .sort((left, right) => right.issue_date.localeCompare(left.issue_date))[0];
+            if (latestAvailableInvoice) {
+              const storageKey = `aufeld21:last-seen-invoice:${member.id}`;
+              setInvoiceNoticeId(
+                window.localStorage.getItem(storageKey) === latestAvailableInvoice.id
+                  ? null
+                  : latestAvailableInvoice.id,
+              );
+            }
+          }
+        }
         if (error) setToast("Die Rechnungen konnten nicht geladen werden. Bitte die Seite neu laden.");
       });
   }, [member, supabase]);
+
+  function dismissInvoiceNotice(invoiceId: string) {
+    if (!member) return;
+    window.localStorage.setItem(`aufeld21:last-seen-invoice:${member.id}`, invoiceId);
+    setInvoiceNoticeId(null);
+  }
 
   useEffect(() => {
     if (!member || !supabase) return;
@@ -1319,6 +1352,37 @@ function BookingApp({ demo }: { demo: boolean }) {
             <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-lime-200 bg-lime-50 px-4 py-3 text-sm text-lime-950">
               <span><strong>Lokale Vorschau</strong> · Anwesenheit und Buchungen sind Demo-Daten.</span>
               <span className="hidden rounded-full bg-white px-3 py-1 text-xs font-semibold sm:inline">Demo-Modus</span>
+            </div>
+          )}
+
+          {invoiceNotice && (
+            <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-emerald-950 shadow-sm sm:flex-row sm:items-center sm:px-5" role="status">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-700 text-white"><FileText size={21} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Neue Rechnung verfügbar</span>
+                <span className="mt-0.5 block text-sm leading-6 text-emerald-800">
+                  {invoiceNotice.invoice_number} für {new Date(`${invoiceNotice.billing_month}T12:00:00Z`).toLocaleDateString("de-AT", { month: "long", year: "numeric", timeZone: "UTC" })} wurde in deinem Portal hinterlegt.
+                </span>
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    downloadInvoice(invoiceNotice);
+                    dismissInvoiceNotice(invoiceNotice.id);
+                  }}
+                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 sm:flex-none"
+                >
+                  <Download size={16} /> PDF öffnen
+                </button>
+                <button
+                  onClick={() => dismissInvoiceNotice(invoiceNotice.id)}
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-100"
+                  aria-label="Rechnungsmeldung schließen"
+                  title="Gesehen"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
           )}
 
