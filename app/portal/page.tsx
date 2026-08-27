@@ -387,6 +387,14 @@ function BookingApp({ demo }: { demo: boolean }) {
   const invoiceNotice = invoiceNoticeId
     ? invoices.find((invoice) => invoice.id === invoiceNoticeId) ?? null
     : null;
+  const todayVienna = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
+  const memberOpenInvoices = member
+    ? invoices.filter((invoice) =>
+        invoice.member_id === member.id
+        && invoice.status === "final"
+        && invoice.issue_date <= todayVienna,
+      )
+    : [];
   const selectedDossier = managedMembers.find((item) => item.id === selectedDossierId)
     ?? managedMembers.find((item) => item.role === "member" || item.role === "partner")
     ?? managedMembers[0];
@@ -913,7 +921,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     const { data } = await supabase.auth.getSession();
     const viennaNow = toZonedTime(new Date(), TZ);
     const billingMonth = format(
-      viennaNow.getDate() >= 29 ? addMonths(startOfMonth(viennaNow), 1) : startOfMonth(viennaNow),
+      viennaNow.getDate() >= 25 ? addMonths(startOfMonth(viennaNow), 1) : startOfMonth(viennaNow),
       "yyyy-MM-01",
     );
     const response = await fetch("/api/admin/invoices/generate", {
@@ -1386,6 +1394,23 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           )}
 
+          {!invoiceNotice && memberOpenInvoices.length > 0 && (
+            <button
+              onClick={() => document.getElementById("member-invoices")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-left text-amber-950 shadow-sm transition hover:bg-amber-100 sm:px-5"
+              aria-label="Offene Rechnungen anzeigen"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800"><Bell size={20} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{memberOpenInvoices.length === 1 ? "Eine Rechnung ist noch offen" : `${memberOpenInvoices.length} Rechnungen sind noch offen`}</span>
+                <span className="mt-0.5 block text-sm text-amber-800">
+                  Offener Betrag: {memberOpenInvoices.reduce((sum, invoice) => sum + invoiceGross(invoice), 0).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} · Antippen für Details und PDF.
+                </span>
+              </span>
+              <ChevronRight className="shrink-0" size={20} />
+            </button>
+          )}
+
           {member.role === "admin" && openIssueReports.length > 0 && (
             <button
               onClick={() => { setView("admin"); setAdminTab("issues"); }}
@@ -1502,7 +1527,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </article>
 
-          {member.role !== "employee" && <article className="mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
+          {member.role !== "employee" && <article id="member-invoices" className="mt-6 scroll-mt-24 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Deine Dokumente</p>
@@ -1900,7 +1925,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#c9ff70]">Automatische Abrechnung</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Nur noch Zahlung kontrollieren.</h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-300">Am 29. jedes Monats werden die Rechnungen für den Folgemonat automatisch erstellt, nummeriert und im Portal des jeweiligen Mieters abgelegt.</p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-300">Am 25. jedes Monats werden die Rechnungen für den Folgemonat automatisch erstellt, nummeriert und im Portal des jeweiligen Mieters abgelegt. Zahlungsziel ist jeweils der 10. des Leistungsmonats.</p>
                 </div>
                 <button onClick={generateMonthlyInvoices} disabled={generatingInvoices} className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-stone-900 hover:bg-stone-100 disabled:opacity-60">
                   <FileText size={17} /> {generatingInvoices ? "Wird erstellt …" : "Jetzt prüfen & erstellen"}

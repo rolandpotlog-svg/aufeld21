@@ -67,13 +67,13 @@ npm audit
 2. Umgebungsvariablen setzen und deployen.
 3. Unter **Settings → Domains** die gekaufte Domain hinzufügen und die von Vercel angezeigten DNS-Einträge beim Domain-Anbieter setzen.
 4. Danach Supabase Site URL und Redirect URLs auf die finale Domain ergänzen.
-5. Für den Cronjob in `vercel.json` wird Vercel Pro benötigt. Er ruft am 29. jedes Monats um 05:00 UTC die geschützte Rechnungsroute auf. Ohne Pro kann der Admin die gleiche Erzeugung im Controlling manuell starten.
+5. Der Cronjob in `vercel.json` läuft auch im Vercel-Hobby-Tarif, weil er nur einmal monatlich ausgeführt wird. Er ruft am 25. jedes Monats um 05:00 UTC die geschützte Rechnungsroute auf. `CRON_SECRET` muss dafür in Vercel gesetzt sein. Ohne aktiven Cronjob kann der Admin die gleiche Erzeugung im Controlling manuell starten.
 
 E-Mail bleibt sinnvollerweise beim Domain-/Mailanbieter; Vercel hostet die Web-App, nicht die normalen Postfächer.
 
 ## Rechnungen und Verwaltung
 
-- Am 29. werden Rechnungen für den Folgemonat erstellt; Fälligkeit ist der 10. des Leistungsmonats.
+- Am 25. werden Rechnungen für den Folgemonat erstellt; Fälligkeit ist der 10. des Leistungsmonats.
 - Rechnungsnummern werden atomar in Postgres vergeben (`A21-YYYY-NNNN`). Eine Unique-Constraint verhindert Dubletten zusätzlich.
 - Grundmieten werden bei Vertragsbeginn oder -ende im laufenden Monat nach Kalendertagen aliquotiert.
 - 12 Meetingraum-Stunden sind je Kalendermonat inklusive; weitere Nutzung kostet 12 € netto je Stunde und wird in 30-Minuten-Schritten erfasst.

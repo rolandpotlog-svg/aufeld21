@@ -49,9 +49,9 @@ export async function POST(request: Request) {
   const currentDay = Number(formatInTimeZone(new Date(), TZ, "d"));
   const currentMonthDate = new Date(`${currentMonth}T00:00:00Z`);
   const nextMonth = new Date(Date.UTC(currentMonthDate.getUTCFullYear(), currentMonthDate.getUTCMonth() + 1, 1));
-  const latestAllowedBillingMonth = currentDay >= 29 ? isoDate(nextMonth) : currentMonth;
+  const latestAllowedBillingMonth = currentDay >= 25 ? isoDate(nextMonth) : currentMonth;
   if (body.billingMonth > latestAllowedBillingMonth) {
-    return Response.json({ error: "Der Folgemonat kann erst ab dem 29. abgerechnet werden." }, { status: 409 });
+    return Response.json({ error: "Der Folgemonat kann erst ab dem 25. abgerechnet werden." }, { status: 409 });
   }
 
   const monthStart = new Date(`${body.billingMonth}T00:00:00Z`);
@@ -62,14 +62,14 @@ export async function POST(request: Request) {
     monthStart.getUTCMonth(),
     Math.min(30, monthEnd.getUTCDate()),
   ));
-  // The invoice is created on the 29th for the following month's rent. Meeting-room
+  // The invoice is created on the 25th for the following month's rent. Meeting-room
   // extras use the last fully completed month so bookings on the 30th/31st are never lost.
   const usageMonthStart = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 2, 1));
   const usageMonthEnd = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 1));
   const usageStartVienna = fromZonedTime(`${isoDate(usageMonthStart)} 00:00:00`, TZ);
   const usageEndVienna = fromZonedTime(`${isoDate(usageMonthEnd)} 00:00:00`, TZ);
   const daysInMonth = billingPeriodEnd.getUTCDate();
-  const issueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 29)));
+  const issueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 25)));
   const dueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), 10)));
 
   const { data: members, error: membersError } = await admin
