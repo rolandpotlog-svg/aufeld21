@@ -1,3 +1,5 @@
+import { MarketingHeader } from "./marketing-shell";
+import { siteUrl } from "@/lib/site";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,6 +28,7 @@ import {
 export const metadata: Metadata = {
   title: "AUFELD21 · Co-Working in Traun",
   description: "Ein persönlicher Co-Working-Space für Selbstständige und kleine Unternehmen in Traun.",
+  alternates: { canonical: siteUrl },
 };
 
 const benefits = [
@@ -52,25 +55,7 @@ const benefits = [
 export default function HomepagePreview() {
   return (
     <main className="homepage-grid min-h-screen overflow-hidden bg-[#f8f8fb] text-[#11131a]">
-      <header className="relative z-20 mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-8 sm:py-5 lg:px-12">
-        <Link href="/" className="flex items-center gap-3" aria-label="AUFELD21 Startseite">
-          <span className="grid h-11 w-11 place-items-center rounded-[13px] bg-[#c9ff70] text-sm font-black tracking-[-0.06em] text-[#162119]">A21</span>
-          <span>
-            <span className="block text-[15px] font-bold tracking-[0.1em]">AUFELD21</span>
-            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500 min-[360px]:block">Co-Working Traun</span>
-          </span>
-        </Link>
-        <nav className="hidden items-center gap-8 text-sm font-semibold lg:flex">
-          <a href="#prices" className="transition hover:text-emerald-700">Angebot</a>
-          <Link href="/buero-service" className="transition hover:text-emerald-700">Büroservice</Link>
-          <Link href="/community" className="transition hover:text-emerald-700">Community</Link>
-          <Link href="/ueber-uns" className="transition hover:text-emerald-700">Über uns</Link>
-          <a href="#contact" className="transition hover:text-emerald-700">Kontakt</a>
-        </nav>
-        <Link href="/portal" className="flex h-11 items-center gap-2 rounded-full bg-[#162119] px-4 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#243429] sm:px-5 sm:text-sm">
-          <span className="sm:hidden">Login</span><span className="hidden sm:inline">Mitgliederportal</span> <ArrowRight size={16} />
-        </Link>
-      </header>
+      <MarketingHeader />
 
       <section className="relative mx-auto max-w-[1440px] px-5 pb-12 pt-5 sm:px-8 sm:pt-8 lg:px-12 lg:pb-20 lg:pt-14">
         <div className="pointer-events-none absolute left-[15%] top-0 h-72 w-72 rounded-full bg-violet-400/15 blur-[100px]" />
@@ -264,16 +249,16 @@ export default function HomepagePreview() {
           <p className="max-w-2xl self-end text-lg leading-8 text-stone-600 sm:text-xl">Kein anonymes Großraumbüro, sondern vier Büros, ein gemeinsamer Meetingraum und Menschen, die einander beim Namen kennen. Genau so viel Gemeinschaft, wie gut tut.</p>
         </div>
 
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
+        <div className="mt-8 grid gap-3 md:grid-cols-3">
           {benefits.map(({ icon: Icon, number, title, text }) => (
-            <article key={number} className="group flex min-h-[240px] flex-col justify-between rounded-[1.7rem] border border-[#162119]/10 bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[290px] sm:rounded-[2rem] sm:p-9">
+            <article key={number} className="group flex items-start gap-4 rounded-2xl border border-[#162119]/10 bg-white p-5 transition duration-300 hover:shadow-lg sm:flex-col sm:rounded-3xl sm:p-7">
               <div className="flex items-start justify-between">
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eaf8df] text-emerald-800"><Icon size={22} strokeWidth={1.8} /></span>
-                <span className="text-sm font-bold text-stone-300">{number}</span>
+                <span className="ml-4 hidden text-sm font-bold text-stone-300 sm:inline">{number}</span>
               </div>
               <div>
-                <h3 className="text-2xl font-semibold tracking-[-0.04em]">{title}</h3>
-                <p className="mt-3 leading-7 text-stone-500">{text}</p>
+                <h3 className="text-lg font-semibold tracking-[-0.04em] sm:text-2xl">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-stone-500 sm:text-base">{text}</p>
               </div>
             </article>
           ))}
@@ -330,16 +315,16 @@ export default function HomepagePreview() {
             </div>
             <Link href="/community" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#162119] px-6 font-bold text-white">Community entdecken <ArrowRight size={17} /></Link>
           </div>
-          <div className="grid gap-px bg-stone-200 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px bg-stone-200 lg:grid-cols-4">
             {[
               ["IK", "ImmoKredit", "Immobilienfinanzierung"],
               ["PX", "Potlox", "Marketing Agentur"],
               ["N", "Neugebauer GmbH", "Buchhandel"],
               ["WA", "Wuff Academy", "Hundeschule"],
             ].map(([initials, name, sector]) => (
-              <article key={name} className="flex min-h-[170px] flex-col justify-between bg-[#fafaf8] p-6 sm:min-h-[200px] sm:p-8">
+              <article key={name} className="flex flex-col justify-between bg-[#fafaf8] p-4 sm:p-7">
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-100 text-xs font-black text-violet-900">{initials}</span>
-                <div className="mt-9"><h3 className="text-xl font-bold tracking-[-0.035em]">{name}</h3><p className="mt-1 text-sm text-stone-500">{sector}</p></div>
+                <div className="mt-4"><h3 className="break-words text-base font-bold tracking-[-0.035em] sm:text-xl">{name}</h3><p className="mt-1 text-xs text-stone-500 sm:text-sm">{sector}</p></div>
               </article>
             ))}
           </div>

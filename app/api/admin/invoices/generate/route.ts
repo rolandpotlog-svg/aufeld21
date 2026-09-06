@@ -1,10 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import { isBillingMonth, scheduledBillingMonths } from "@/lib/invoices/billing";
 
-const TZ = "Europe/Vienna";
-
-const isoDate = (date: Date) => date.toISOString().slice(0, 10);
-const roundMoney = (value: number) => Math.round(value * 100) / 100;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,183 +10,58 @@ export async function POST(request: Request) {
   if (!url || !serviceKey || !authorization?.startsWith("Bearer ")) {
     return Response.json({ error: "Nicht autorisiert." }, { status: 401 });
   }
-
-  const admin = createClient(url, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const isCron = Boolean(process.env.CRON_SECRET) && authorization === `Bearer ${process.env.CRON_SECRET}`;
   let creatorId: string;
   if (isCron) {
-    const { data: firstAdmin } = await admin
-      .from("members")
-      .select("id")
-      .eq("role", "admin")
-      .eq("active", true)
-      .order("created_at")
-      .limit(1)
-      .single();
-    if (!firstAdmin) return Response.json({ error: "Kein aktiver Admin vorhanden." }, { status: 409 });
-    creatorId = firstAdmin.id;
+    const { data } = await admin.from("members").select("id").eq("role", "admin").eq("active", true).order("created_at").limit(1).single();
+    if (!data) return Response.json({ error: "Kein aktiver Admin vorhanden." }, { status: 409 });
+    creatorId = data.id;
   } else {
-    const { data: userData } = await admin.auth.getUser(authorization.slice(7));
-    if (!userData.user) return Response.json({ error: "Nicht angemeldet." }, { status: 401 });
-    const { data: requester } = await admin.from("members").select("role,active").eq("id", userData.user.id).single();
-    if (requester?.role !== "admin" || !requester.active) {
-      return Response.json({ error: "Nur Administratoren dürfen Rechnungen erzeugen." }, { status: 403 });
-    }
-    creatorId = userData.user.id;
+    const { data } = await admin.auth.getUser(authorization.slice(7));
+    if (!data.user) return Response.json({ error: "Nicht angemeldet." }, { status: 401 });
+    const { data: member } = await admin.from("members").select("role,active").eq("id", data.user.id).single();
+    if (member?.role !== "admin" || !member.active) return Response.json({ error: "Kein Zugriff." }, { status: 403 });
+    creatorId = data.user.id;
   }
-
-  const body = (await request.json().catch(() => ({}))) as { billingMonth?: string };
-  if (!body.billingMonth?.match(/^\d{4}-\d{2}-01$/)) {
+  const body = await request.json().catch(() => null) as { billingMonth?: unknown } | null;
+  if (!body || (body.billingMonth !== undefined && (typeof body.billingMonth !== "string" || !isBillingMonth(body.billingMonth)))) {
     return Response.json({ error: "Ungültiger Abrechnungsmonat." }, { status: 400 });
   }
-
-  const currentMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM-01");
-  const currentDay = Number(formatInTimeZone(new Date(), TZ, "d"));
-  const currentMonthDate = new Date(`${currentMonth}T00:00:00Z`);
-  const nextMonth = new Date(Date.UTC(currentMonthDate.getUTCFullYear(), currentMonthDate.getUTCMonth() + 1, 1));
-  const latestAllowedBillingMonth = currentDay >= 25 ? isoDate(nextMonth) : currentMonth;
-  if (body.billingMonth > latestAllowedBillingMonth) {
+  const scheduled = scheduledBillingMonths();
+  const months = typeof body.billingMonth === "string" ? [body.billingMonth] : scheduled;
+  if (months.some((month) => month > scheduled[scheduled.length - 1])) {
     return Response.json({ error: "Der Folgemonat kann erst ab dem 25. abgerechnet werden." }, { status: 409 });
   }
-
-  const monthStart = new Date(`${body.billingMonth}T00:00:00Z`);
-  const monthEndExclusive = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1));
-  const monthEnd = new Date(monthEndExclusive.getTime() - 86_400_000);
-  const billingPeriodEnd = new Date(Date.UTC(
-    monthStart.getUTCFullYear(),
-    monthStart.getUTCMonth(),
-    Math.min(30, monthEnd.getUTCDate()),
-  ));
-  // The invoice is created on the 25th for the following month's rent. Meeting-room
-  // extras use the last fully completed month so bookings on the 30th/31st are never lost.
-  const usageMonthStart = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 2, 1));
-  const usageMonthEnd = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 1));
-  const usageStartVienna = fromZonedTime(`${isoDate(usageMonthStart)} 00:00:00`, TZ);
-  const usageEndVienna = fromZonedTime(`${isoDate(usageMonthEnd)} 00:00:00`, TZ);
-  const daysInMonth = billingPeriodEnd.getUTCDate();
-  const issueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 25)));
-  const dueDate = isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), 10)));
-
-  const { data: members, error: membersError } = await admin
-    .from("members")
-    .select("id,name,role,office_name,billing_name,billing_address,monthly_rent_net,contract_start,contract_end")
-    .eq("active", true)
-    .in("role", ["member", "partner", "admin"]);
-  if (membersError) return Response.json({ error: "Mitglieder konnten nicht geladen werden." }, { status: 500 });
-
-  const { data: existing } = await admin
-    .from("invoices")
-    .select("member_id")
-    .eq("billing_month", body.billingMonth)
-    .neq("status", "cancelled");
-  const existingIds = new Set((existing ?? []).map((invoice) => invoice.member_id));
-  const invoiceYear = Number(issueDate.slice(0, 4));
+  // An interrupted process remains visibly unfinished in the admin log.
+  const { data: run, error: runError } = await admin.from("billing_runs").insert({}).select("id").single();
+  if (runError || !run) return Response.json({ error: "Abrechnungsprotokoll nicht verfügbar. Bitte Datenbankmigration prüfen." }, { status: 503 });
   let created = 0;
   let skipped = 0;
-
-  for (const member of members ?? []) {
-    if (existingIds.has(member.id)) {
-      skipped += 1;
-      continue;
-    }
-    const items: Array<{ description: string; quantity: number; unit: string; unit_price_net: number; vat_rate: number; sort_order: number }> = [];
-    const contractStart = member.contract_start ? new Date(`${member.contract_start}T00:00:00Z`) : monthStart;
-    const contractEnd = member.contract_end ? new Date(`${member.contract_end}T00:00:00Z`) : billingPeriodEnd;
-    const activeStart = contractStart > monthStart ? contractStart : monthStart;
-    const activeEnd = contractEnd < billingPeriodEnd ? contractEnd : billingPeriodEnd;
-    if (member.monthly_rent_net != null && activeStart <= activeEnd) {
-      const activeDays = Math.floor((activeEnd.getTime() - activeStart.getTime()) / 86_400_000) + 1;
-      const monthlyRent = Number(member.monthly_rent_net);
-      items.push({
-        description:
-          activeDays === daysInMonth
-            ? member.role === "partner"
-              ? `Spezialtarif Flexbüro inkl. 12 Std. Meetingraum ${body.billingMonth.slice(0, 7)}`
-              : `Grundmiete ${member.office_name || "AUFELD21"} ${body.billingMonth.slice(0, 7)}`
-            : member.role === "partner"
-              ? `Spezialtarif Flexbüro aliquot ${isoDate(activeStart)} bis ${isoDate(activeEnd)} (${activeDays}/${daysInMonth} Tage)`
-              : `Grundmiete aliquot ${isoDate(activeStart)} bis ${isoDate(activeEnd)} (${activeDays}/${daysInMonth} Tage)`,
-        quantity: 1,
-        unit: "Monat",
-        unit_price_net: roundMoney(monthlyRent * (activeDays / daysInMonth)),
-        vat_rate: 20,
-        sort_order: 0,
+  const errors: Array<{ memberId?: string; name?: string; month?: string; message: string }> = [];
+  const { data: members, error } = await admin.from("members").select("id,name")
+    .eq("active", true).in("role", ["member", "partner", "admin"]).not("monthly_rent_net", "is", null);
+  if (error) errors.push({ message: "Mieter konnten nicht geladen werden." });
+  for (const month of months) {
+    for (const member of members ?? []) {
+      const { data, error: invoiceError } = await admin.rpc("create_monthly_invoice", {
+        target_member_id: member.id, target_month: month, creator_id: creatorId,
       });
+      if (invoiceError) {
+        errors.push({ memberId: member.id, name: member.name, month,
+          message: invoiceError.message.includes("billing_profile_incomplete")
+            ? "Rechnungsadresse oder Vertragsbeginn fehlt."
+            : "Erstellung fehlgeschlagen. Bitte erneut prüfen." });
+      } else if (data?.created) created += 1;
+      else skipped += 1;
     }
-
-    const [{ data: bookings }, { data: bonuses }] = await Promise.all([
-      admin
-        .from("bookings")
-        .select("start_at,end_at")
-        .eq("member_id", member.id)
-        .gte("start_at", usageStartVienna.toISOString())
-        .lt("start_at", usageEndVienna.toISOString()),
-      admin
-        .from("quota_adjustments")
-        .select("hours")
-        .eq("member_id", member.id)
-        .eq("valid_month", isoDate(usageMonthStart)),
-    ]);
-    const usedHours = (bookings ?? []).reduce(
-      (sum, booking) => sum + (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000,
-      0,
-    );
-    const bonusHours = (bonuses ?? []).reduce((sum, bonus) => sum + Number(bonus.hours), 0);
-    const extraHours = Math.max(usedHours - 12 - bonusHours, 0);
-    if (extraHours > 0) {
-      items.push({
-        description: `Meetingraum Zusatznutzung ${isoDate(usageMonthStart).slice(0, 7)}`,
-        quantity: extraHours,
-        unit: "Std.",
-        unit_price_net: 12,
-        vat_rate: 20,
-        sort_order: 1,
-      });
-    }
-
-    if (items.length === 0 || !member.billing_address) {
-      skipped += 1;
-      continue;
-    }
-    const { data: invoiceNumber, error: numberError } = await admin.rpc("next_invoice_number", {
-      invoice_year: invoiceYear,
-    });
-    if (numberError || !invoiceNumber) {
-      skipped += 1;
-      continue;
-    }
-    const { data: invoice, error: invoiceError } = await admin
-      .from("invoices")
-      .insert({
-        member_id: member.id,
-        status: "final",
-        invoice_number: invoiceNumber,
-        issue_date: issueDate,
-        billing_month: body.billingMonth,
-        service_period_start: isoDate(monthStart),
-        service_period_end: isoDate(billingPeriodEnd),
-        due_date: dueDate,
-        finalized_at: new Date().toISOString(),
-        created_by: creatorId,
-      })
-      .select("id")
-      .single();
-    if (invoiceError || !invoice) {
-      skipped += 1;
-      continue;
-    }
-    const { error: itemsError } = await admin
-      .from("invoice_items")
-      .insert(items.map((item) => ({ ...item, invoice_id: invoice.id })));
-    if (itemsError) {
-      await admin.from("invoices").delete().eq("id", invoice.id);
-      skipped += 1;
-      continue;
-    }
-    created += 1;
   }
-
-  return Response.json({ created, skipped });
+  const { error: logError } = await admin.from("billing_runs").update({
+    finished_at: new Date().toISOString(), created_count: created, skipped_count: skipped, errors,
+  }).eq("id", run.id);
+  if (logError) errors.push({ message: "Abschluss des Abrechnungslaufs konnte nicht protokolliert werden." });
+  return Response.json({
+    created, skipped, errors,
+    ...(errors.length ? { error: `${errors.length} Problem(e) bei der Abrechnung. Details im Admin-Bereich.` } : {}),
+  }, { status: errors.length ? 500 : 200 });
 }

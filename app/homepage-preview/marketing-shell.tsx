@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { MobileMenu } from "./mobile-menu";
 
 export function MarketingHeader() {
   return (
@@ -14,8 +15,12 @@ export function MarketingHeader() {
         <Link href="/buero-service">Büroservice</Link>
         <Link href="/community">Community</Link>
         <Link href="/ueber-uns">Über uns</Link>
+        <Link href="/#contact">Kontakt</Link>
       </nav>
-      <Link href="/portal" className="flex h-11 items-center gap-2 rounded-full bg-[#162119] px-4 text-xs font-bold text-white sm:px-5 sm:text-sm"><span className="sm:hidden">Login</span><span className="hidden sm:inline">Mitgliederportal</span><ArrowRight size={16} /></Link>
+      <div className="flex items-center gap-2">
+        <Link href="/portal" className="flex h-11 items-center gap-2 rounded-full bg-[#162119] px-3 text-xs font-bold text-white sm:px-5 sm:text-sm"><span className="sm:hidden">Login</span><span className="hidden sm:inline">Mitgliederportal</span><ArrowRight size={16} /></Link>
+        <MobileMenu />
+      </div>
     </header>
   );
 }

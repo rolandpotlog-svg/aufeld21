@@ -3,6 +3,7 @@ node_modules/
 .vercel/
 .vinext/
 .wrangler/
+supabase/.temp/
 
 .env
 .env.*

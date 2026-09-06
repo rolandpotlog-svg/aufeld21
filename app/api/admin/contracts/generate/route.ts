@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   const upload = await admin.storage.from("member-documents").upload(storagePath, bytes, { contentType: "application/pdf" });
   if (upload.error) return Response.json({ error: "Der Vertragsentwurf konnte nicht abgelegt werden." }, { status: 500 });
   const title = `Nutzungsvereinbarung - Entwurf ${dateStamp}`;
-  const { error: documentError } = await admin.from("member_documents").insert({ member_id: member.id, document_type: "mietvertrag", title, storage_path: storagePath, visible_to_member: true, valid_from: member.contract_start, valid_until: body.contractEnd, uploaded_by: userData.user.id });
+  const { error: documentError } = await admin.from("member_documents").insert({ member_id: member.id, document_type: "mietvertrag", title, storage_path: storagePath, visible_to_member: false, valid_from: member.contract_start, valid_until: body.contractEnd, uploaded_by: userData.user.id });
   if (documentError) { await admin.storage.from("member-documents").remove([storagePath]); return Response.json({ error: "Der Vertragsentwurf konnte nicht registriert werden." }, { status: 500 }); }
   await admin.from("members").update({ contract_end: body.contractEnd }).eq("id", member.id);
   return new Response(Buffer.from(bytes), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="Nutzungsvereinbarung-${member.name.replace(/[^A-Za-z0-9-]/g, "-")}-Entwurf.pdf"`, "Cache-Control": "private, no-store", "X-Document-Title": encodeURIComponent(title) } });

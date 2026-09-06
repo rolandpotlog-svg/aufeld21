@@ -43,6 +43,8 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { SpacePlan } from "../space-plan";
+import { invoiceIsOpen, invoiceIsOverdue, isOriginalDocument } from "@/lib/invoices/billing";
+import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
 
 const TZ = "Europe/Vienna";
 const SLOT_HEIGHT = 52;
@@ -128,6 +130,10 @@ const times = Array.from({ length: (END_HOUR - START_HOUR) * 2 + 1 }, (_, index)
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 });
 
+function readLocalStorage(key: string) {
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+
 function memberName(booking: Booking) {
   if (Array.isArray(booking.members)) return booking.members[0]?.name ?? "Mitglied";
   return booking.members?.name ?? "Mitglied";
@@ -178,6 +184,13 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [member, setMember] = useState<Member | null>(
     demo ? { id: "demo-member", email: "demo@aufeld21.at", name: "Roland", role: "admin", plan: "pro", active: true } : null,
   );
+  const [revision, refreshPortal] = usePortalRefresh(Boolean(member && supabase));
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [invoiceYear, setInvoiceYear] = useState("all");
+  const [invoiceScope, setInvoiceScope] = useState("month");
+  const [billingRun, setBillingRun] = useState<{ started_at: string; finished_at: string | null; created_count: number; errors: Array<{ name?: string; month?: string; message: string }> } | null>(null);
+  const [billingRunError, setBillingRunError] = useState(false);
+  const [spaceDocuments, setSpaceDocuments] = useState<Array<{ id: string; title: string; storage_path: string }>>([]);
   const [authReady, setAuthReady] = useState(demo);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -351,6 +364,8 @@ function BookingApp({ demo }: { demo: boolean }) {
     };
   }, [session, supabase]);
 
+  useDialogFocus(Boolean(draft || selectedBooking || issueDraft || paymentDraft || contractDraft || inviteDraft || bonusTarget || billingMember || depositMember || accessMember));
+
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const mobileDay = days[mobileDayOffset] ?? days[0];
@@ -359,16 +374,20 @@ function BookingApp({ demo }: { demo: boolean }) {
   const remainingHours = Math.max(availableHours - monthlyUsedHours, 0);
   const billableHours = Math.max(monthlyUsedHours - availableHours, 0);
   const billableNet = member?.role === "employee" ? 0 : billableHours * 12;
-  const billingMembers = managedMembers.filter((item) => item.active && (item.role === "member" || item.role === "partner" || item.role === "admin"));
+  const billingMembers = managedMembers.filter((item) => item.active && item.role !== "employee" && item.monthly_rent_net != null);
+  const todayVienna = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
   const currentBillingMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM-01");
   const monthlyGrossTarget = billingMembers.reduce((sum, item) => sum + Number(item.monthly_rent_net ?? 0) * 1.2, 0);
   const paidThisMonthGross = invoices.filter((invoice) => invoice.status === "paid" && invoice.paid_at && formatInTimeZone(invoice.paid_at, TZ, "yyyy-MM") === currentBillingMonth.slice(0, 7)).reduce((sum, invoice) => sum + invoiceGross(invoice), 0);
-  const openInvoices = invoices.filter((invoice) => invoice.status === "final");
+  const openInvoices = invoices.filter((invoice) => invoiceIsOpen(invoice, todayVienna));
   const openInvoiceGross = openInvoices.reduce((sum, invoice) => sum + invoiceGross(invoice), 0);
-  const overdueInvoices = openInvoices.filter((invoice) => new Date(`${invoice.due_date}T23:59:59`) < new Date());
+  const overdueInvoices = openInvoices.filter((invoice) => invoiceIsOverdue(invoice, todayVienna));
   const draftInvoices = invoices.filter((invoice) => invoice.status === "draft");
   const visibleAdminInvoices = invoices.filter(
-    (invoice) => invoice.status !== "cancelled" && (invoiceMemberFilter === "all" || invoice.member_id === invoiceMemberFilter),
+    (invoice) => invoice.status !== "cancelled" && (invoiceMemberFilter === "all" || invoice.member_id === invoiceMemberFilter)
+      && (invoiceScope === "all" || (invoiceScope === "month" && invoice.billing_month === currentBillingMonth)
+        || (invoiceScope === "open" && invoiceIsOpen(invoice, todayVienna))
+        || (invoiceScope === "future" && invoice.issue_date > todayVienna)),
   );
   const invoiceGroups = managedMembers
     .map((managedMember) => ({
@@ -377,7 +396,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     }))
     .filter((group) => group.invoices.length > 0);
   const missingBillingProfiles = billingMembers.filter((item) => !item.billing_address || item.monthly_rent_net == null || !item.contract_start);
-  const tenantDepositIssues = managedMembers.filter((item) => item.role === "member" || item.role === "admin").filter((item) => {
+  const tenantDepositIssues = billingMembers.filter((item) => item.role === "member" || item.role === "admin").filter((item) => {
     const deposit = deposits.find((entry) => entry.member_id === item.id);
     return !deposit || Number(deposit.received_amount) < Number(deposit.agreed_amount);
   });
@@ -385,9 +404,11 @@ function BookingApp({ demo }: { demo: boolean }) {
   const openIssueReports = issueReports.filter((item) => item.status === "open");
   const resolvedIssueReports = issueReports.filter((item) => item.status === "resolved");
   const invoiceNotice = invoiceNoticeId
-    ? invoices.find((invoice) => invoice.id === invoiceNoticeId) ?? null
+    ? invoices.find((invoice) => invoice.id === invoiceNoticeId && invoice.member_id === member?.id) ?? null
     : null;
-  const todayVienna = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
+  const memberInvoices = invoices.filter((invoice) => invoice.member_id === member?.id && !["draft", "cancelled"].includes(invoice.status));
+  const invoiceYears = [...new Set(memberInvoices.map((invoice) => invoice.billing_month.slice(0, 4)))].sort().reverse();
+  const memberDocuments = documents.filter((item) => item.member_id === member?.id && item.visible_to_member && isOriginalDocument(item) && (member?.role === "member" || member?.role === "admin" || item.document_type !== "mietvertrag"));
   const memberOpenInvoices = member
     ? invoices.filter((invoice) =>
         invoice.member_id === member.id
@@ -402,7 +423,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     ? invoices.filter((invoice) => invoice.member_id === selectedDossier.id && invoice.status !== "cancelled")
     : [];
   const dossierDocuments = selectedDossier
-    ? documents.filter((document) => document.member_id === selectedDossier.id && !document.storage_path.includes("/vertraege/nutzungsvereinbarung-entwurf-"))
+    ? documents.filter((document) => document.member_id === selectedDossier.id && isOriginalDocument(document))
     : [];
   const dossierDeposit = selectedDossier ? deposits.find((deposit) => deposit.member_id === selectedDossier.id) : undefined;
   const dossierAccess = selectedDossier ? accessInventory.find((entry) => entry.member_id === selectedDossier.id) : undefined;
@@ -422,7 +443,7 @@ function BookingApp({ demo }: { demo: boolean }) {
         .gt("end_at", utcStart.toISOString())
         .order("start_at");
       if (active) {
-        setBookings((data as Booking[]) ?? []);
+        if (!error) setBookings((data as Booking[]) ?? []);
         setLoadingBookings(false);
         if (error) setToast("Buchungen konnten gerade nicht geladen werden.");
       }
@@ -431,7 +452,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     return () => {
       active = false;
     };
-  }, [member, supabase, weekStart]);
+  }, [member, supabase, weekStart, revision]);
 
   useEffect(() => {
     if (!member || !supabase) return;
@@ -464,11 +485,13 @@ function BookingApp({ demo }: { demo: boolean }) {
 
   useEffect(() => {
     if (!member || !supabase) return;
+    let active = true;
     supabase
       .from("invoices")
       .select("id,member_id,invoice_number,status,issue_date,due_date,billing_month,paid_at,members!invoices_member_id_fkey(name,email),invoice_items(description,quantity,unit,unit_price_net,vat_rate)")
       .order("issue_date", { ascending: false })
       .then(({ data, error }) => {
+        if (!active) return;
         if (data) {
           const loadedInvoices = data as unknown as Invoice[];
           setInvoices(loadedInvoices);
@@ -486,7 +509,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             if (latestAvailableInvoice) {
               const storageKey = `aufeld21:last-seen-invoice:${member.id}`;
               setInvoiceNoticeId(
-                window.localStorage.getItem(storageKey) === latestAvailableInvoice.id
+                readLocalStorage(storageKey) === latestAvailableInvoice.id
                   ? null
                   : latestAvailableInvoice.id,
               );
@@ -495,11 +518,12 @@ function BookingApp({ demo }: { demo: boolean }) {
         }
         if (error) setToast("Die Rechnungen konnten nicht geladen werden. Bitte die Seite neu laden.");
       });
-  }, [member, supabase]);
+    return () => { active = false; };
+  }, [member, supabase, revision]);
 
   function dismissInvoiceNotice(invoiceId: string) {
     if (!member) return;
-    window.localStorage.setItem(`aufeld21:last-seen-invoice:${member.id}`, invoiceId);
+    try { window.localStorage.setItem(`aufeld21:last-seen-invoice:${member.id}`, invoiceId); } catch { /* Private browsing can disable storage. */ }
     setInvoiceNoticeId(null);
   }
 
@@ -509,12 +533,14 @@ function BookingApp({ demo }: { demo: boolean }) {
       supabase.from("member_deposits").select("member_id,agreed_amount,received_amount,returned_amount,received_at,note"),
       supabase.from("member_documents").select("id,member_id,document_type,title,storage_path,visible_to_member,valid_until,created_at").order("created_at", { ascending: false }),
       supabase.from("member_access_inventory").select("member_id,loxone_chip_count,entrance_key_count,office_key_count,issued_at,note"),
-    ]).then(([depositResult, documentResult, accessResult]) => {
+      supabase.from("space_documents").select("id,title,storage_path").eq("published", true).order("valid_from", { ascending: false }),
+    ]).then(([depositResult, documentResult, accessResult, spaceResult]) => {
       if (depositResult.data) setDeposits(depositResult.data as Deposit[]);
       if (documentResult.data) setDocuments(documentResult.data as MemberDocument[]);
       if (accessResult.data) setAccessInventory(accessResult.data as AccessInventory[]);
+      if (spaceResult.data) setSpaceDocuments(spaceResult.data);
     });
-  }, [member, supabase]);
+  }, [member, supabase, revision]);
 
   useEffect(() => {
     if (!member || member.role !== "admin" || !supabase) return;
@@ -547,10 +573,14 @@ function BookingApp({ demo }: { demo: boolean }) {
 
   useEffect(() => {
     if (!member || member.role !== "admin" || !supabase) return;
+    supabase.from("billing_runs").select("started_at,finished_at,created_count,errors").order("started_at", { ascending: false }).limit(1).maybeSingle().then(({ data, error }) => {
+      setBillingRunError(Boolean(error));
+      if (data) setBillingRun(data);
+    });
     supabase.from("issue_reports").select("id,member_id,category,note,status,created_at,members(name)").order("created_at", { ascending: false }).then(({ data }) => {
       if (data) setIssueReports(data as unknown as IssueReport[]);
     });
-  }, [member, supabase]);
+  }, [member, supabase, revision]);
 
   useEffect(() => {
     if (!toast) return;
@@ -631,9 +661,16 @@ function BookingApp({ demo }: { demo: boolean }) {
     setToast("Dein Passwort wurde gespeichert.");
   }
 
+  function openNextBooking() {
+    let day = toZonedTime(new Date(), TZ);
+    let minutes = Math.max(START_HOUR * 60, Math.ceil((day.getHours() * 60 + day.getMinutes() + 1) / 30) * 30);
+    if (minutes >= END_HOUR * 60) { day = addDays(day, 1); minutes = START_HOUR * 60; }
+    openBooking(day, `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`);
+  }
+
   function openBooking(day: Date, time: string) {
     const [hour, minute] = time.split(":").map(Number);
-    const endMinutes = hour * 60 + minute + 60;
+    const endMinutes = Math.min(hour * 60 + minute + 60, END_HOUR * 60);
     setFormError("");
     setDraft({
       date: format(day, "yyyy-MM-dd"),
@@ -650,6 +687,11 @@ function BookingApp({ demo }: { demo: boolean }) {
     setFormError("");
     const start = fromZonedTime(`${draft.date} ${draft.start}:00`, TZ);
     const end = fromZonedTime(`${draft.date} ${draft.end}:00`, TZ);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start <= new Date()) {
+      setFormError("Bitte wähle einen zukünftigen Zeitraum.");
+      setSaving(false);
+      return;
+    }
     if (end <= start) {
       setFormError("Die Endzeit muss nach der Startzeit liegen.");
       setSaving(false);
@@ -684,6 +726,9 @@ function BookingApp({ demo }: { demo: boolean }) {
       if (format(start, "yyyy-MM") === format(new Date(), "yyyy-MM")) {
         setMonthlyUsedHours((current) => current + (end.getTime() - start.getTime()) / 3_600_000);
       }
+      setWeekStart(startOfWeek(toZonedTime(start, TZ), { weekStartsOn: 1 }));
+      setMobileDayOffset((toZonedTime(start, TZ).getDay() + 6) % 7);
+      setView("calendar");
       setDraft(null);
       setToast("Demo-Buchung gespeichert.");
       return;
@@ -715,26 +760,35 @@ function BookingApp({ demo }: { demo: boolean }) {
     setBookings((current) =>
       [...current, data as Booking].sort((a, b) => a.start_at.localeCompare(b.start_at)),
     );
+    setWeekStart(startOfWeek(toZonedTime(start, TZ), { weekStartsOn: 1 }));
+    setMobileDayOffset((toZonedTime(start, TZ).getDay() + 6) % 7);
+    setView("calendar");
     setDraft(null);
     setToast("Der Raum ist gebucht.");
   }
 
   async function cancelBooking(booking: Booking) {
+    if (booking.member_id !== member?.id || new Date(booking.start_at) <= new Date()) {
+      setToast("Begonnene oder vergangene Buchungen können nicht storniert werden.");
+      return;
+    }
     if (!window.confirm("Diese Buchung wirklich stornieren?")) return;
     if (!supabase) {
       setBookings((current) => current.filter((item) => item.id !== booking.id));
       setMonthlyUsedHours((current) =>
         Math.max(current - (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000, 0),
       );
+      setSelectedBooking(null);
       setToast("Demo-Buchung storniert.");
       return;
     }
-    const { error } = await supabase.from("bookings").delete().eq("id", booking.id);
-    if (error) {
+    const { data, error } = await supabase.from("bookings").delete().eq("id", booking.id).select("id").maybeSingle();
+    if (error || !data) {
       setToast("Die Buchung konnte nicht storniert werden.");
       return;
     }
     setBookings((current) => current.filter((item) => item.id !== booking.id));
+    setSelectedBooking(null);
     setToast("Buchung storniert.");
   }
 
@@ -771,6 +825,7 @@ function BookingApp({ demo }: { demo: boolean }) {
       return;
     }
     setIssueDraft(null);
+    refreshPortal();
     setToast("Danke! Deine Meldung wurde aufgenommen.");
   }
 
@@ -887,8 +942,8 @@ function BookingApp({ demo }: { demo: boolean }) {
     const { data } = await supabase.auth.getSession();
     const response = await fetch(`/api/invoices/${invoice.id}/pdf`, {
       headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` },
-    });
-    if (!response.ok) {
+    }).catch(() => null);
+    if (!response?.ok) {
       setToast("Die Rechnung konnte nicht heruntergeladen werden.");
       return;
     }
@@ -919,21 +974,24 @@ function BookingApp({ demo }: { demo: boolean }) {
       return;
     }
     const { data } = await supabase.auth.getSession();
-    const viennaNow = toZonedTime(new Date(), TZ);
-    const billingMonth = format(
-      viennaNow.getDate() >= 25 ? addMonths(startOfMonth(viennaNow), 1) : startOfMonth(viennaNow),
-      "yyyy-MM-01",
-    );
+
     const response = await fetch("/api/admin/invoices/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${data.session?.access_token ?? ""}`,
       },
-      body: JSON.stringify({ billingMonth }),
-    });
+      body: JSON.stringify({}),
+    }).catch(() => null);
+    if (!response) {
+      setGeneratingInvoices(false);
+      refreshPortal();
+      setToast("Verbindung unterbrochen. Bitte erneut prüfen; vorhandene Rechnungen werden nicht doppelt erstellt.");
+      return;
+    }
     const result = await response.json().catch(() => ({}));
     setGeneratingInvoices(false);
+    refreshPortal();
     if (response.ok && supabase) {
       const { data: refreshedInvoices } = await supabase
         .from("invoices")
@@ -941,7 +999,7 @@ function BookingApp({ demo }: { demo: boolean }) {
         .order("issue_date", { ascending: false });
       if (refreshedInvoices) setInvoices(refreshedInvoices as unknown as Invoice[]);
     }
-    setToast(response.ok ? `${result.created} fertige Rechnungen erstellt, ${result.skipped} bereits vorhanden oder unvollständig.` : result.error ?? "Erstellung fehlgeschlagen.");
+    setToast(response.ok ? `${result.created} fertige Rechnungen erstellt, ${result.skipped} bereits vorhanden oder nicht fällig.` : result.error ?? "Erstellung fehlgeschlagen.");
   }
 
   async function finalizeInvoice(invoice: Invoice) {
@@ -1164,11 +1222,18 @@ function BookingApp({ demo }: { demo: boolean }) {
     setToast("Vertragsentwurf erstellt, heruntergeladen und in der Mieterakte abgelegt.");
   }
 
-  async function downloadMemberDocument(document: MemberDocument) {
+  async function downloadMemberDocument(document: Pick<MemberDocument, "title" | "storage_path">) {
     if (!supabase) { setToast("Der Dokumentdownload wird mit Supabase Storage aktiv."); return; }
-    const { data, error } = await supabase.storage.from("member-documents").createSignedUrl(document.storage_path, 60);
+    const { data, error } = await supabase.storage.from("member-documents").download(document.storage_path);
     if (error) { setToast("Dokument konnte nicht geöffnet werden."); return; }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    const url = URL.createObjectURL(data);
+    const anchor = window.document.createElement("a");
+    anchor.href = url;
+    anchor.download = document.title + ".pdf";
+    window.document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   if (!authReady) {
@@ -1276,7 +1341,7 @@ function BookingApp({ demo }: { demo: boolean }) {
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-[14px] bg-[#17231c] text-sm font-black tracking-tight text-[#c9ff70] shadow-sm">A21</div>
-            <div>
+            <div className="hidden min-[400px]:block">
               <p className="text-lg font-bold tracking-[-0.04em]">AUFELD<span className="text-emerald-700">21</span></p>
               <p className="hidden text-xs text-stone-500 sm:block">Meetingraum · Hallo {member.name}</p>
             </div>
@@ -1334,7 +1399,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             <button
               onClick={() => {
                 setView("calendar");
-                openBooking(new Date(), "09:00");
+                openNextBooking();
               }}
               className="flex h-11 items-center gap-2 rounded-xl bg-emerald-700 px-3 text-sm font-medium text-white hover:bg-emerald-800 sm:px-4"
               aria-label="Meetingraum buchen"
@@ -1352,6 +1417,11 @@ function BookingApp({ demo }: { demo: boolean }) {
             </button>
           </div>
         </div>
+        <nav className={`mx-auto grid max-w-[1500px] gap-1 px-2 pb-2 md:hidden ${member.role === "admin" ? "grid-cols-5" : "grid-cols-4"}`} aria-label="Hauptnavigation mobil">
+          {([["dashboard", "Start"], ["calendar", "Kalender"], ["tour", "Rundgang"], ["about", "Über uns"], ...(member.role === "admin" ? [["admin", "Admin"]] : [])] as Array<[typeof view, string]>).map(([target, label]) => (
+            <button key={target} onClick={() => setView(target)} className={`min-h-11 min-w-0 rounded-xl px-1 text-xs font-semibold ${view === target ? "bg-[#17231c] text-white" : "text-stone-600"}`}>{label}</button>
+          ))}
+        </nav>
       </header>
 
       {view === "dashboard" && (
@@ -1376,7 +1446,6 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <button
                   onClick={() => {
                     downloadInvoice(invoiceNotice);
-                    dismissInvoiceNotice(invoiceNotice.id);
                   }}
                   className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 sm:flex-none"
                 >
@@ -1428,7 +1497,7 @@ function BookingApp({ demo }: { demo: boolean }) {
           <div className="overflow-hidden rounded-[2rem] bg-[#17231c] px-6 py-8 text-white shadow-xl shadow-emerald-950/10 sm:px-10 sm:py-11">
             <div className="grid items-end gap-8 lg:grid-cols-[1.35fr_0.65fr]">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#c9ff70]">Donnerstag · AUFELD21</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#c9ff70]">{formatInTimeZone(new Date(), TZ, "EEEE", { locale: de })} · AUFELD21</p>
                 <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.045em] sm:text-6xl">
                   Schön, dass du da bist, {member.name}.
                 </h1>
@@ -1451,21 +1520,10 @@ function BookingApp({ demo }: { demo: boolean }) {
 
           <div className="mt-6 grid gap-5 md:grid-cols-3">
             <article className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm md:col-span-2">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-stone-500">Gerade im AUFELD21</p>
-                  <p className="mt-2 text-5xl font-semibold tracking-[-0.06em]">7 <span className="text-xl font-medium text-stone-400">Personen</span></p>
-                </div>
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-800"><Users size={22} /></div>
-              </div>
-              <div className="mt-7">
-                <div className="mb-2 flex justify-between text-xs font-medium text-stone-500"><span>Aktuelle Auslastung</span><span>7 von ca. 18 Plätzen</span></div>
-                <div className="h-3 overflow-hidden rounded-full bg-stone-100"><div className="h-full w-[39%] rounded-full bg-emerald-600" /></div>
-              </div>
-              <div className="mt-6 flex items-center gap-2 text-sm text-stone-500">
-                <DoorOpen size={17} className="text-emerald-700" />
-                Später live über den Türchip-Webhook
-              </div>
+              <p className="text-sm font-medium text-emerald-700">Dein Space, kurz erklärt</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Ankommen. Wohlfühlen. Loslegen.</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-stone-500">Wo ist was? Im Rundgang findest du Büros, Küche und Meetingraum auf einen Blick.</p>
+              <button onClick={() => setView("tour")} className="mt-5 flex min-h-11 items-center gap-2 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-800"><DoorOpen size={18} /> Rundgang öffnen</button>
             </article>
 
             <article className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
@@ -1521,7 +1579,8 @@ function BookingApp({ demo }: { demo: boolean }) {
           <article className="mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-start justify-between"><div><p className="text-sm font-medium text-emerald-700">Sicher hinterlegt</p><h2 className="mt-1 text-2xl font-semibold tracking-tight">{member.role === "member" || member.role === "admin" ? "Verträge & Dokumente" : "Hausordnung & Informationen"}</h2></div><ShieldCheck className="text-emerald-700" /></div>
             <div className="mt-5 divide-y divide-stone-100">
-              {documents.filter((item) => item.member_id === member.id && item.visible_to_member && (member.role === "member" || member.role === "admin" || item.document_type !== "mietvertrag")).length === 0 ? <p className="py-4 text-sm text-stone-500">Noch keine Informationen hinterlegt.</p> : documents.filter((item) => item.member_id === member.id && item.visible_to_member && (member.role === "member" || member.role === "admin" || item.document_type !== "mietvertrag")).map((document) => (
+              {spaceDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex min-h-12 w-full items-center gap-3 py-4 text-left hover:text-emerald-800"><FileText size={18} className="shrink-0" /><span className="font-medium">{document.title}</span><Download size={16} className="ml-auto shrink-0" /></button>)}
+              {memberDocuments.length === 0 && spaceDocuments.length === 0 ? <p className="py-4 text-sm text-stone-500">Noch keine Informationen hinterlegt.</p> : memberDocuments.map((document) => (
                 <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex w-full items-center gap-3 py-4 text-left hover:text-emerald-800"><FileText size={18} /><span className="font-medium">{document.title}</span><Download size={16} className="ml-auto" /></button>
               ))}
             </div>
@@ -1532,18 +1591,24 @@ function BookingApp({ demo }: { demo: boolean }) {
               <div>
                 <p className="text-sm font-medium text-emerald-700">Deine Dokumente</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight">Rechnungen</h2>
+                <label className="mt-3 flex items-center gap-3 text-sm text-stone-600">Jahr
+                  <select aria-label="Rechnungsjahr" value={invoiceYear} onChange={(event) => setInvoiceYear(event.target.value)} className="min-h-11 rounded-xl border border-stone-300 bg-white px-3">
+                    <option value="all">Alle Jahre ({memberInvoices.length})</option>
+                    {invoiceYears.map((year) => <option key={year}>{year}</option>)}
+                  </select>
+                </label>
               </div>
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-stone-100 text-stone-700"><FileText size={20} /></div>
             </div>
             <div className="mt-5 divide-y divide-stone-100">
-              {invoices.filter((invoice) => invoice.member_id === member.id && invoice.status !== "draft" && invoice.status !== "cancelled").length === 0 ? (
+              {memberInvoices.length === 0 ? (
                 <p className="py-4 text-sm text-stone-500">Noch keine Rechnungen verfügbar.</p>
               ) : (
-                invoices.filter((invoice) => invoice.member_id === member.id && invoice.status !== "draft" && invoice.status !== "cancelled").slice(0, 4).map((invoice) => (
+                memberInvoices.filter((invoice) => invoiceYear === "all" || invoice.billing_month.startsWith(invoiceYear)).map((invoice) => (
                   <div key={invoice.id} className="flex flex-col justify-between gap-3 py-4 first:pt-0 sm:flex-row sm:items-center">
                     <div>
                       <p className="font-semibold">{invoice.invoice_number}</p>
-                      <p className="mt-1 text-sm text-stone-500">{new Date(invoice.issue_date).toLocaleDateString("de-AT")} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto · {invoice.status === "paid" && invoice.paid_at ? `bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : "offen"}</p>
+                      <p className="mt-1 text-sm text-stone-500">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto · {invoice.status === "paid" && invoice.paid_at ? `bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : invoice.issue_date > todayVienna ? "Vorausrechnung" : invoiceIsOverdue(invoice, todayVienna) ? "überfällig" : "offen"} · fällig am {new Date(invoice.due_date).toLocaleDateString("de-AT")}</p>
                     </div>
                     <button onClick={() => downloadInvoice(invoice)} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 px-4 text-sm font-semibold hover:bg-stone-100">
                       <Download size={16} /> PDF
@@ -1933,6 +1998,13 @@ function BookingApp({ demo }: { demo: boolean }) {
               </div>
             </section>
 
+            <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4 text-sm" role="status">
+              {billingRunError ? <p className="text-red-700">Abrechnungsprotokoll nicht erreichbar. Bitte Konfiguration prüfen.</p> : billingRun ? <>
+                <p className="font-semibold">Letzter Abrechnungslauf: {formatInTimeZone(billingRun.started_at, TZ, "dd.MM.yyyy HH:mm")}</p>
+                <p className="mt-1 text-stone-500">{!billingRun.finished_at ? "Lauf noch nicht abgeschlossen. Bei längerer Wartezeit bitte erneut prüfen." : `${billingRun.created_count} Rechnung(en) erstellt · ${billingRun.errors.length ? "Prüfung erforderlich" : "Ohne gemeldete Fehler"}`}</p>
+                {billingRun.errors.map((error, index) => <p key={index} className="mt-2 text-red-700">{error.name ? error.name + ": " : ""}{error.message}</p>)}
+              </> : <p className="text-stone-500">Noch kein Lauf mit dem neuen Abrechnungsprotokoll. „Jetzt prüfen & erstellen“ kontrolliert fehlende Monatsrechnungen.</p>}
+            </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"><p className="text-sm text-stone-500">Offen</p><p className="mt-1 text-2xl font-semibold">{openInvoices.length}</p><p className="mt-1 text-xs text-stone-400">{openInvoiceGross.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} ausständig</p></article>
               <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"><p className="text-sm text-stone-500">Überfällig</p><p className={`mt-1 text-2xl font-semibold ${overdueInvoices.length ? "text-red-700" : "text-stone-900"}`}>{overdueInvoices.length}</p><p className="mt-1 text-xs text-stone-400">benötigen deine Kontrolle</p></article>
@@ -1947,16 +2019,21 @@ function BookingApp({ demo }: { demo: boolean }) {
                   {billingMembers.map((billingMemberItem) => <option key={billingMemberItem.id} value={billingMemberItem.id}>{billingMemberItem.billing_name || billingMemberItem.name}{billingMemberItem.office_name ? ` · ${billingMemberItem.office_name}` : ""}</option>)}
                 </select>
               </div>
+              <label className="mt-4 flex flex-wrap items-center gap-3 text-sm font-medium">Zeitraum
+                <select value={invoiceScope} onChange={(event) => setInvoiceScope(event.target.value)} className="min-h-11 rounded-xl border border-stone-300 bg-white px-3">
+                  <option value="month">Dieser Monat</option><option value="open">Alle offenen Rechnungen</option><option value="future">Vorausrechnungen</option><option value="all">Gesamtes Archiv</option>
+                </select>
+              </label>
               {draftInvoices.length > 0 && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{draftInvoices.length} älterer Entwurf ist noch vorhanden und kann einmalig finalisiert werden. Neue Rechnungen werden automatisch fertig erstellt.</p>}
 
               <div className="mt-5 space-y-4">
                 {invoiceGroups.length === 0 ? <p className="rounded-2xl bg-stone-50 p-6 text-sm text-stone-500">Für diese Auswahl sind noch keine Rechnungen vorhanden.</p> : invoiceGroups.map((group) => {
-                  const groupOpen = group.invoices.filter((invoice) => invoice.status === "final");
+                  const groupOpen = group.invoices.filter((invoice) => invoiceIsOpen(invoice, todayVienna));
                   return (
                     <article key={group.member.id} className="overflow-hidden rounded-2xl border border-stone-200">
                       <div className="flex flex-col justify-between gap-3 bg-stone-50 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
                         <div><p className="font-semibold">{group.member.billing_name || group.member.name}</p><p className="mt-1 text-xs text-stone-500">{group.member.office_name || group.member.email}</p></div>
-                        <div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${groupOpen.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{groupOpen.length ? `${groupOpen.length} offen` : "Alles bezahlt"}</span><span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-500">{group.invoices.length} Rechnungen</span></div>
+                        <div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${groupOpen.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{groupOpen.length ? `${groupOpen.length} offen` : group.invoices.every((invoice) => invoice.status === "paid") ? "Alles bezahlt" : "Keine aktuelle Forderung"}</span><span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-500">{group.invoices.length} Rechnungen</span></div>
                       </div>
                       <div className="divide-y divide-stone-100">
                         {group.invoices.map((invoice) => (
@@ -1966,7 +2043,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                               <div className="min-w-0"><p className="truncate font-semibold">{invoice.invoice_number || "Alter Entwurf"} · {new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })}</p><p className="mt-1 text-sm text-stone-500">{invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${invoice.status === "draft" ? "bg-amber-50 text-amber-800" : invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-700"}`}>{invoice.status === "draft" ? "Alter Entwurf" : invoice.status === "paid" ? "Bezahlt" : "Offen"}</span>
+                              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${invoice.status === "draft" ? "bg-amber-50 text-amber-800" : invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-700"}`}>{invoice.status === "draft" ? "Alter Entwurf" : invoice.status === "paid" ? "Bezahlt" : invoice.issue_date > todayVienna ? "Vorausrechnung" : invoiceIsOverdue(invoice, todayVienna) ? "Überfällig" : "Offen"}</span>
                               {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Einmalig finalisieren</button>}
                               {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-10 rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800">Als bezahlt markieren</button>}
                               {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Korrigieren</button>}
@@ -2088,22 +2165,25 @@ function BookingApp({ demo }: { demo: boolean }) {
                   const height = Math.max(((end.getTime() - start.getTime()) / 1_800_000) * MOBILE_SLOT_HEIGHT, 34);
                   const own = booking.member_id === member.id;
                   return (
-                    <article
+                    <button type="button"
                       key={booking.id}
-                      className={`absolute left-1.5 right-1.5 z-10 overflow-hidden rounded-lg border px-2.5 py-1.5 text-xs shadow-sm ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
+                      onClick={() => setSelectedBooking(booking)}
+                      aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
+                      className={`absolute left-1.5 right-1.5 z-10 overflow-hidden rounded-lg border px-2.5 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
                       style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 32) }}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0"><p className="truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</p><p className="whitespace-nowrap text-[11px] font-medium">{formatInTimeZone(booking.start_at, TZ, "HH:mm")}–{formatInTimeZone(booking.end_at, TZ, "HH:mm")}{booking.note ? ` · ${booking.note}` : ""}</p></div>
-                        {height >= 68 && <div className="flex shrink-0 gap-1"><a href={googleCalendarUrl(booking)} target="_blank" rel="noopener noreferrer" className="grid h-7 w-7 place-items-center rounded-md bg-white/80" aria-label="In Google Kalender öffnen"><CalendarPlus size={13} /></a>{own && <button onClick={() => cancelBooking(booking)} className="grid h-7 w-7 place-items-center rounded-md bg-white/80 text-red-700" aria-label="Buchung stornieren"><Trash2 size={13} /></button>}</div>}
-                      </div>
-                    </article>
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</span>
+                        <span className="shrink-0 text-[10px]">{formatInTimeZone(booking.start_at, TZ, "HH:mm")}–{formatInTimeZone(booking.end_at, TZ, "HH:mm")}</span>
+                      </span>
+                      {height >= 68 && booking.note && <span className="mt-1 block truncate opacity-80">{booking.note}</span>}
+                    </button>
                   );
                 })}
               </div>
             </div>
           </div>
-          <p className="mt-3 text-center text-xs text-stone-500">Freie Zeit antippen, um zu buchen</p>
+          <p className="mt-3 text-center text-xs text-stone-500">Freie Zeit buchen · Termin antippen für Details</p>
         </div>
 
         <div className="-mx-4 hidden overflow-x-auto px-4 pb-5 sm:-mx-6 sm:px-6 md:block">
@@ -2153,41 +2233,17 @@ function BookingApp({ demo }: { demo: boolean }) {
                     const height = Math.max(((end.getTime() - start.getTime()) / 1_800_000) * SLOT_HEIGHT, 44);
                     const own = booking.member_id === member.id;
                     return (
-                      <article
+                      <button type="button"
                         key={booking.id}
-                        className={`absolute left-1 right-1 z-10 overflow-hidden rounded-lg border p-2 text-xs shadow-sm ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
+                        onClick={() => setSelectedBooking(booking)}
+                        aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
+                        className={`absolute left-1 right-1 z-10 overflow-hidden rounded-lg border px-2 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
                         style={{ top: Math.max(top + 2, 2), height: Math.max(height - 4, 40) }}
                       >
-                        <p className="truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</p>
-                        <p className="mt-0.5 whitespace-nowrap font-medium">
-                          {formatInTimeZone(booking.start_at, TZ, "HH:mm")}–{formatInTimeZone(booking.end_at, TZ, "HH:mm")}
-                        </p>
-                        {booking.note && <p className="mt-1 truncate text-[11px] opacity-80">{booking.note}</p>}
-                        {height >= 100 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            <a
-                              href={googleCalendarUrl(booking)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="grid h-8 w-8 place-items-center rounded-md bg-white/80 hover:bg-white"
-                              aria-label="In Google Kalender öffnen"
-                              title="In Google Kalender"
-                            >
-                              <CalendarPlus size={14} />
-                            </a>
-                            {own && (
-                              <button
-                                onClick={() => cancelBooking(booking)}
-                                className="grid h-8 w-8 place-items-center rounded-md bg-white/80 text-red-700 hover:bg-white"
-                                aria-label="Buchung stornieren"
-                                title="Stornieren"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </article>
+                        <span className="block truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</span>
+                        <span className="block whitespace-nowrap text-[10px]">{formatInTimeZone(booking.start_at, TZ, "HH:mm")}–{formatInTimeZone(booking.end_at, TZ, "HH:mm")}</span>
+                        {height >= 100 && booking.note && <span className="mt-1 block truncate opacity-80">{booking.note}</span>}
+                      </button>
                     );
                   })}
                 </div>
@@ -2205,9 +2261,27 @@ function BookingApp({ demo }: { demo: boolean }) {
       </section>
       )}
 
+      {selectedBooking && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setSelectedBooking(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="booking-detail-title" className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="text-sm font-medium text-emerald-700">Meetingraum</p><h2 id="booking-detail-title" className="mt-1 text-2xl font-semibold">{memberName(selectedBooking)}</h2></div>
+              <button onClick={() => setSelectedBooking(null)} aria-label="Schließen" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100"><X size={20} /></button>
+            </div>
+            <p className="mt-5 font-medium">{formatInTimeZone(selectedBooking.start_at, TZ, "EEEE, dd. MMMM yyyy", { locale: de })}</p>
+            <p className="mt-1 text-stone-500">{formatInTimeZone(selectedBooking.start_at, TZ, "HH:mm")}–{formatInTimeZone(selectedBooking.end_at, TZ, "HH:mm")} Uhr</p>
+            {selectedBooking.note && <p className="mt-4 break-words rounded-xl bg-stone-50 p-4 text-sm">{selectedBooking.note}</p>}
+            <a href={googleCalendarUrl(selectedBooking)} target="_blank" rel="noopener noreferrer" className="mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white"><CalendarPlus size={18} /> In Google Kalender</a>
+            {selectedBooking.member_id === member.id && (new Date(selectedBooking.start_at) > new Date()
+              ? <button onClick={() => cancelBooking(selectedBooking)} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 font-semibold text-red-700"><Trash2 size={17} /> Buchung stornieren</button>
+              : <p className="mt-4 text-sm leading-6 text-stone-500">Begonnene und vergangene Buchungen bleiben als Nachweis erhalten. Für Korrekturen bitte Roland kontaktieren.</p>)}
+          </section>
+        </div>
+      )}
+
       {draft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setDraft(null)}>
-          <section className="w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="booking-title">
+          <section className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="booking-title">
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Meetingraum</p>
@@ -2220,7 +2294,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             <form onSubmit={saveBooking} className="space-y-5">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-stone-700">Datum</span>
-                <input type="date" required value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} className="h-13 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700 focus:ring-3 focus:ring-emerald-700/10" />
+                <input type="date" required min={todayVienna} value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} className="h-13 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700 focus:ring-3 focus:ring-emerald-700/10" />
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label>
@@ -2263,7 +2337,7 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {issueDraft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setIssueDraft(null)}>
-          <section className="w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="issue-title">
+          <section className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="issue-title">
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-800"><CircleAlert size={21} /></div>

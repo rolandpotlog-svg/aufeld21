@@ -42,6 +42,14 @@ export async function GET(
       (["member", "partner"].includes(requestingMember.role) && invoice.member_id === userData.user.id));
   if (!allowed) return Response.json({ error: "Kein Zugriff." }, { status: 403 });
 
+  if (requestingMember.role !== "admin" && ["draft", "cancelled"].includes(invoice.status)) {
+    return Response.json({ error: "Diese Rechnung ist nicht freigegeben." }, { status: 403 });
+  }
+  const { data: snapshot } = await admin.from("invoice_snapshots")
+    .select("recipient_name,recipient_address,recipient_uid,pdf_version").eq("invoice_id", id).maybeSingle();
+  if (invoice.status !== "draft" && (!snapshot || ![1, 2].includes(snapshot.pdf_version))) {
+    return Response.json({ error: "Das Rechnungsoriginal ist momentan nicht verfügbar. Bitte die Verwaltung kontaktieren." }, { status: 503 });
+  }
   const recipient = Array.isArray(invoice.members) ? invoice.members[0] : invoice.members;
   const items = [...(invoice.invoice_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   const bytes = await createInvoicePdf({
@@ -49,9 +57,9 @@ export async function GET(
     issueDate: new Date(invoice.issue_date).toLocaleDateString("de-AT"),
     dueDate: new Date(invoice.due_date).toLocaleDateString("de-AT"),
     servicePeriod: `${new Date(invoice.service_period_start).toLocaleDateString("de-AT")} bis ${new Date(invoice.service_period_end).toLocaleDateString("de-AT")}`,
-    recipientName: recipient?.billing_name ?? recipient?.name ?? "Mitglied",
-    recipientAddress: recipient?.billing_address ?? "Rechnungsadresse nicht hinterlegt",
-    recipientUid: recipient?.billing_uid,
+    recipientName: snapshot?.recipient_name ?? recipient?.billing_name ?? recipient?.name ?? "Mitglied",
+    recipientAddress: snapshot?.recipient_address ?? recipient?.billing_address ?? "Rechnungsadresse nicht hinterlegt",
+    recipientUid: snapshot ? snapshot.recipient_uid : recipient?.billing_uid,
     items: items.map((item) => ({
       description: item.description,
       quantity: Number(item.quantity),
@@ -59,7 +67,7 @@ export async function GET(
       unitPriceNet: Number(item.unit_price_net),
       vatRate: Number(item.vat_rate),
     })),
-  });
+  }, snapshot?.pdf_version ?? 2);
 
   const safeNumber = (invoice.invoice_number ?? `Entwurf-${invoice.id.slice(0, 8)}`).replace(/[^A-Za-z0-9-]/g, "-");
   return new Response(Buffer.from(bytes), {
