@@ -45,6 +45,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { SpacePlan } from "../space-plan";
 import { invoiceIsOpen, invoiceIsOverdue, isOriginalDocument } from "@/lib/invoices/billing";
 import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
+import { MemberDirectory } from "./member-directory";
+import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 
 const TZ = "Europe/Vienna";
 const SLOT_HEIGHT = 52;
@@ -52,25 +54,6 @@ const MOBILE_SLOT_HEIGHT = 36;
 const START_HOUR = 7;
 const END_HOUR = 20;
 
-type Member = {
-  id: string;
-  email: string;
-  name: string;
-  role: "member" | "partner" | "employee" | "admin";
-  plan: "pro";
-  active: boolean;
-};
-type ManagedMember = Member & {
-  usedHours: number;
-  bonusHours: number;
-  office_name?: string | null;
-  billing_name?: string | null;
-  billing_address?: string | null;
-  billing_uid?: string | null;
-  monthly_rent_net?: number | null;
-  contract_start?: string | null;
-  contract_end?: string | null;
-};
 type Booking = {
   id: string;
   member_id: string;
@@ -299,7 +282,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [generatingInvoices, setGeneratingInvoices] = useState(false);
   const [invoiceMemberFilter, setInvoiceMemberFilter] = useState("all");
   const [billingMember, setBillingMember] = useState<ManagedMember | null>(null);
-  const [selectedDossierId, setSelectedDossierId] = useState(demo ? "demo-anna" : "");
+  const [selectedDossierId, setSelectedDossierId] = useState("");
   const [deposits, setDeposits] = useState<Deposit[]>(demo ? [
     { member_id: "demo-member", agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: "Keine Kaution vereinbart" },
     { member_id: "demo-anna", agreed_amount: 780, received_amount: 780, returned_amount: 0, received_at: "2026-03-10", note: null },
@@ -416,9 +399,7 @@ function BookingApp({ demo }: { demo: boolean }) {
         && invoice.issue_date <= todayVienna,
       )
     : [];
-  const selectedDossier = managedMembers.find((item) => item.id === selectedDossierId)
-    ?? managedMembers.find((item) => item.role === "member" || item.role === "partner")
-    ?? managedMembers[0];
+  const selectedDossier = managedMembers.find((item) => item.id === selectedDossierId);
   const dossierInvoices = selectedDossier
     ? invoices.filter((invoice) => invoice.member_id === selectedDossier.id && invoice.status !== "cancelled")
     : [];
@@ -1339,14 +1320,14 @@ function BookingApp({ demo }: { demo: boolean }) {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5_0,_#fafaf9_28rem)] text-stone-900">
       <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-white/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-[14px] bg-[#17231c] text-sm font-black tracking-tight text-[#c9ff70] shadow-sm">A21</div>
-            <div className="hidden min-[400px]:block">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-[#17231c] text-sm font-black tracking-tight text-[#c9ff70] shadow-sm">A21</div>
+            <div className="hidden min-w-0 min-[440px]:block">
               <p className="text-lg font-bold tracking-[-0.04em]">AUFELD<span className="text-emerald-700">21</span></p>
-              <p className="hidden text-xs text-stone-500 sm:block">Meetingraum · Hallo {member.name}</p>
+              <p className="hidden max-w-40 truncate text-xs text-stone-500 sm:block">Meetingraum · Hallo {member.name}</p>
             </div>
           </div>
-          <nav className="hidden items-center rounded-xl bg-stone-100 p-1 md:flex" aria-label="Hauptnavigation">
+          <nav className="hidden shrink-0 items-center rounded-xl bg-stone-100 p-1 lg:flex" aria-label="Hauptnavigation">
             <button
               onClick={() => setView("dashboard")}
               className={`h-9 rounded-lg px-4 text-sm font-medium transition ${view === "dashboard" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
@@ -1417,7 +1398,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             </button>
           </div>
         </div>
-        <nav className={`mx-auto grid max-w-[1500px] gap-1 px-2 pb-2 md:hidden ${member.role === "admin" ? "grid-cols-5" : "grid-cols-4"}`} aria-label="Hauptnavigation mobil">
+        <nav className={`mx-auto grid max-w-[1500px] gap-1 px-2 pb-2 lg:hidden ${member.role === "admin" ? "grid-cols-5" : "grid-cols-4"}`} aria-label="Hauptnavigation mobil">
           {([["dashboard", "Start"], ["calendar", "Kalender"], ["tour", "Rundgang"], ["about", "Über uns"], ...(member.role === "admin" ? [["admin", "Admin"]] : [])] as Array<[typeof view, string]>).map(([target, label]) => (
             <button key={target} onClick={() => setView(target)} className={`min-h-11 min-w-0 rounded-xl px-1 text-xs font-semibold ${view === target ? "bg-[#17231c] text-white" : "text-stone-600"}`}>{label}</button>
           ))}
@@ -1832,16 +1813,27 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </section>
 
-          <div id="admin-people" className={`${adminTab !== "people" ? "hidden " : ""}mt-6 scroll-mt-6 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm`}>
+          <div id="admin-people" className={`${adminTab !== "people" ? "hidden " : ""}mt-6 scroll-mt-36 rounded-3xl border border-stone-200 bg-white shadow-sm lg:scroll-mt-24`}>
             <div className="border-b border-stone-100 px-5 py-5 sm:px-7">
-              <h2 className="text-xl font-semibold tracking-tight">Mieter, Büros & Kontingente</h2>
-              <p className="mt-1 text-sm text-stone-500">Eine Mieterakte pro Person: Rechnungen, Vertrag, Kaution und Meetingstunden an einem Ort.</p>
+              {selectedDossier && <button onClick={() => { setSelectedDossierId(""); requestAnimationFrame(() => { document.getElementById("people-title")?.focus({ preventScroll: true }); document.getElementById("admin-people")?.scrollIntoView({ behavior: "smooth", block: "start" }); }); }} className="mb-3 flex min-h-11 items-center gap-1.5 rounded-xl border border-stone-200 px-3 text-sm font-semibold text-stone-600 hover:bg-stone-50"><ChevronLeft size={17} /> Alle Personen</button>}
+              <h2 id="people-title" tabIndex={-1} className="text-xl font-semibold tracking-tight outline-none">{selectedDossier ? isTeamMember(selectedDossier) ? "Personenakte" : "Mieterakte" : "Mieter & Team"}</h2>
+              <p className="mt-1 text-sm leading-6 text-stone-500">{selectedDossier ? "Unterlagen, Zugang und Meetingstunden an einem Ort." : "Büros, Meetingstunden und Zugänge. Öffne eine Person für alle Details."}</p>
             </div>
+            <div className={selectedDossier ? "hidden" : ""}><MemberDirectory
+              members={managedMembers}
+              monthLabel={format(new Date(), "MMMM yyyy", { locale: de })}
+              passwordResetMemberId={passwordResetMemberId}
+              onOpen={(item) => { setSelectedDossierId(item.id); requestAnimationFrame(() => { document.getElementById("people-title")?.focus({ preventScroll: true }); document.getElementById("admin-people")?.scrollIntoView({ behavior: "smooth", block: "start" }); }); }}
+              onBilling={setBillingMember}
+              onGift={(item) => { setBonusAmount("2"); setBonusTarget(item); }}
+              onPasswordReset={sendMemberPasswordReset}
+              onToggleActive={toggleMemberActive}
+            /></div>
             {selectedDossier && (
-              <section className="border-b border-stone-200 bg-stone-50/70 p-5 sm:p-7" aria-label="Mieter- und Bürodossier">
+              <section className="rounded-b-3xl bg-stone-50/70 p-4 sm:p-7" aria-label="Personenakte">
                 <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
                   <label className="block w-full max-w-xl">
-                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Mieter oder Büro auswählen</span>
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Person oder Büro auswählen</span>
                     <select value={selectedDossier.id} onChange={(event) => setSelectedDossierId(event.target.value)} className="h-13 w-full rounded-2xl border border-stone-200 bg-white px-4 font-semibold outline-none focus:border-emerald-700">
                       {managedMembers.map((item) => <option key={item.id} value={item.id}>{item.office_name ? `${item.office_name} · ` : ""}{item.billing_name || item.name}</option>)}
                     </select>
@@ -1855,17 +1847,19 @@ function BookingApp({ demo }: { demo: boolean }) {
 
                 <div className="mt-5 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
                   <div className="flex flex-col justify-between gap-4 bg-[#17231c] p-6 text-white sm:flex-row sm:items-center sm:p-7">
-                    <div className="flex items-center gap-4">
-                      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-xl font-semibold text-[#c9ff70]">{selectedDossier.name.slice(0, 1)}</div>
-                      <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-[#c9ff70]">{selectedDossier.office_name || "Noch keinem Büro zugeordnet"}</p><h3 className="mt-1 text-2xl font-semibold">{selectedDossier.billing_name || selectedDossier.name}</h3><p className="mt-1 text-sm text-stone-300">{selectedDossier.name} · {selectedDossier.email}</p></div>
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-xl font-semibold text-[#c9ff70] sm:h-14 sm:w-14">{selectedDossier.name.slice(0, 1)}</div>
+                      <div className="min-w-0"><p className="text-xs font-bold uppercase tracking-[0.14em] text-[#c9ff70]">{selectedDossier.office_name || (isTeamMember(selectedDossier) ? "Team AUFELD21" : "Noch keinem Büro zugeordnet")}</p><h3 className="mt-1 break-words text-xl font-semibold sm:text-2xl">{selectedDossier.billing_name || selectedDossier.name}</h3><p className="mt-1 break-all text-sm leading-5 text-stone-300">{selectedDossier.name} · {selectedDossier.email}</p></div>
                     </div>
                     <span className={`w-fit rounded-full px-3 py-1.5 text-xs font-semibold ${selectedDossier.active ? "bg-emerald-400/15 text-emerald-200" : "bg-red-400/15 text-red-200"}`}>{selectedDossier.active ? "Zugang aktiv" : "Zugang deaktiviert"}</span>
                   </div>
 
-                  <div className="grid gap-px bg-stone-200 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className={`grid gap-px bg-stone-200 sm:grid-cols-2 ${isTeamMember(selectedDossier) ? "" : "xl:grid-cols-4"}`}>
+                    {isTeamMember(selectedDossier) ? <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Teamzugang</p><p className="mt-2 font-semibold">{selectedDossier.role === "admin" ? "Administration" : "Mitarbeiter"}</p><p className="mt-1 text-xs leading-5 text-stone-500">Keine Miete, keine Rechnungen und keine Kaution.</p></div> : <>
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Monatsmiete</p><p className="mt-2 text-xl font-semibold">{selectedDossier.monthly_rent_net == null ? "–" : (Number(selectedDossier.monthly_rent_net) * 1.2).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}</p><p className="mt-1 text-xs text-stone-400">brutto inkl. 20 % USt</p></div>
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Vertrag</p><p className="mt-2 font-semibold">{selectedDossier.contract_start ? `ab ${new Date(selectedDossier.contract_start).toLocaleDateString("de-AT")}` : "Nicht hinterlegt"}</p><p className="mt-1 text-xs text-stone-400">{selectedDossier.contract_end ? `bis ${new Date(selectedDossier.contract_end).toLocaleDateString("de-AT")}` : "unbefristet / offen"}</p></div>
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Kaution</p><p className="mt-2 font-semibold">{dossierDeposit ? Number(dossierDeposit.received_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" }) : "Nicht erfasst"}</p><p className="mt-1 text-xs text-stone-400">{dossierDeposit ? `von ${Number(dossierDeposit.agreed_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} vereinbart` : "noch zu prüfen"}</p></div>
+                    </>}
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Meetingraum</p><p className="mt-2 text-xl font-semibold">{selectedDossier.usedHours.toLocaleString("de-AT")} h</p><p className="mt-1 text-xs text-stone-400">12 h inklusive · +{selectedDossier.bonusHours.toLocaleString("de-AT")} h Bonus</p></div>
                   </div>
 
@@ -1884,16 +1878,16 @@ function BookingApp({ demo }: { demo: boolean }) {
                     </div>
                   </div>
 
-                  <div className="grid gap-6 p-5 sm:p-7 xl:grid-cols-2">
-                    <div>
+                  <div className={`grid gap-6 p-5 sm:p-7 ${isTeamMember(selectedDossier) ? "" : "xl:grid-cols-2"}`}>
+                    {(!isTeamMember(selectedDossier) || dossierInvoices.length > 0) && <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Finanzen</p><h4 className="mt-1 text-lg font-semibold">Alle Rechnungen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierInvoices.length}</span></div>
                       <div className="mt-4 divide-y divide-stone-100 rounded-2xl border border-stone-100">
                         {dossierInvoices.length === 0 ? <p className="p-4 text-sm text-stone-500">Noch keine Rechnungen vorhanden.</p> : dossierInvoices.map((invoice) => <div key={invoice.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{invoice.invoice_number || "Entwurf"}</p><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : invoice.status === "final" ? "bg-amber-50 text-amber-800" : "bg-stone-100 text-stone-600"}`}>{invoice.status === "paid" ? "Bezahlt" : invoice.status === "final" ? "Offen" : "Entwurf"}</span></div><p className="mt-1 text-xs text-stone-500">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div><div className="flex flex-wrap gap-2">{invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-9 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white">Als bezahlt</button>}{invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-9 rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-700">Wieder offen</button>}<button onClick={() => downloadInvoice(invoice)} className="flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-xs font-semibold"><Download size={14} /> PDF</button></div></div>)}
                       </div>
-                    </div>
+                    </div>}
 
                     <div>
-                      <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Ablage</p><h4 className="mt-1 text-lg font-semibold">Vertrag & Unterlagen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierDocuments.length}</span></div>
+                      <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Ablage</p><h4 className="mt-1 text-lg font-semibold">{isTeamMember(selectedDossier) ? "Unterlagen" : "Vertrag & Unterlagen"}</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierDocuments.length}</span></div>
                       <div className="mt-4 rounded-2xl border border-stone-100 p-4">
                         {dossierDocuments.length === 0 ? <p className="text-sm text-stone-500">Noch kein hochgeladenes Original hinterlegt.</p> : dossierDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex w-full items-center gap-2 border-b border-stone-100 py-3 text-left text-sm font-medium last:border-0"><FileText size={16} className="text-emerald-700" />{document.title}<Download size={14} className="ml-auto text-stone-400" /></button>)}
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -1907,61 +1901,6 @@ function BookingApp({ demo }: { demo: boolean }) {
                 </div>
               </section>
             )}
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-left">
-                <thead className="bg-stone-50 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                  <tr>
-                    <th className="px-7 py-4">Mitglied</th>
-                    <th className="px-5 py-4">Büro</th>
-                    <th className="px-5 py-4">Tarif</th>
-                    <th className="px-5 py-4">Verwendet</th>
-                    <th className="px-5 py-4">Bonus</th>
-                    <th className="px-5 py-4">Zusatzkosten</th>
-                    <th className="px-7 py-4 text-right">Aktion</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {managedMembers.map((item) => {
-                    const extra = Math.max(item.usedHours - 12 - item.bonusHours, 0);
-                    return (
-                      <tr key={item.id} className={`${item.active ? "" : "opacity-55 "}hover:bg-stone-50/70`}>
-                        <td className="px-7 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="grid h-10 w-10 place-items-center rounded-full bg-emerald-100 font-semibold text-emerald-800">{item.name.slice(0, 1)}</div>
-                            <div>
-                              <p className="font-semibold">{item.name} {item.role === "admin" && <span className="ml-1 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] uppercase text-stone-500">Admin</span>}{item.role === "employee" && <span className="ml-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] uppercase text-sky-700">Mitarbeiter</span>}{item.role === "partner" && <span className="ml-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] uppercase text-violet-700">Nutzungspartner</span>}</p>
-                              <p className="mt-0.5 text-sm text-stone-500">{item.email}{!item.active ? " · deaktiviert" : ""}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-5 text-sm font-medium text-stone-600">{item.office_name || "–"}</td>
-                        <td className="px-5 py-5"><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">Pro · 12 h</span></td>
-                        <td className="px-5 py-5 font-medium">{item.usedHours.toLocaleString("de-AT")} h</td>
-                        <td className="px-5 py-5 font-medium text-emerald-700">+{item.bonusHours.toLocaleString("de-AT")} h</td>
-                        <td className="px-5 py-5 font-semibold">{item.role === "employee" ? "–" : (extra * 12).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}</td>
-                        <td className="px-7 py-5 text-right">
-                          <button onClick={() => { setSelectedDossierId(item.id); document.getElementById("admin-people")?.scrollIntoView({ behavior: "smooth" }); }} className="mr-2 h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Mieterakte</button>
-                          {(item.role === "member" || item.role === "partner" || item.role === "admin") && <button onClick={() => setBillingMember(item)} className="mr-2 h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">
-                            Abrechnung
-                          </button>}
-                          <button disabled={passwordResetMemberId === item.id} onClick={() => sendMemberPasswordReset(item)} className="mr-2 h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100 disabled:opacity-50">{passwordResetMemberId === item.id ? "Wird gesendet …" : "Passwort-Link"}</button>
-                          <button
-                            onClick={() => {
-                              setBonusAmount("2");
-                              setBonusTarget(item);
-                            }}
-                            className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100"
-                          >
-                            Stunden schenken
-                          </button>
-                          {item.role !== "admin" && <button onClick={() => toggleMemberActive(item)} className={`ml-2 h-10 rounded-xl border px-3 text-sm font-semibold ${item.active ? "border-red-100 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"}`}>{item.active ? "Deaktivieren" : "Aktivieren"}</button>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
           </div>
 
           <div id="admin-files" className={`${adminTab !== "documents" ? "hidden " : ""}mt-6 scroll-mt-6 grid gap-6 xl:grid-cols-2`}>
