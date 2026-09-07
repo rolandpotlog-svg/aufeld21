@@ -90,6 +90,21 @@ Vercel hostet die Web-App. Resend übernimmt die automatischen Auth-Mails; norma
 
 ## Rechnungen und Verwaltung
 
+### Automatische Portal-Mails
+
+- Neue endgültige Rechnungen benachrichtigen den aktiven Rechnungsempfänger; neue Meldungen benachrichtigen ausschließlich die aktive Administratorin `julia.potlog@gmail.com`. Mitarbeiter erhalten keine Rechnungsmails.
+- Keine Nachsendung vorhandener Rechnungen/Meldungen. Bezahlt/offen-Umschalten löst keine weitere Mail aus; Rechnungsdatensätze und Nummern bleiben unverändert. Vordatierte Rechnungen werden erst ab ihrem Ausstellungsdatum angekündigt.
+- Supabase-Trigger schreiben transaktional in `email_notifications`. Der benannte Supabase-Cron `aufeld21-email-notifications` prüft minütlich und übergibt höchstens eine Mail je Lauf über `pg_net` an Resend. Meldungen werden priorisiert; Abrechnungsstapel benötigen entsprechend mehrere Minuten. Dafür muss kein Browser offen sein und kein zusätzlicher Vercel-Cron laufen.
+- Einrichtung: Migrationen anwenden, einen separaten Resend-Schlüssel mit **Sending access nur für aufeld21.at** im Supabase-Dashboard unter Integrations → Vault als `aufeld21_notification_resend_key` speichern, danach serverseitig `update public.email_notification_settings set enabled=true where id;`. Zum Pausieren `enabled=false` setzen; wartende Ereignisse bleiben erhalten. Kein Schlüssel in SQL-Editor-Verlauf, Git, Logs oder Browser-Code!
+- Absender: `AUFELD21 <noreply@aufeld21.at>`. Portal-Link: `https://www.aufeld21.at/portal`. Keine Anhänge, vertraulichen Meldungstexte oder Login-Tokens in Benachrichtigungen. Die Auth-SMTP-Konfiguration bleibt separat.
+- Unter **Admin → E-Mails** stehen Versandstatus, letzte Prüfung und Fehler. „An Maildienst übergeben“ ist keine Zustellbestätigung; diese wird über den verlinkten Resend-Log geprüft. Auch eine Zustellbestätigung bedeutet nicht, dass der Empfänger die Mail gelesen hat. `failed`/`review` müssen manuell anhand der Resend-Logs geprüft werden; kein ungeprüfter Neuversand.
+- Stabile Idempotenz-ID und eingefrorener Mailinhalt schützen Wiederholungen. Temporäre Fehler werden erneut versucht. Bei unklarer Zustellung nach 23 Stunden stoppt der Versand zur Prüfung, da Resend Idempotenz-IDs nur 24 Stunden vorhält. Eindeutig abgewiesene Limit-Versuche dürfen später erneut versucht werden.
+- Intern maximal 70 neue Benachrichtigungen/UTC-Tag und 2.500/UTC-Monat. Das ist ein Puffer, keine separate Resend-Quote: Auth-Mails und andere Versandwege teilen weiterhin das Free-Kontingent. Bei Limits bleiben Nachrichten in der Warteschlange; es wird kein kostenpflichtiges Paket aktiviert.
+- Sicherheitsgrenze: Outbox/Status sind per RLS nur für aktive Admins lesbar und für Browser nicht beschreibbar. Vault und `notification_private` bleiben privat. Auf gehostetem Supabase sind `net`-Objektprivilegien systemverwaltet; REVOKE kann wirkungslos sein. **`net`/`vault` niemals als Data-API-Schema freigeben und keine öffentliche RPC zum Lesen ihrer Inhalte hinzufügen.** Bei Einrichtung und Änderungen tatsächlichen API-Zugriff testen; nicht nur erfolgreiche Migrationen voraussetzen.
+- Tests: `lib/notifications/database.test.ts` deckt neue Ereignisse, Rechte, Rollback, identische Retries, Limits, verlorene Antworten, Mitarbeiter, Deaktivierung und unveränderte Rechnungen ohne Produktionszugriff ab.
+
+### Abrechnungsverhalten
+
 - Am 25. werden Rechnungen für den Folgemonat erstellt; Fälligkeit ist der 10. des Leistungsmonats.
 - Rechnungsnummern werden atomar in Postgres vergeben (`A21-YYYY-NNNN`). Eine Unique-Constraint verhindert Dubletten zusätzlich.
 - Grundmieten werden bei Vertragsbeginn oder -ende im laufenden Monat nach Kalendertagen aliquotiert.

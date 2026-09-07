@@ -47,6 +47,7 @@ import { SpacePlan } from "../space-plan";
 import { invoiceIsOpen, invoiceIsOverdue, isOriginalDocument } from "@/lib/invoices/billing";
 import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
 import { MemberDirectory } from "./member-directory";
+import { EmailNotifications } from "./email-notifications";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 
 const TZ = "Europe/Vienna";
@@ -199,7 +200,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
   const [view, setView] = useState<"dashboard" | "calendar" | "tour" | "about" | "admin">("dashboard");
-  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues">("overview");
+  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues" | "emails">("overview");
   const [issueDraft, setIssueDraft] = useState<IssueDraft | null>(null);
   const [sendingIssue, setSendingIssue] = useState(false);
   const [issueError, setIssueError] = useState("");
@@ -1760,11 +1761,13 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </div>
 
-          <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-5" aria-label="Adminbereiche">
-            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen']] as const).map(([tabValue, label]) => (
+          <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-3 lg:grid-cols-6" aria-label="Adminbereiche">
+            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen'], ['emails', 'E-Mails']] as const).map(([tabValue, label]) => (
               <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}{tabValue === "issues" && openIssueReports.length > 0 && <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{openIssueReports.length > 9 ? "9+" : openIssueReports.length}</span>}</button>
             ))}
           </nav>
+
+          {adminTab === "emails" && <EmailNotifications supabase={supabase} revision={revision} />}
 
           <div className={`${adminTab !== "overview" ? "hidden " : ""}mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4`}>
             <article className="rounded-3xl bg-[#17231c] p-6 text-white shadow-sm">
