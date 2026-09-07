@@ -49,7 +49,6 @@ import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
 import { MemberDirectory } from "./member-directory";
 import { EmailNotifications } from "./email-notifications";
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
-import { pushEmails } from "@/lib/push/validation";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 
 const TZ = "Europe/Vienna";
@@ -1770,7 +1769,7 @@ function BookingApp({ demo }: { demo: boolean }) {
           </nav>
 
           {adminTab === "emails" && <>
-            {supabase && pushEmails.has(member.email.toLowerCase()) && <PushSettings supabase={supabase} />}
+            {supabase && <PushSettings supabase={supabase} />}
             <EmailNotifications supabase={supabase} revision={revision} />
           </>}
 

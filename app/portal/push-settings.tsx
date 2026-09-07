@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+class PushApiError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+
 async function pushApi(db: SupabaseClient, body?: object) {
   const { data: { session } } = await db.auth.getSession();
   if (!session) throw new Error('Bitte melde dich erneut an.');
@@ -12,7 +16,7 @@ async function pushApi(db: SupabaseClient, body?: object) {
     ...(body ? { body: JSON.stringify(body) } : {}), cache: 'no-store',
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Push ist gerade nicht erreichbar.');
+  if (!response.ok) throw new PushApiError(data.error || 'Push ist gerade nicht erreichbar.', response.status);
   return data;
 }
 
@@ -35,6 +39,7 @@ export function PushSettings({ supabase }: { supabase: SupabaseClient }) {
   const [publicKey, setPublicKey] = useState('');
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [allowed, setAllowed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -44,9 +49,14 @@ export function PushSettings({ supabase }: { supabase: SupabaseClient }) {
     Promise.all([pushApi(supabase), navigator.serviceWorker?.getRegistration('/')]).then(async ([status, registration]) => {
       const sub = await registration?.pushManager?.getSubscription();
       if (!active) return;
+      setAllowed(true);
       setPublicKey(status.publicKey);
       setConnected(Boolean(sub && status.devices.some((device: { endpoint: string }) => device.endpoint === sub.endpoint)));
-    }).catch(error => { if (active) setError(error.message); }).finally(() => { if (active) setLoading(false); });
+    }).catch(error => {
+      if (!active) return;
+      if (error instanceof PushApiError && error.status === 403) setAllowed(false);
+      else setError(error.message);
+    }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [supabase]);
 
@@ -78,6 +88,9 @@ export function PushSettings({ supabase }: { supabase: SupabaseClient }) {
     } catch (error) { setError(error instanceof Error ? error.message : 'Aktion fehlgeschlagen.'); }
     finally { setBusy(false); }
   }
+  // Eligibility comes from the server; private recipient addresses are never
+  // bundled into the public portal JavaScript.
+  if (allowed === false || (allowed === null && loading)) return null;
   return <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 sm:p-7">
     <h2 className="text-xl font-semibold text-emerald-950">Handy-Push für Meldungen</h2>
     <p className="mt-2 text-sm leading-6 text-emerald-950">Nur für Julia und Roland. Auf dem Sperrbildschirm steht lediglich „Neue Meldung im Portal“ – der Inhalt bleibt im geschützten Adminbereich. E-Mails bleiben zusätzlich aktiv.</p>
