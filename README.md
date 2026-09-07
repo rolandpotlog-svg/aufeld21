@@ -2,8 +2,8 @@
 
 Öffentliche Website und geschütztes Mitgliederportal für den Co-Working-Space AUFELD21 in Traun. Gebaut mit Next.js (App Router, TypeScript), Supabase, Tailwind CSS und Vercel.
 
-- Öffentliche Website: `/`
-- Mitgliederportal: `/portal`
+- Öffentliche Website: `https://www.aufeld21.at/`
+- Mitgliederportal: `https://www.aufeld21.at/portal`
 - Admin-Controlling: im Portal für Mitglieder mit der Rolle `admin`
 - Zeitzone: Speicherung in UTC, Darstellung in `Europe/Vienna`
 
@@ -14,8 +14,9 @@
 3. Unter **Authentication → Providers → Email** E-Mail/Passwort aktivieren.
 4. Öffentliche Registrierung deaktivieren. Die App setzt zusätzlich `shouldCreateUser: false`; Zugang erhalten nur Personen, die ein Admin eingeladen hat und die in `public.members` vorhanden sind.
 5. Unter **Authentication → URL Configuration** eintragen:
-   - Site URL Produktion: `https://aufeld21.vercel.app` (später die eigene Domain)
-   - Redirect URLs: `http://localhost:3000/**`, `https://aufeld21.vercel.app/**` und später `https://DEINE-DOMAIN/**`
+   - Site URL Produktion: `https://www.aufeld21.at`
+   - Produktions-Redirects: `https://www.aufeld21.at/portal` und `https://www.aufeld21.at/portal?setup=password` (Magic Link, Einladung und Passwort-Reset).
+   - Bestehende Freigabe `https://aufeld21.vercel.app/**` beibehalten, damit bereits versendete Links weiterhin funktionieren. Lokale Entwicklungsadressen separat freigeben (derzeit `http://localhost:3210/**`). Keine pauschale Freigabe fremder Domains.
 6. Für echte Einladungs- und Passwort-Reset-Mails unter **Authentication → SMTP Settings** ein eigenes SMTP-Postfach hinterlegen, beispielsweise `portal@aufeld21.at` von World4You. Der Supabase-Testversand ist kein verlässlicher Produktiv-Maildienst.
 
 ### Ersten Admin anlegen
@@ -38,7 +39,7 @@ cp .env.example .env.local
 Werte aus **Supabase → Project Settings → API** einsetzen:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SITE_URL` – öffentliche HTTPS-Domain für Canonical-Links und Sitemap
+- `NEXT_PUBLIC_SITE_URL=https://www.aufeld21.at` – öffentliche HTTPS-Domain für Canonical-Links und Sitemap; Änderungen erfordern ein neues Deployment
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SECRET_KEY` – ausschließlich serverseitig
 - `CRON_SECRET` – langes, zufälliges Geheimnis für die Rechnungsautomatik
@@ -67,8 +68,8 @@ npm audit
 
 1. GitHub-Repository in Vercel importieren.
 2. Umgebungsvariablen setzen und deployen.
-3. Unter **Settings → Domains** die gekaufte Domain hinzufügen und die von Vercel angezeigten DNS-Einträge beim Domain-Anbieter setzen.
-4. Danach Supabase Site URL und Redirect URLs auf die finale Domain ergänzen.
+3. Unter **Settings → Domains** ist `www.aufeld21.at` mit Production verbunden; `aufeld21.at` leitet mit 308 darauf weiter. Die von Vercel angezeigten DNS-Einträge beim Domain-Anbieter setzen. Alte, widersprüchliche Web-Einträge ersetzen; Mail-, MX- und TXT-Einträge unverändert lassen.
+4. HTTPS und die Weiterleitung prüfen, danach Supabase Site URL und die exakten Portal-Redirects wie oben ergänzen. Die bisherige `aufeld21.vercel.app`-Adresse bleibt mit Production verbunden. Browser-Anmeldungen sind domaingebunden: Auf der neuen Domain müssen Mitglieder sich einmal neu anmelden; vorhandene Konten und Passwörter bleiben gültig.
 5. Der Cronjob in `vercel.json` prüft täglich um 05:00 UTC fehlende Rechnungen für den aktuellen Monat; ab dem 25. zusätzlich für den Folgemonat (Europe/Vienna). So werden kurzzeitig fehlgeschlagene Läufe nachgeholt. `CRON_SECRET` muss dafür in Vercel gesetzt sein. Im Vercel-Dashboard muss der Produktions-Cron aktiviert und ein erfolgreicher Lauf kontrolliert werden. Der Admin kann dieselbe Prüfung im Controlling manuell starten. Nicht abgeschlossene und fehlgeschlagene Läufe bleiben im Abrechnungsprotokoll sichtbar.
 
 E-Mail bleibt sinnvollerweise beim Domain-/Mailanbieter; Vercel hostet die Web-App, nicht die normalen Postfächer.
