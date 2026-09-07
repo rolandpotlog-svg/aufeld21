@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { initializePortalAuth } from "@/lib/supabase/portal-auth";
 import { SpacePlan } from "../space-plan";
 import { invoiceIsOpen, invoiceIsOverdue, isOriginalDocument } from "@/lib/invoices/billing";
 import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
@@ -175,6 +176,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [billingRunError, setBillingRunError] = useState(false);
   const [spaceDocuments, setSpaceDocuments] = useState<Array<{ id: string; title: string; storage_path: string }>>([]);
   const [authReady, setAuthReady] = useState(demo);
+  const [sessionReady, setSessionReady] = useState(demo);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -303,12 +305,20 @@ function BookingApp({ demo }: { demo: boolean }) {
     if (!supabase) return;
     const db = supabase;
     let active = true;
-    db.auth.getSession().then(({ data }) => {
-      if (active) setSession(data.session);
-    });
     const { data } = db.auth.onAuthStateChange((event, nextSession) => {
+      if (!active) return;
       setSession(nextSession);
       if (event === "PASSWORD_RECOVERY") setPasswordSetup(true);
+    });
+    initializePortalAuth(db.auth, window.location.href, (url) => {
+      window.history.replaceState(window.history.state, "", url);
+    }).then((result) => {
+      if (!active) return;
+      setSession(result.session);
+      setPasswordSetup(result.passwordSetup);
+      setShowPasswordReset(Boolean(result.error));
+      setAuthMessage(result.error ?? "");
+      setSessionReady(true);
     });
     return () => {
       active = false;
@@ -317,7 +327,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   }, [supabase]);
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !sessionReady) return;
     const db = supabase;
     let active = true;
     async function loadMember() {
@@ -345,7 +355,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     return () => {
       active = false;
     };
-  }, [session, supabase]);
+  }, [session, sessionReady, supabase]);
 
   useDialogFocus(Boolean(draft || selectedBooking || issueDraft || paymentDraft || contractDraft || inviteDraft || bonusTarget || billingMember || depositMember || accessMember));
 
@@ -617,7 +627,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     setAuthMessage(
       error
         ? "Der Reset-Link konnte gerade nicht gesendet werden. Bitte warte kurz und versuche es erneut."
-        : "Reset-Link angefordert. Bitte prüfe jetzt deinen Posteingang und auch den Spam-Ordner.",
+        : "E-Mail angefordert. Öffne jetzt die neueste Mail von AUFELD21 und klicke darin auf „Reset password“. Erst dort legst du dein neues Passwort fest. Bitte prüfe auch den Spam-Ordner.",
     );
   }
 
@@ -1217,7 +1227,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
-  if (!authReady) {
+  if (!authReady || !sessionReady) {
     return (
       <main className="grid min-h-screen place-items-center bg-stone-50">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-emerald-700" aria-label="Laden" />

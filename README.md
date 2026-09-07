@@ -17,7 +17,21 @@
    - Site URL Produktion: `https://www.aufeld21.at`
    - Produktions-Redirects: `https://www.aufeld21.at/portal` und `https://www.aufeld21.at/portal?setup=password` (Magic Link, Einladung und Passwort-Reset).
    - Bestehende Freigabe `https://aufeld21.vercel.app/**` beibehalten, damit bereits versendete Links weiterhin funktionieren. Lokale Entwicklungsadressen separat freigeben (derzeit `http://localhost:3210/**`). Keine pauschale Freigabe fremder Domains.
-6. Für echte Einladungs- und Passwort-Reset-Mails unter **Authentication → SMTP Settings** ein eigenes SMTP-Postfach hinterlegen, beispielsweise `portal@aufeld21.at` von World4You. Der Supabase-Testversand ist kein verlässlicher Produktiv-Maildienst.
+6. Für echte Einladungs- und Passwort-Reset-Mails unter **Authentication → SMTP Settings** einen Versanddienst hinterlegen. AUFELD21 verwendet Resend; ein kostenpflichtiges Postfach bei World4You ist dafür nicht nötig. World4You verwaltet nur die DNS-Freigabe der Domain. Der Supabase-Testversand ist kein Produktiv-Maildienst und erreicht nur vorab zugelassene Team-Adressen.
+
+### Auth-Mails über Resend
+
+- Domain `aufeld21.at` in Resend verifizieren; die dort angezeigten DKIM-/Versand-DNS-Einträge bei World4You ergänzen. Bestehende Web- und Mail-Einträge nicht überschreiben.
+- SMTP: Host `smtp.resend.com`, Port `465`, Benutzer `resend`, Absender `AUFELD21 <noreply@aufeld21.at>`.
+- Als SMTP-Passwort einen Resend-Schlüssel mit **Sending access**, beschränkt auf **aufeld21.at**, direkt in Supabase speichern. Keine Schlüssel in Git, Browser-Code oder `NEXT_PUBLIC_`-Variablen ablegen.
+- Klick-/Öffnungs-Tracking für Auth-Mails nicht aktivieren. Das vorhandene 60-Sekunden-Intervall je Nutzer beibehalten; zunächst 30 Auth-Mails pro Stunde.
+- Free-Tarif am 07.09.2026: 3.000 Transaktionsmails pro Monat, maximal 100 pro Tag. Kostenpflichtige Zusatzkontingente bleiben deaktiviert; aktuelle Limits im Resend-Konto prüfen.
+- Nach der Einrichtung zuerst eine Passwort-Mail an den Admin testen und den Zustellstatus in Resend prüfen. Empfänger bestätigt zusätzlich den Posteingang und testet den Link selbst, ohne das Passwort weiterzugeben. Erst danach Einladungen bzw. neue Passwort-Links an Mieter senden.
+- `noreply@aufeld21.at` ist nur ein Versandabsender, kein empfangendes Postfach.
+
+### Passwort- und Einladungslinks
+
+Das Portal verarbeitet Mail-Callbacks zentral in `lib/supabase/portal-auth.ts`: Browser-Anforderungen bleiben PKCE-geschützt; vom Admin ausgelöste Einladungs-/Reset-Links mit Tokenpaar werden mit `auth.setSession` bei Supabase validiert. Deshalb ist die automatische URL-Erkennung des SSR-Browserclients deaktiviert, nicht jedoch PKCE. Callback-Codes werden nur einmal eingelöst, sensible URL-Parameter sofort entfernt und Fehler sichtbar angezeigt. Das Passwortformular erscheint erst nach erfolgreicher Sitzungsermittlung; die bestehende Prüfung aktiver Mitglieder und sämtliche RLS-/Admin-Prüfungen bleiben erhalten.
 
 ### Ersten Admin anlegen
 
@@ -72,7 +86,7 @@ npm audit
 4. HTTPS und die Weiterleitung prüfen, danach Supabase Site URL und die exakten Portal-Redirects wie oben ergänzen. Die bisherige `aufeld21.vercel.app`-Adresse bleibt mit Production verbunden. Browser-Anmeldungen sind domaingebunden: Auf der neuen Domain müssen Mitglieder sich einmal neu anmelden; vorhandene Konten und Passwörter bleiben gültig.
 5. Der Cronjob in `vercel.json` prüft täglich um 05:00 UTC fehlende Rechnungen für den aktuellen Monat; ab dem 25. zusätzlich für den Folgemonat (Europe/Vienna). So werden kurzzeitig fehlgeschlagene Läufe nachgeholt. `CRON_SECRET` muss dafür in Vercel gesetzt sein. Im Vercel-Dashboard muss der Produktions-Cron aktiviert und ein erfolgreicher Lauf kontrolliert werden. Der Admin kann dieselbe Prüfung im Controlling manuell starten. Nicht abgeschlossene und fehlgeschlagene Läufe bleiben im Abrechnungsprotokoll sichtbar.
 
-E-Mail bleibt sinnvollerweise beim Domain-/Mailanbieter; Vercel hostet die Web-App, nicht die normalen Postfächer.
+Vercel hostet die Web-App. Resend übernimmt die automatischen Auth-Mails; normale empfangende Postfächer wären ein separat zu wählender Dienst und sind für diesen Versand nicht erforderlich.
 
 ## Rechnungen und Verwaltung
 
