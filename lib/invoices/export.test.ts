@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { zipSync, strToU8, strFromU8, unzipSync } from 'fflate';
+import { PDFDocument } from 'pdf-lib';
+import { createInvoicePdfV2 } from './pdf-v2.ts';
+import { csvCell, exportOriginal, exportTotals, exportFilename, paymentCsv, type ExportInvoice } from './export.ts';
+const sample: ExportInvoice = { id: '00000000-0000-4000-8000-000000000001', invoice_number: 'A21-TEST-0001', status: 'final', issue_date: '2026-07-25', due_date: '2026-08-10', service_period_start: '2026-08-01', service_period_end: '2026-08-31', paid_at: null, invoice_items: [{ description: 'Büro', quantity: 1, unit: 'Monat', unit_price_net: 400, vat_rate: 20, sort_order: 0 }], invoice_snapshots: { recipient_name: 'Frozen Recipient', recipient_address: 'Teststrasse 1', recipient_uid: null, pdf_version: 2 } };
+test('accounting export preserves snapshots, amounts, statuses and safe CSV cells', () => {
+  const original = exportOriginal(sample);
+  assert.equal(original.data.recipientName, 'Frozen Recipient');
+  assert.deepEqual(exportTotals(original.data, 2), { net: 400, vat: 80, gross: 480 });
+  const fractional = { ...original.data, items: [20, 10].map(vatRate => ({ description: 'Test', quantity: 1, unit: 'x', unitPriceNet: .025, vatRate })) };
+  assert.deepEqual(exportTotals(fractional, 2), { net: .06, vat: .01, gross: .06999999999999999 });
+  assert.equal(exportTotals(fractional, 1).net, .05);
+  assert.match(paymentCsv([sample, { ...sample, status: 'cancelled' }], 'now'), /480,00/);
+  assert.match(paymentCsv([sample, { ...sample, status: 'cancelled' }], 'now'), /Storniert/);
+  assert.throws(() => exportOriginal({ ...sample, invoice_snapshots: null }), /Original|original/);
+  assert.throws(() => exportOriginal({ ...sample, status: 'draft' }));
+  assert.throws(() => exportOriginal({ ...sample, invoice_items: [] }));
+  for (const value of ['=SUM(1)', ' +FORMULA', '\tbad', '@formula', '-formula']) assert.ok(csvCell(value).startsWith('"\''));
+  assert.equal(csvCell('Name "Test";'), '"Name ""Test"";"');
+  assert.ok(!exportFilename({ ...sample, invoice_number: '../../evil' }).includes('..'));
+});
+test('ZIP contains readable original PDF and UTF-8 payment CSV', async () => {
+  const { data } = exportOriginal(sample);
+  const bytes = await createInvoicePdfV2(data);
+  const zip = zipSync({ [exportFilename(sample)]: bytes, 'Zahlungsuebersicht.csv': strToU8(paymentCsv([sample], 'now')) }, { level: 0 });
+  const files = unzipSync(zip);
+  const pdf = await PDFDocument.load(files[exportFilename(sample)]);
+  assert.equal(pdf.getPageCount(), 1);
+  assert.equal(pdf.getTitle(), 'Rechnung A21-TEST-0001');
+  assert.match(strFromU8(files['Zahlungsuebersicht.csv']), /Frozen Recipient/);
+  assert.equal(files['Zahlungsuebersicht.csv'][0], 0xef);
+});

@@ -63,14 +63,14 @@ test('meeting terms: preserve legacy months, protect future invoices, never rewr
     await set(db,tenant,next,'post',0);
     assert.equal(Number((await usage(db,tenant,current)).included_hours),1);
     assert.equal(Number((await usage(db,tenant,next)).included_hours),0);
-    const old=await db.query('select create_monthly_invoice($1,$2,$3) result',[tenant,'2024-01-01',admin]);
+    const old=await db.query<{result:string}>('select create_monthly_invoice($1,$2,$3) result',[tenant,'2024-01-01',admin]);
     const before=JSON.stringify((await db.query('select * from invoices')).rows);
     assert.ok(old.rows[0].result);
     await assert.rejects(set(db,tenant,'2024-01-01','post',0),/future_month_required/);
     assert.equal(JSON.stringify((await db.query('select * from invoices')).rows),before);
     await db.query(`insert into invoices(member_id,billing_month,issue_date,due_date,service_period_start,service_period_end,created_by) values($1,$2,$2,$2,$2,$2::date+27,$3)`,[tenant,next,admin]);
     await assert.rejects(set(db,tenant,next,'business',1),/future_invoice_exists/);
-    assert.equal(Number((await db.query('select monthly_rent_net from members where id=$1',[tenant])).rows[0].monthly_rent_net),69);
+    assert.equal(Number((await db.query<{monthly_rent_net:string}>('select monthly_rent_net from members where id=$1',[tenant])).rows[0].monthly_rent_net),69);
   } finally {await db.close();}
 });
 
@@ -107,7 +107,7 @@ test('meeting terms: actual invoice uses historical quota and bills shared extra
     assert.match(items[0].description,/Business-Standort/);
     assert.equal(Number(items[1].quantity),2); assert.equal(Number(items[1].unit_price_net),12);
     await db.query('select create_monthly_invoice($1,$2,$3)',[tenant,'2024-04-01',admin]);
-    assert.equal((await db.query('select count(*)::int n from invoice_usage_periods')).rows[0].n,1);
+    assert.equal((await db.query<{n:number}>('select count(*)::int n from invoice_usage_periods')).rows[0].n,1);
     await db.exec('begin'); await set(db,tenant,await month(db,1),'custom',6); await db.exec('rollback');
     assert.equal(Number((await usage(db,tenant,await month(db,1))).included_hours),1);
   } finally {await db.close();}

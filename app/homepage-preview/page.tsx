@@ -4,6 +4,7 @@ import { packages, officeArea } from "@/lib/members/packages";
 import { MarketingPrice } from "./marketing-price";
 import type { Metadata } from "next";
 import Image from "next/image";
+import { ContactForm } from "./contact-form";
 import Link from "next/link";
 import {
   ArrowDownRight,
@@ -367,6 +368,7 @@ export default function HomepagePreview() {
               </a>
             </div>
           </div>
+          <ContactForm />
         </div>
       </section>
 

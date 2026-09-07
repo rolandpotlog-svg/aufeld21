@@ -132,9 +132,9 @@ test('push database: self-test throttle and private signed wake-up',async()=>{
     await register(db);
     await db.query('select push_config($1)',[config]);
     const query='select push_test($1,$2) id';
-    assert.ok((await db.query(query,[julia,subscription.endpoint])).rows[0].id);
-    assert.equal((await db.query(query,[julia,subscription.endpoint])).rows[0].id,null);
-    assert.equal((await db.query(query,[roland,subscription.endpoint])).rows[0].id,null);
+    assert.ok((await db.query<{id:string|null}>(query,[julia,subscription.endpoint])).rows[0].id);
+    assert.equal((await db.query<{id:string|null}>(query,[julia,subscription.endpoint])).rows[0].id,null);
+    assert.equal((await db.query<{id:string|null}>(query,[roland,subscription.endpoint])).rows[0].id,null);
     await db.exec('select notification_private.dispatch_push()');
     const req=(await db.query<{body:unknown,headers:Record<string,string>}>('select body,headers from net.requests')).rows[0];
     assert.ok(req.headers['X-Push-Signature']);

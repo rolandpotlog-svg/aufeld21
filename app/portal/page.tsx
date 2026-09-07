@@ -47,6 +47,9 @@ import { invoiceIsOpen, invoiceIsOverdue, isOriginalDocument } from "@/lib/invoi
 import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
 import { MemberDirectory } from "./member-directory";
 import { EmailNotifications } from "./email-notifications";
+import { ContactRequests, EnquiryBadge } from "./contact-requests";
+import { InvoiceReminder } from "./invoice-reminder";
+import { MonthExport } from "./month-export";
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
 import { MeetingSettings } from "./meeting-settings";
 import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
@@ -202,7 +205,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
   const [view, setView] = useState<"dashboard" | "calendar" | "tour" | "about" | "admin">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "admin" : "dashboard");
-  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues" | "emails">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "issues" : "overview");
+  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues" | "emails" | "contacts">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "issues" : "overview");
   const [issueDraft, setIssueDraft] = useState<IssueDraft | null>(null);
   const [sendingIssue, setSendingIssue] = useState(false);
   const [issueError, setIssueError] = useState("");
@@ -1745,11 +1748,13 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </div>
 
-          <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-3 lg:grid-cols-6" aria-label="Adminbereiche">
-            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen'], ['emails', 'E-Mail & Push']] as const).map(([tabValue, label]) => (
-              <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}{tabValue === "issues" && openIssueReports.length > 0 && <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{openIssueReports.length > 9 ? "9+" : openIssueReports.length}</span>}</button>
+          <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-3 lg:grid-cols-7" aria-label="Adminbereiche">
+            {([['overview', 'Übersicht'], ['contacts', 'Anfragen'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen'], ['emails', 'E-Mail & Push']] as const).map(([tabValue, label]) => (
+              <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}{tabValue === "contacts" && <EnquiryBadge supabase={supabase} revision={revision} />}{tabValue === "issues" && openIssueReports.length > 0 && <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{openIssueReports.length > 9 ? "9+" : openIssueReports.length}</span>}</button>
             ))}
           </nav>
+
+          {adminTab === "contacts" && <ContactRequests supabase={supabase} revision={revision} onChange={refreshPortal} />}
 
           {adminTab === "emails" && <>
             {supabase && <PushSettings supabase={supabase} />}
@@ -1925,6 +1930,7 @@ function BookingApp({ demo }: { demo: boolean }) {
           </div>
 
           <div id="admin-invoices" className={`${adminTab !== "invoices" ? "hidden " : ""}mt-6 scroll-mt-6`}>
+            <div className="mb-4"><MonthExport supabase={supabase} /></div>
             <section className="rounded-3xl bg-[#17231c] p-5 text-white shadow-sm sm:p-7">
               <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                 <div>
@@ -1987,6 +1993,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                               {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Einmalig finalisieren</button>}
                               {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-10 rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800">Als bezahlt markieren</button>}
                               {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Korrigieren</button>}
+                              {invoiceIsOverdue(invoice, todayVienna) && <InvoiceReminder invoice={invoice.id} supabase={supabase} />}
                               {(invoice.status === "final" || invoice.status === "paid") && <button onClick={() => prepareInvoiceEmail(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100"><Send size={15} /> E-Mail</button>}
                               <button onClick={() => downloadInvoice(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100" aria-label="Rechnung herunterladen"><Download size={15} /> PDF</button>
                               {(invoice.status === "draft" || invoice.status === "final") && <button onClick={() => cancelInvoice(invoice)} className="h-10 rounded-xl px-2 text-xs font-medium text-stone-400 hover:bg-red-50 hover:text-red-700">Stornieren</button>}
