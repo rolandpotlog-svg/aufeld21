@@ -48,6 +48,8 @@ import { invoiceIsOpen, invoiceIsOverdue, isOriginalDocument } from "@/lib/invoi
 import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
 import { MemberDirectory } from "./member-directory";
 import { EmailNotifications } from "./email-notifications";
+import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
+import { pushEmails } from "@/lib/push/validation";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 
 const TZ = "Europe/Vienna";
@@ -199,8 +201,8 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
-  const [view, setView] = useState<"dashboard" | "calendar" | "tour" | "about" | "admin">("dashboard");
-  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues" | "emails">("overview");
+  const [view, setView] = useState<"dashboard" | "calendar" | "tour" | "about" | "admin">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "admin" : "dashboard");
+  const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues" | "emails">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "issues" : "overview");
   const [issueDraft, setIssueDraft] = useState<IssueDraft | null>(null);
   const [sendingIssue, setSendingIssue] = useState(false);
   const [issueError, setIssueError] = useState("");
@@ -1400,7 +1402,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               <span>Buchen</span>
             </button>
             <button
-              onClick={() => supabase?.auth.signOut()}
+              onClick={async () => { if (supabase) { await disconnectPushBeforeLogout(supabase); await supabase.auth.signOut(); } }}
               className="grid h-11 w-11 place-items-center rounded-xl border border-stone-200 bg-white text-stone-600 hover:bg-stone-100"
               aria-label="Abmelden"
               title="Abmelden"
@@ -1762,12 +1764,15 @@ function BookingApp({ demo }: { demo: boolean }) {
           </div>
 
           <nav className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 sm:grid-cols-3 lg:grid-cols-6" aria-label="Adminbereiche">
-            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen'], ['emails', 'E-Mails']] as const).map(([tabValue, label]) => (
+            {([['overview', 'Übersicht'], ['people', 'Personen'], ['invoices', 'Rechnungen'], ['documents', 'Unterlagen'], ['issues', 'Meldungen'], ['emails', 'E-Mail & Push']] as const).map(([tabValue, label]) => (
               <button key={tabValue} onClick={() => setAdminTab(tabValue)} className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${adminTab === tabValue ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{label}{tabValue === "issues" && openIssueReports.length > 0 && <span className="grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">{openIssueReports.length > 9 ? "9+" : openIssueReports.length}</span>}</button>
             ))}
           </nav>
 
-          {adminTab === "emails" && <EmailNotifications supabase={supabase} revision={revision} />}
+          {adminTab === "emails" && <>
+            {supabase && pushEmails.has(member.email.toLowerCase()) && <PushSettings supabase={supabase} />}
+            <EmailNotifications supabase={supabase} revision={revision} />
+          </>}
 
           <div className={`${adminTab !== "overview" ? "hidden " : ""}mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4`}>
             <article className="rounded-3xl bg-[#17231c] p-6 text-white shadow-sm">
