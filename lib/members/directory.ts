@@ -1,3 +1,5 @@
+import { extraMeetingHourNet, type PackageId } from './packages.ts';
+
 export type Member = {
   id: string;
   email: string;
@@ -10,6 +12,9 @@ export type Member = {
 export type ManagedMember = Member & {
   usedHours: number;
   bonusHours: number;
+  includedHours?: number;
+  meetingPackage?: PackageId;
+  meetingAccountId?: string;
   office_name?: string | null;
   billing_name?: string | null;
   billing_address?: string | null;
@@ -44,12 +49,12 @@ export function filterMembers(members: ManagedMember[], query: string, filter: M
 
 // Display only: the database remains authoritative for quotas and invoicing.
 export function meetingSummary(member: ManagedMember) {
-  const allowance = 12 + member.bonusHours;
+  const allowance = (member.includedHours ?? 12) + member.bonusHours;
   const extraHours = Math.max(member.usedHours - allowance, 0);
   return {
     allowance,
     extraHours,
-    extraNet: isTeamMember(member) ? null : extraHours * 12,
-    progress: Math.min(Math.max(member.usedHours / allowance * 100, 0), 100),
+    extraNet: isTeamMember(member) ? null : extraHours * extraMeetingHourNet,
+    progress: allowance > 0 ? Math.min(Math.max(member.usedHours / allowance * 100, 0), 100) : member.usedHours > 0 ? 100 : 0,
   };
 }

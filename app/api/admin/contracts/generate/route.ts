@@ -17,11 +17,20 @@ export async function POST(request: Request) {
 
   const body = await request.json() as { memberId?: string; representative?: string; companyRegister?: string; phone?: string; contractEnd?: string; officeArea?: string };
   if (!body.memberId || !body.contractEnd?.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return Response.json({ error: "Vertretung, Firmenbuchnummer und Vertragsende sind erforderlich." }, { status: 400 });
+    return Response.json({ error: "Mieter und Vertragsende sind erforderlich. Vertretung und Firmenbuchnummer sind optional." }, { status: 400 });
   }
   const { data: member } = await admin.from("members").select("id,email,name,role,office_name,billing_name,billing_address,billing_uid,monthly_rent_net,contract_start").eq("id", body.memberId).single();
   if (!member || !["member", "admin"].includes(member.role) || !member.billing_address || member.monthly_rent_net == null || !member.contract_start) {
     return Response.json({ error: "Die Mieter- und Abrechnungsdaten sind noch unvollständig." }, { status: 409 });
+  }
+  // This existing PDF template is specifically for office rental with 12 h.
+  // Do not silently give a postal/business package the terms of an office lease.
+  const { data: terms, error: termsError } = await admin.from('meeting_terms')
+    .select('package,included_hours,account_id').eq('member_id', member.id)
+    .order('effective_month', { ascending: false });
+  if (termsError || !terms?.length) return Response.json({ error: 'Das Meetingkontingent konnte nicht geprüft werden.' }, { status: 503 });
+  if (terms.some(term => Number(term.included_hours) !== 12 || term.account_id !== member.id || ['post', 'business', 'shared'].includes(term.package))) {
+    return Response.json({ error: 'Diese Vertragsvorlage gilt für Büromiete mit 12 Meetingstunden. Für dieses Paket bitte eine passende individuelle Vereinbarung hochladen.' }, { status: 409 });
   }
   const { data: deposit } = await admin.from("member_deposits").select("agreed_amount").eq("member_id", member.id).maybeSingle();
   const createdOn = formatInTimeZone(new Date(), TZ, "dd.MM.yyyy");

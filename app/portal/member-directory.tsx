@@ -132,7 +132,7 @@ export function MemberDirectory(props: Props) {
               <p className="mb-1 text-[11px] text-stone-500 xl:hidden">Meetingstunden</p>
               <p className="text-sm tabular-nums"><span className="font-semibold text-stone-900">{hours(member.usedHours)} h</span><span className="text-stone-500"> / {hours(summary.allowance)} h</span></p>
               <div className="my-2 h-1.5 max-w-44 overflow-hidden rounded-full bg-stone-100" aria-hidden="true"><div className={`h-full rounded-full ${summary.extraHours > 0 ? "bg-amber-500" : "bg-emerald-600"}`} style={{ width: `${summary.progress}%` }} /></div>
-              <p className="text-xs leading-5 text-stone-500"><span className="whitespace-nowrap">12 h inklusive</span>{member.bonusHours > 0 && <> <span className="whitespace-nowrap text-emerald-700">· +{hours(member.bonusHours)} h Bonus</span></>}</p>
+              <p className="text-xs leading-5 text-stone-500"><span className="whitespace-nowrap">{hours(member.includedHours ?? 12)} h inklusive{member.meetingAccountId && member.meetingAccountId !== member.id ? ' · gemeinsam' : ''}</span>{member.bonusHours > 0 && <> <span className="whitespace-nowrap text-emerald-700">· +{hours(member.bonusHours)} h Bonus</span></>}</p>
             </div>
             <div className="min-w-0">
               <p className="mb-1 text-[11px] text-stone-500 xl:hidden">Zusatznutzung</p>

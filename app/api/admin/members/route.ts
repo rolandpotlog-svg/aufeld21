@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { formatInTimeZone } from "date-fns-tz";
+import { isPackageId, packages, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 
 export async function GET(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,7 +22,15 @@ export async function GET(request: Request) {
     .select("id,email,name,role,plan,active,office_name,billing_name,billing_address,billing_uid,monthly_rent_net,contract_start,contract_end")
     .order("name");
   if (error) return NextResponse.json({ error: "Mitglieder konnten nicht geladen werden." }, { status: 500 });
-  return NextResponse.json({ members });
+  const { data: quotas, error: quotaError } = await admin.rpc('meeting_usage', { target_month: formatInTimeZone(new Date(), 'Europe/Vienna', 'yyyy-MM-01') });
+  if (quotaError) return NextResponse.json({ error: 'Meetingkontingente konnten nicht geladen werden.' }, { status: 503 });
+  if (!quotas || members.some(item => !(quotas as MeetingUsage[]).some(row => row.member_id === item.id))) {
+    return NextResponse.json({ error: 'Ein Meetingkontingent fehlt. Bitte die Konfiguration prüfen.' }, { status: 503 });
+  }
+  return NextResponse.json({ members: members.map(item => {
+    const quota = (quotas as MeetingUsage[]).find(row => row.member_id === item.id)!;
+    return { ...item, includedHours: Number(quota.included_hours), meetingPackage: quota.package, meetingAccountId: quota.account_id, usedHours: Number(quota.used_hours), bonusHours: Number(quota.bonus_hours) };
+  }) }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function POST(request: Request) {
@@ -53,10 +63,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nur Administratoren dürfen Mitglieder einladen." }, { status: 403 });
   }
 
-  const body = (await request.json()) as { name?: string; email?: string; role?: "member" | "partner" | "employee" };
+  const body = (await request.json()) as { name?: string; email?: string; role?: "member" | "partner" | "employee"; package?: PackageId };
   const name = body.name?.trim();
   const email = body.email?.trim().toLowerCase();
   const role = body.role === "employee" || body.role === "partner" ? body.role : "member";
+  const packageId = body.package ?? 'pro';
+  if (!isPackageId(packageId) || ['shared', 'custom'].includes(packageId)) return NextResponse.json({ error: 'Bitte ein gültiges Startpaket auswählen.' }, { status: 400 });
   if (!name || !email || !email.includes("@")) {
     return NextResponse.json({ error: "Name und gültige E-Mail-Adresse sind erforderlich." }, { status: 400 });
   }
@@ -85,6 +97,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Das Mitglied konnte nicht angelegt werden." }, { status: 500 });
   }
 
+  if (packageId !== 'pro') {
+    const { error: termsError } = await admin.rpc('set_meeting_terms', { target_member: inviteData.user.id,
+      target_month: formatInTimeZone(new Date(), 'Europe/Vienna', 'yyyy-MM-01'), target_package: packageId,
+      target_hours: packages[packageId].hours, target_account: inviteData.user.id, creator_id: userData.user.id });
+    if (termsError) return NextResponse.json({ error: 'Der Zugang und die Einladung wurden bereits erstellt. Das gewählte Kontingent konnte nicht gespeichert werden. Bitte in der Mieterkarte unter Meetingkontingent prüfen; nicht erneut einladen.' }, { status: 409 });
+  }
   return NextResponse.json({ id: inviteData.user.id, email, name, role });
 }
 

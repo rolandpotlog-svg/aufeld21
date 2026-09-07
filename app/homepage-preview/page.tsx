@@ -1,5 +1,7 @@
 import { MarketingHeader } from "./marketing-shell";
 import { siteUrl } from "@/lib/site";
+import { packages, officeArea } from "@/lib/members/packages";
+import { MarketingPrice } from "./marketing-price";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -73,9 +75,10 @@ export default function HomepagePreview() {
               <a href="#contact" className="flex h-14 items-center justify-center gap-3 rounded-full bg-[linear-gradient(105deg,#7c3aed,#2563eb_52%,#0891b2)] px-7 font-black text-white shadow-lg transition hover:-translate-y-0.5">Besichtigung anfragen <ArrowDownRight size={19} /></a>
               <a href="#prices" className="flex h-14 items-center justify-center rounded-full border border-slate-300 bg-white/75 px-7 font-bold backdrop-blur transition hover:border-violet-300 hover:bg-white">Preise ansehen</a>
             </div>
-            <div className="mt-9 grid max-w-2xl grid-cols-3 gap-5 border-t border-slate-200 pt-6">
-              {[["~100 m²", "Gesamtfläche"], ["24/7", "Zutritt"], ["12 h", "Meeting inkl."]].map(([value, label]) => <div key={label}><p className="text-xl font-black tracking-[-0.04em] sm:text-2xl">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:text-xs">{label}</p></div>)}
+            <div className="mt-8 grid max-w-2xl grid-cols-3 gap-2 border-t border-slate-200 pt-5 sm:gap-5">
+              {[["~100 m²", "Fläche"], ["24/7", "Zugang"], ["12 h", "Meeting*"]].map(([value, label]) => <div className="min-w-0" key={label}><p className="text-xl font-black tracking-[-0.04em] sm:text-2xl">{value}</p><p className="mt-1 text-sm font-medium text-slate-600">{label}</p></div>)}
             </div>
+            <p className="mt-3 text-xs leading-5 text-slate-500">* Pro Monat bei Flex, Fix und Büro. Details beim jeweiligen Angebot.</p>
           </div>
         </div>
       </section>
@@ -98,7 +101,7 @@ export default function HomepagePreview() {
               ["Büro 1", "16,31 m²", "Kompaktes Teambüro", "bg-[#eff7df]"],
               ["Büro 2", "12,62 m²", "Ruhiges Einzelbüro", "bg-[#f4f6e9]"],
               ["Büro 3", "14,13 m²", "Büro für kleine Teams", "bg-[#eff7df]"],
-              ["Büro 4", "24,78 m²", "Büro oder 4 Coworking-Plätze", "bg-[#dff4e6]"],
+              ["Büro 4", officeArea, "Büro oder 4 Coworking-Plätze", "bg-[#dff4e6]"],
             ].map(([name, size, status, tone], index) => (
               <article key={name} className={`flex min-h-[180px] flex-col justify-between p-6 sm:min-h-[230px] sm:p-8 ${tone}`}>
                 <div className="flex items-start justify-between">
@@ -141,38 +144,41 @@ export default function HomepagePreview() {
             {[
               {
                 name: "Flex",
-                price: "180 €",
+                price: packages.flex.net,
+                unit: "pro Person",
                 detail: "Freie Platzwahl im Coworking-Bereich",
-                items: ["12 Stunden Meetingraum / Monat", "Highspeed-Internet", "Küche & Getränke", "Flexible Platzwahl"],
+                items: ["12 Stunden Meetingraum je Person / Monat", "Highspeed-Internet", "Küche & Getränke", "Flexible Platzwahl"],
               },
               {
                 name: "Fix",
-                price: "250 €",
+                price: packages.fix.net,
+                unit: "pro Person",
                 detail: "Dein persönlicher Schreibtisch",
-                items: ["12 Stunden Meetingraum / Monat", "Eigener fixer Arbeitsplatz", "Highspeed-Internet", "Küche & Getränke"],
+                items: ["12 Stunden Meetingraum je Person / Monat", "Eigener fixer Arbeitsplatz", "Highspeed-Internet", "Küche & Getränke"],
                 featured: true,
               },
               {
                 name: "Privates Büro",
-                price: "590 €",
-                detail: "Ca. 25–27 m² für ein kleines Team",
-                items: ["12 Stunden Meetingraum / Monat", "Abschließbarer eigener Raum", "Highspeed-Internet", "Gemeinsame Infrastruktur"],
+                price: packages.office.net,
+                unit: "für das gesamte Büro",
+                detail: `${officeArea} für ein kleines Team`,
+                items: ["12 Stunden Meetingraum gemeinsam je Büro / Monat", "Abschließbarer eigener Raum", "Highspeed-Internet", "Gemeinsame Infrastruktur"],
               },
             ].map((offer) => (
               <article key={offer.name} className={`relative flex min-h-[400px] flex-col rounded-[1.7rem] p-7 sm:min-h-[440px] sm:rounded-[2rem] sm:p-9 ${offer.featured ? "bg-[#162119] text-white shadow-2xl" : "border border-[#162119]/10 bg-white"}`}>
                 {offer.featured && <span className="absolute right-7 top-7 rounded-full bg-[#c9ff70] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#162119]">Beliebt</span>}
                 <p className={`text-sm font-bold uppercase tracking-[0.15em] ${offer.featured ? "text-[#c9ff70]" : "text-emerald-700"}`}>{offer.name}</p>
-                <p className="mt-8 text-5xl font-semibold tracking-[-0.065em]">{offer.price}</p>
-                <p className={`mt-2 text-sm ${offer.featured ? "text-stone-400" : "text-stone-500"}`}>pro Monat · netto</p>
+                <MarketingPrice net={offer.price} unit={offer.unit} dark={offer.featured} />
                 <p className={`mt-8 leading-7 ${offer.featured ? "text-stone-300" : "text-stone-600"}`}>{offer.detail}</p>
-                <ul className={`mt-8 space-y-4 border-t pt-7 ${offer.featured ? "border-white/15" : "border-stone-200"}`}>
+                <ul className={`mb-7 mt-6 space-y-4 border-t pt-6 ${offer.featured ? "border-white/15" : "border-stone-200"}`}>
                   {offer.items.map((item) => <li key={item} className="flex gap-3 text-sm leading-6"><Check size={18} className="mt-0.5 shrink-0 text-emerald-500" />{item}</li>)}
                 </ul>
-                <a href="#contact" className={`mt-auto flex h-12 items-center justify-center rounded-full font-bold transition hover:-translate-y-0.5 ${offer.featured ? "bg-[#c9ff70] text-[#162119]" : "bg-[#162119] text-white"}`}>Verfügbarkeit anfragen</a>
+                <a href="#contact" className={`mt-auto flex min-h-12 shrink-0 items-center justify-center rounded-full px-3 py-3 text-center font-bold transition hover:-translate-y-0.5 ${offer.featured ? "bg-[#c9ff70] text-[#162119]" : "bg-[#162119] text-white"}`}>Verfügbarkeit anfragen</a>
               </article>
             ))}
           </div>
-          <p className="mt-5 text-sm leading-6 text-stone-500">Weitere Meetingraum-Zeit wird in 30-Minuten-Schritten mit 12 € netto pro Stunde verrechnet. Verfügbarkeit und konkrete Vertragsdetails nach persönlicher Abstimmung.</p>
+          <p className="mt-5 text-sm leading-6 text-stone-600">Zusätzliche Meetingraum-Zeit: 12 € netto (14,40 € inkl. 20 % USt) je Stunde, abgerechnet in 30-Minuten-Schritten. Nicht genutzte Inklusivstunden verfallen am Monatsende. Zusätzliche Logins im selben Büro teilen dessen Kontingent.</p>
+          <p className="mt-2 text-sm leading-6 text-stone-600">Verfügbarkeit, Nutzerzahl, Laufzeit, Kündigungsfrist und gegebenenfalls Kaution werden vor Vertragsabschluss schriftlich vereinbart. Bestehende individuelle Vereinbarungen bleiben unverändert.</p>
         </div>
       </section>
 
@@ -191,17 +197,17 @@ export default function HomepagePreview() {
               <article className="flex min-h-[310px] flex-col rounded-[1.8rem] bg-white p-7 text-[#162119] sm:min-h-[350px] sm:p-8">
                 <FileText className="text-emerald-700" size={28} />
                 <p className="mt-10 text-sm font-bold uppercase tracking-[0.15em] text-emerald-700">Postservice</p>
-                <p className="mt-3 text-4xl font-semibold tracking-[-0.055em]">39 €</p><p className="mt-1 text-sm text-stone-500">monatlich · netto</p>
+                <MarketingPrice net={packages.post.net} unit="pro Unternehmen" />
                 <ul className="mt-7 space-y-3 text-sm leading-6 text-stone-600">
-                  {["Postadresse bei AUFELD21", "Annahme und Sortierung", "Benachrichtigung bei Eingang", "Abholung vor Ort"].map((item) => <li key={item} className="flex gap-3"><Check size={17} className="mt-1 shrink-0 text-emerald-600" />{item}</li>)}
+                  {["Postadresse bei AUFELD21", "Briefpost und vereinbarte Paketannahme", "Benachrichtigung bei Eingang", "Abholung vor Ort"].map((item) => <li key={item} className="flex gap-3"><Check size={17} className="mt-1 shrink-0 text-emerald-600" />{item}</li>)}
                 </ul>
               </article>
               <article className="flex min-h-[310px] flex-col rounded-[1.8rem] bg-[#dff4e6] p-7 text-[#162119] sm:min-h-[350px] sm:p-8">
                 <ScanLine className="text-emerald-700" size={28} />
                 <p className="mt-10 text-sm font-bold uppercase tracking-[0.15em] text-emerald-700">Business-Standort</p>
-                <p className="mt-3 text-4xl font-semibold tracking-[-0.055em]">69 €</p><p className="mt-1 text-sm text-stone-500">monatlich · netto</p>
+                <MarketingPrice net={packages.business.net} unit="pro Unternehmen" />
                 <ul className="mt-7 space-y-3 text-sm leading-6 text-stone-600">
-                  {["Alles aus Postservice", "Firmenname am Postkasten", "1 Stunde Meetingraum / Monat", "Nutzung der Anschrift nach Prüfung"].map((item) => <li key={item} className="flex gap-3"><Check size={17} className="mt-1 shrink-0 text-emerald-600" />{item}</li>)}
+                  {["Alles aus Postservice", "Firmenname am Postkasten", "1 Stunde Meetingraum je Unternehmen / Monat", "Nutzung der Anschrift nach Prüfung"].map((item) => <li key={item} className="flex gap-3"><Check size={17} className="mt-1 shrink-0 text-emerald-600" />{item}</li>)}
                 </ul>
               </article>
             </div>
@@ -272,7 +278,7 @@ export default function HomepagePreview() {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c9ff70]">Ein Ort, alles da</p>
               <MapPin className="text-[#c9ff70]" size={26} />
             </div>
-            <h2 className="mt-10 max-w-xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.055em] sm:mt-14 sm:text-6xl">Zentral gelegen. Schnell überall.</h2>
+            <h2 className="mt-6 max-w-xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.055em] sm:mt-8 sm:text-6xl">Zentral gelegen. Schnell überall.</h2>
             <p className="mt-5 max-w-xl leading-7 text-stone-300">Nah an Linz, schnell auf den wichtigsten Wegen und mit allem für den Alltag direkt in der Umgebung.</p>
             <div className="mt-9 grid grid-cols-1 gap-px overflow-hidden rounded-2xl bg-white/15 sm:grid-cols-2">
               {[
@@ -295,11 +301,11 @@ export default function HomepagePreview() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             <div className="flex flex-col justify-between rounded-[2rem] bg-white p-7 sm:p-9">
               <CalendarDays size={26} className="text-emerald-700" />
-              <div className="mt-12"><h3 className="text-2xl font-semibold tracking-[-0.04em]">Meetingraum einfach buchen</h3><p className="mt-3 leading-7 text-stone-500">Mitglieder reservieren Termine unterwegs in wenigen Sekunden über das eigene Portal.</p></div>
+              <div className="mt-6"><h3 className="text-2xl font-semibold tracking-[-0.04em]">Meetingraum einfach buchen</h3><p className="mt-3 leading-7 text-stone-500">Mitglieder reservieren Termine unterwegs in wenigen Sekunden über das eigene Portal.</p></div>
             </div>
             <div className="flex flex-col justify-between rounded-[2rem] bg-[#c9ff70] p-7 sm:p-9">
               <Coffee size={26} />
-              <div className="mt-12"><h3 className="text-2xl font-semibold tracking-[-0.04em]">Raum für Begegnung</h3><p className="mt-3 leading-7 text-[#314125]">Küche, Balkon und kurze Wege schaffen Platz für Gespräche, ohne die Ruhe beim Arbeiten zu verlieren.</p></div>
+              <div className="mt-6"><h3 className="text-2xl font-semibold tracking-[-0.04em]">Raum für Begegnung</h3><p className="mt-3 leading-7 text-[#314125]">Küche, Balkon und kurze Wege schaffen Platz für Gespräche, ohne die Ruhe beim Arbeiten zu verlieren.</p></div>
             </div>
           </div>
         </div>
@@ -315,33 +321,20 @@ export default function HomepagePreview() {
             </div>
             <Link href="/community" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#162119] px-6 font-bold text-white">Community entdecken <ArrowRight size={17} /></Link>
           </div>
-          <div className="grid grid-cols-2 gap-px bg-stone-200 lg:grid-cols-4">
-            {[
-              ["IK", "ImmoKredit", "Immobilienfinanzierung"],
-              ["PX", "Potlox", "Marketing Agentur"],
-              ["N", "Neugebauer GmbH", "Buchhandel"],
-              ["WA", "Wuff Academy", "Hundeschule"],
-            ].map(([initials, name, sector]) => (
-              <article key={name} className="flex flex-col justify-between bg-[#fafaf8] p-4 sm:p-7">
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-100 text-xs font-black text-violet-900">{initials}</span>
-                <div className="mt-4"><h3 className="break-words text-base font-bold tracking-[-0.035em] sm:text-xl">{name}</h3><p className="mt-1 text-xs text-stone-500 sm:text-sm">{sector}</p></div>
-              </article>
-            ))}
-          </div>
         </div>
       </section>
 
-      <section id="about" className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
+      <section id="about" className="mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 sm:pb-16 lg:px-12">
         <div className="grid items-center gap-10 overflow-hidden rounded-[2.4rem] bg-white p-5 shadow-[0_30px_100px_rgba(42,35,80,0.10)] lg:grid-cols-[0.9fr_1.1fr] lg:p-7">
-          <div className="relative min-h-[340px] overflow-hidden rounded-[1.8rem] sm:min-h-[400px] lg:min-h-[500px]">
+          <div className="relative min-h-[260px] overflow-hidden rounded-[1.8rem] sm:min-h-[340px] lg:min-h-[380px]">
             <Image src="/julia-roland-potlog.jpg" alt="Julia und Roland Potlog, Gastgeber von AUFELD21" fill sizes="(min-width: 1024px) 42vw, 100vw" className="object-cover object-center" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#10131c]/55 via-transparent to-transparent" />
             <span className="absolute bottom-5 left-5 rounded-full border border-white/25 bg-white/85 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] backdrop-blur">Julia & Roland</span>
           </div>
           <div className="px-2 py-8 sm:px-8 lg:px-10">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-700">Unsere Geschichte</p>
-            <h2 className="mt-4 text-[2rem] font-semibold leading-[1.05] tracking-[-0.06em] sm:mt-5 sm:text-6xl">Aus einem eigenen Büro wurde eine gemeinsame Idee.</h2>
-            <p className="mt-7 max-w-3xl text-lg leading-8 text-stone-600">Wir wollten einen Arbeitsplatz schaffen, den wir selbst jeden Tag gerne betreten. Modern, ruhig und unkompliziert. Dabei entstand ein Ort, den wir mit anderen Selbstständigen und kleinen Unternehmen teilen möchten – persönlich geführt und offen für echte Zusammenarbeit.</p>
+            <h2 className="mt-4 text-[2rem] font-semibold leading-[1.05] tracking-[-0.06em] sm:mt-5 sm:text-5xl">Persönlich geführt. Von Julia & Roland.</h2>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-stone-600">Ein Arbeitsplatz, den wir selbst gerne nutzen – und mit anderen teilen. Wer dahintersteht und wie AUFELD21 entstanden ist, erzählen wir auf unserer Über-uns-Seite.</p>
             <p className="mt-7 font-semibold">Julia & Roland Potlog · Potlog Immobilien KG</p>
             <Link href="/ueber-uns" className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-violet-700">Unsere Geschichte lesen <ArrowRight size={17}/></Link>
           </div>

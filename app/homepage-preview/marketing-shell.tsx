@@ -41,7 +41,7 @@ export function MarketingPage({ eyebrow, title, intro, children }: { eyebrow: st
       <section className="mx-auto max-w-[1440px] px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-16 lg:px-12">
         <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-violet-700"><ArrowLeft size={16} /> Zur Startseite</Link>
         <p className="mt-12 text-xs font-black uppercase tracking-[0.18em] text-violet-700">{eyebrow}</p>
-        <h1 className="mt-4 max-w-5xl text-[clamp(3.1rem,8vw,7rem)] font-black leading-[0.9] tracking-[-0.075em]">{title}</h1>
+        <h1 className="mt-4 max-w-5xl break-words text-[clamp(2.3rem,8vw,7rem)] font-black leading-[0.98] tracking-[-0.065em]">{title}</h1>
         <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600 sm:text-xl">{intro}</p>
       </section>
       {children}

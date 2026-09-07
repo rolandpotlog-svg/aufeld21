@@ -10,7 +10,6 @@ import {
   format,
   isSameDay,
   isSameWeek,
-  startOfMonth,
   startOfWeek,
   addMonths,
 } from "date-fns";
@@ -49,6 +48,8 @@ import { useDialogFocus, usePortalRefresh } from "./use-portal-refresh";
 import { MemberDirectory } from "./member-directory";
 import { EmailNotifications } from "./email-notifications";
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
+import { MeetingSettings } from "./meeting-settings";
+import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 
 const TZ = "Europe/Vienna";
@@ -223,7 +224,9 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [bonusAmount, setBonusAmount] = useState("2");
   const [monthlyUsedHours, setMonthlyUsedHours] = useState(demo ? 3.5 : 0);
   const [monthlyBonusHours, setMonthlyBonusHours] = useState(demo ? 2 : 0);
-  const [inviteDraft, setInviteDraft] = useState<{ name: string; email: string; role: "member" | "partner" | "employee" } | null>(null);
+  const [meetingUsage, setMeetingUsage] = useState<MeetingUsage | null>(null);
+  const [meetingError, setMeetingError] = useState('');
+  const [inviteDraft, setInviteDraft] = useState<{ name: string; email: string; role: "member" | "partner" | "employee"; package?: PackageId } | null>(null);
   const [paymentDraft, setPaymentDraft] = useState<{ invoice: Invoice; paidOn: string } | null>(null);
   const [contractDraft, setContractDraft] = useState<ContractDraft | null>(null);
   const [generatingContract, setGeneratingContract] = useState(false);
@@ -310,6 +313,11 @@ function BookingApp({ demo }: { demo: boolean }) {
     const { data } = db.auth.onAuthStateChange((event, nextSession) => {
       if (!active) return;
       setSession(nextSession);
+      if (event === 'SIGNED_OUT') {
+        setMeetingUsage(null); setMeetingError('');
+        setMonthlyUsedHours(0); setMonthlyBonusHours(0);
+        setManagedMembers([]); setSelectedDossierId('');
+      }
       if (event === "PASSWORD_RECOVERY") setPasswordSetup(true);
     });
     initializePortalAuth(db.auth, window.location.href, (url) => {
@@ -364,11 +372,11 @@ function BookingApp({ demo }: { demo: boolean }) {
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const mobileDay = days[mobileDayOffset] ?? days[0];
-  const includedHours = 12;
+  const includedHours = meetingUsage ? Number(meetingUsage.included_hours) : demo ? 12 : 0;
   const availableHours = includedHours + monthlyBonusHours;
   const remainingHours = Math.max(availableHours - monthlyUsedHours, 0);
   const billableHours = Math.max(monthlyUsedHours - availableHours, 0);
-  const billableNet = member?.role === "employee" ? 0 : billableHours * 12;
+  const billableNet = (meetingUsage ? meetingUsage.billable : demo && member?.role !== 'employee') ? billableHours * extraMeetingHourNet : 0;
   const billingMembers = managedMembers.filter((item) => item.active && item.role !== "employee" && item.monthly_rent_net != null);
   const todayVienna = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
   const currentBillingMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM-01");
@@ -395,7 +403,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     const deposit = deposits.find((entry) => entry.member_id === item.id);
     return !deposit || Number(deposit.received_amount) < Number(deposit.agreed_amount);
   });
-  const totalUsedHours = managedMembers.reduce((sum, item) => sum + Number(item.usedHours), 0);
+  const totalUsedHours = [...new Map(managedMembers.map(item => [item.meetingAccountId ?? item.id, Number(item.usedHours)])).values()].reduce((sum, hours) => sum + hours, 0);
   const openIssueReports = issueReports.filter((item) => item.status === "open");
   const resolvedIssueReports = issueReports.filter((item) => item.status === "resolved");
   const invoiceNotice = invoiceNoticeId
@@ -449,32 +457,17 @@ function BookingApp({ demo }: { demo: boolean }) {
 
   useEffect(() => {
     if (!member || !supabase) return;
-    const db = supabase;
-    const viennaNow = toZonedTime(new Date(), TZ);
-    const monthStart = fromZonedTime(format(startOfMonth(viennaNow), "yyyy-MM-dd 00:00:00"), TZ);
-    const monthEnd = fromZonedTime(format(addMonths(startOfMonth(viennaNow), 1), "yyyy-MM-dd 00:00:00"), TZ);
-    Promise.all([
-      db
-        .from("bookings")
-        .select("start_at,end_at")
-        .eq("member_id", member.id)
-        .gte("start_at", monthStart.toISOString())
-        .lt("start_at", monthEnd.toISOString()),
-      db
-        .from("quota_adjustments")
-        .select("hours")
-        .eq("member_id", member.id)
-        .eq("valid_month", format(viennaNow, "yyyy-MM-01")),
-    ]).then(([bookingResult, bonusResult]) => {
-      const used = (bookingResult.data ?? []).reduce(
-        (sum, booking) => sum + (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000,
-        0,
-      );
-      const bonus = (bonusResult.data ?? []).reduce((sum, adjustment) => sum + Number(adjustment.hours), 0);
-      setMonthlyUsedHours(used);
-      setMonthlyBonusHours(bonus);
-    });
-  }, [member, supabase, bookings]);
+    let active = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const response = await fetch('/api/meeting-usage', { headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}` }, cache: 'no-store' });
+      const result = await response.json();
+      if (!response.ok || !result.usage) throw new Error(result.error || 'Meetingkontingent konnte nicht geladen werden.');
+      if (!active) return;
+      setMeetingUsage(result.usage); setMonthlyUsedHours(Number(result.usage.used_hours));
+      setMonthlyBonusHours(Number(result.usage.bonus_hours)); setMeetingError('');
+    }).catch(error => { if (active) setMeetingError(error.message); });
+    return () => { active = false; };
+  }, [member, supabase, bookings, revision]);
 
   useEffect(() => {
     if (!member || !supabase) return;
@@ -537,32 +530,15 @@ function BookingApp({ demo }: { demo: boolean }) {
 
   useEffect(() => {
     if (!member || member.role !== "admin" || !supabase) return;
-    const db = supabase;
-    const now = toZonedTime(new Date(), TZ);
-    const monthValue = format(now, "yyyy-MM-01");
-    const monthStart = fromZonedTime(`${monthValue} 00:00:00`, TZ);
-    const monthEnd = fromZonedTime(`${format(addMonths(startOfMonth(now), 1), "yyyy-MM-dd")} 00:00:00`, TZ);
-    db.auth.getSession().then(({ data: sessionData }) =>
-      Promise.all([
-        fetch("/api/admin/members", { headers: { Authorization: `Bearer ${sessionData.session?.access_token ?? ""}` } }).then((response) => response.json()),
-        db.from("bookings").select("member_id,start_at,end_at").gte("start_at", monthStart.toISOString()).lt("start_at", monthEnd.toISOString()),
-        db.from("quota_adjustments").select("member_id,hours").eq("valid_month", monthValue),
-      ]).then(([membersResult, bookingsResult, adjustmentsResult]) => {
-        if (!membersResult.members) return;
-        setManagedMembers(
-          (membersResult.members as Array<Omit<ManagedMember, "usedHours" | "bonusHours">>).map((item) => ({
-            ...item,
-            usedHours: (bookingsResult.data ?? [])
-              .filter((booking) => booking.member_id === item.id)
-              .reduce((sum, booking) => sum + (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000, 0),
-            bonusHours: (adjustmentsResult.data ?? [])
-              .filter((adjustment) => adjustment.member_id === item.id)
-              .reduce((sum, adjustment) => sum + Number(adjustment.hours), 0),
-          })),
-        );
-      }),
-    );
-  }, [member, supabase, bookings]);
+    let active = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const response = await fetch('/api/admin/members', { headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}` }, cache: 'no-store' });
+      const result = await response.json();
+      if (!response.ok || !result.members) throw new Error(result.error || 'Personen konnten nicht geladen werden.');
+      if (active) setManagedMembers(result.members);
+    }).catch(error => { if (active) setToast(error.message); });
+    return () => { active = false; };
+  }, [member, supabase, bookings, revision]);
 
   useEffect(() => {
     if (!member || member.role !== "admin" || !supabase) return;
@@ -693,7 +669,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     const requestedHours = (end.getTime() - start.getTime()) / 3_600_000;
     const bookingMonth = formatInTimeZone(start, TZ, "yyyy-MM");
     const currentMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM");
-    if (member.role === "employee" && bookingMonth === currentMonth && monthlyUsedHours + requestedHours > availableHours) {
+    if (member.role === "employee" && (demo || meetingUsage) && bookingMonth === currentMonth && monthlyUsedHours + requestedHours > availableHours) {
       setFormError(`Dein Monatskontingent reicht für diese Buchung nicht aus. Verfügbar sind noch ${remainingHours.toLocaleString("de-AT")} Stunden. Bitte wende dich für Bonusstunden an Roland.`);
       setSaving(false);
       return;
@@ -746,6 +722,8 @@ function BookingApp({ demo }: { demo: boolean }) {
           ? "Der Raum ist in diesem Zeitraum schon gebucht."
           : error.message.includes("employee_quota_exceeded")
             ? "Dein Monatskontingent ist ausgeschöpft. Bitte wende dich für Bonusstunden an Roland."
+          : error.message.includes('shared_account_inactive')
+            ? 'Das zugehörige Hauptkonto ist deaktiviert. Bitte wende dich an die Verwaltung.'
           : "Die Buchung konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
       );
       return;
@@ -858,6 +836,7 @@ function BookingApp({ demo }: { demo: boolean }) {
       ),
     );
     if (bonusTarget.id === member.id) setMonthlyBonusHours((current) => current + hours);
+    if (supabase) refreshPortal();
     setBonusTarget(null);
     setToast(`${hours.toLocaleString("de-AT")} Bonusstunden für ${bonusTarget.name} gutgeschrieben.`);
   }
@@ -876,6 +855,8 @@ function BookingApp({ demo }: { demo: boolean }) {
           name: inviteDraft.name.trim(),
           role: inviteDraft.role,
           plan: "pro",
+          meetingPackage: inviteDraft.package ?? 'pro',
+          includedHours: packages[inviteDraft.package ?? 'pro'].hours,
           active: true,
           usedHours: 0,
           bonusHours: 0,
@@ -1531,17 +1512,19 @@ function BookingApp({ demo }: { demo: boolean }) {
             </article>
           </div>
 
+          {meetingError && <p role="alert" className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-950">{meetingError} Die angezeigten Werte können veraltet sein. Bitte neu laden; Buchungen werden weiterhin serverseitig geprüft.</p>}
           <article className="mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Dein Meetingraum-Kontingent · {format(new Date(), "MMMM yyyy", { locale: de })}</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
-                  {remainingHours.toLocaleString("de-AT")} Stunden verfügbar
+                  {!demo && !meetingUsage ? 'Kontingent wird geladen …' : `${remainingHours.toLocaleString("de-AT")} Stunden verfügbar`}
                 </h2>
                 <p className="mt-2 text-sm text-stone-500">
                   {monthlyUsedHours.toLocaleString("de-AT")} von {availableHours.toLocaleString("de-AT")} Stunden verwendet
                   {monthlyBonusHours > 0 ? ` · inklusive ${monthlyBonusHours.toLocaleString("de-AT")} Bonusstunden` : ""}
                 </p>
+                {meetingUsage && meetingUsage.account_id !== member.id && <p className="mt-2 text-sm text-emerald-800">Gemeinsam mit {meetingUsage.account_name}. Kein zusätzliches Kontingent je Login.</p>}
               </div>
               {member.role === "employee" && billableHours > 0 ? (
                 <div className="rounded-2xl bg-amber-50 px-5 py-4 text-amber-950">
@@ -1556,14 +1539,14 @@ function BookingApp({ demo }: { demo: boolean }) {
               ) : (
                 <div className="rounded-2xl bg-emerald-50 px-5 py-4 text-emerald-950">
                   <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Aktueller Tarif</p>
-                  <p className="mt-1 text-xl font-semibold">Pro · 12 h/Monat</p>
+                  <p className="mt-1 text-xl font-semibold">{meetingUsage ? packages[meetingUsage.package].name : demo ? 'Bestehende Vereinbarung' : 'Wird geladen …'} · {includedHours} h/Monat</p>
                 </div>
               )}
             </div>
             <div className="mt-6 h-3 overflow-hidden rounded-full bg-stone-100">
               <div
                 className={`h-full rounded-full ${billableHours > 0 ? "bg-amber-500" : "bg-emerald-600"}`}
-                style={{ width: `${Math.min((monthlyUsedHours / Math.max(availableHours, 1)) * 100, 100)}%` }}
+                style={{ width: `${availableHours > 0 ? Math.min(monthlyUsedHours / availableHours * 100, 100) : monthlyUsedHours > 0 ? 100 : 0}%` }}
               />
             </div>
             <p className="mt-3 text-xs text-stone-400">{member.role === "employee" ? "Wenn du mehr Zeit brauchst, kann Roland dir zusätzliche Bonusstunden freischalten." : "Weitere Nutzung wird in 30-Minuten-Schritten zu 12 € netto pro Stunde verrechnet."}</p>
@@ -1877,7 +1860,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Vertrag</p><p className="mt-2 font-semibold">{selectedDossier.contract_start ? `ab ${new Date(selectedDossier.contract_start).toLocaleDateString("de-AT")}` : "Nicht hinterlegt"}</p><p className="mt-1 text-xs text-stone-400">{selectedDossier.contract_end ? `bis ${new Date(selectedDossier.contract_end).toLocaleDateString("de-AT")}` : "unbefristet / offen"}</p></div>
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Kaution</p><p className="mt-2 font-semibold">{dossierDeposit ? Number(dossierDeposit.received_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" }) : "Nicht erfasst"}</p><p className="mt-1 text-xs text-stone-400">{dossierDeposit ? `von ${Number(dossierDeposit.agreed_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} vereinbart` : "noch zu prüfen"}</p></div>
                     </>}
-                    <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Meetingraum</p><p className="mt-2 text-xl font-semibold">{selectedDossier.usedHours.toLocaleString("de-AT")} h</p><p className="mt-1 text-xs text-stone-400">12 h inklusive · +{selectedDossier.bonusHours.toLocaleString("de-AT")} h Bonus</p></div>
+                    <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Meetingraum</p><p className="mt-2 text-xl font-semibold">{selectedDossier.usedHours.toLocaleString("de-AT")} h</p><p className="mt-1 text-xs text-stone-500">{selectedDossier.includedHours ?? 12} h inklusive · +{selectedDossier.bonusHours.toLocaleString("de-AT")} h Bonus{selectedDossier.meetingAccountId && selectedDossier.meetingAccountId !== selectedDossier.id ? ' · gemeinsames Kontingent' : ''}</p></div>
                   </div>
 
                   <div className="border-t border-stone-200 bg-emerald-50/45 p-5 sm:p-7">
@@ -1895,6 +1878,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                     </div>
                   </div>
 
+                  {supabase && <div className="px-5 sm:px-7"><MeetingSettings key={selectedDossier.id} member={selectedDossier} supabase={supabase} onSaved={refreshPortal} /></div>}
                   <div className={`grid gap-6 p-5 sm:p-7 ${isTeamMember(selectedDossier) ? "" : "xl:grid-cols-2"}`}>
                     {(!isTeamMember(selectedDossier) || dossierInvoices.length > 0) && <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Finanzen</p><h4 className="mt-1 text-lg font-semibold">Alle Rechnungen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierInvoices.length}</span></div>
@@ -2361,7 +2345,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                 </select>
               </label>
               <div className="rounded-xl bg-stone-50 p-4 text-sm text-stone-600">
-                Danach verfügt {bonusTarget.name} über insgesamt <strong>{(12 + bonusTarget.bonusHours + Number(bonusAmount)).toLocaleString("de-AT")} Freistunden</strong> in diesem Monat.
+                Danach umfasst das Kontingent von {bonusTarget.name} insgesamt <strong>{((bonusTarget.includedHours ?? 12) + bonusTarget.bonusHours + Number(bonusAmount)).toLocaleString("de-AT")} Freistunden</strong> in diesem Monat. Bei einem Zusatzlogin gelten diese für das gemeinsame Hauptkonto.
               </div>
               <button className="h-13 w-full rounded-xl bg-emerald-700 font-semibold text-white hover:bg-emerald-800">Gutschrift vergeben</button>
             </form>
@@ -2397,7 +2381,8 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <span className="mb-2 block text-sm font-medium text-stone-700">E-Mail-Adresse</span>
                 <input required type="email" value={inviteDraft.email} onChange={(event) => setInviteDraft({ ...inviteDraft, email: event.target.value })} className="h-13 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" placeholder="name@beispiel.at" />
               </label>
-              <div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-950">{inviteDraft.role === "employee" ? <><strong>Mitarbeiterzugang:</strong> 12 Stunden je Kalendermonat plus Bonusstunden. Keine Rechnungen, Kautionen oder Mietverträge.</> : inviteDraft.role === "partner" ? <><strong>Nutzungspartner:</strong> 12 Stunden plus Bonusstunden und reguläre Rechnungen. Keine Kautionen oder Mietverträge.</> : <><strong>Mieterzugang:</strong> 12 Stunden je Kalendermonat; Zusatznutzung wird abgerechnet. Rechnungen und freigegebene Vertragsdokumente sind sichtbar.</>}</div>
+              <label className="block"><span className="mb-2 block text-sm font-medium">Startpaket / Meetingkontingent</span><select value={inviteDraft.package ?? 'pro'} onChange={event => setInviteDraft({ ...inviteDraft, package: event.target.value as PackageId })} className="min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4">{Object.entries(packages).filter(([id]) => !['shared', 'custom'].includes(id)).map(([id, pkg]) => <option key={id} value={id}>{pkg.name} · {pkg.hours} h / Monat</option>)}</select></label>
+              <div className="rounded-xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">{packages[inviteDraft.package ?? 'pro'].hours} Inklusivstunden je Kalendermonat plus Bonusstunden. Die Grundmiete wird separat in den Abrechnungsdaten vereinbart, nicht durch die Paketauswahl gesetzt. {inviteDraft.role === 'employee' ? 'Mitarbeiter erhalten keine Rechnungen, Kautionen oder Mietverträge. Zusatzlogins vor der ersten Buchung in der Personenakte dem Hauptkonto zuordnen.' : 'Zusatznutzung wird gemäß Vereinbarung abgerechnet.'}</div>
               {inviteError && <p className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800">{inviteError}</p>}
               <button disabled={inviting} className="h-13 w-full rounded-xl bg-emerald-700 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">{inviting ? "Einladung wird gesendet …" : "Einladung senden"}</button>
             </form>
