@@ -50,6 +50,8 @@ import { EmailNotifications } from "./email-notifications";
 import { ContactRequests, EnquiryBadge } from "./contact-requests";
 import { InvoiceReminder } from "./invoice-reminder";
 import { MonthExport } from "./month-export";
+import { InvoiceStatusBadge } from "./invoice-status-badge";
+import { invoiceStatus } from "@/lib/invoices/status";
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
 import { MeetingSettings } from "./meeting-settings";
 import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
@@ -1579,17 +1581,18 @@ function BookingApp({ demo }: { demo: boolean }) {
               </div>
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-stone-100 text-stone-700"><FileText size={20} /></div>
             </div>
-            <div className="mt-5 divide-y divide-stone-100">
+            <div className="mt-5 space-y-3">
               {memberInvoices.length === 0 ? (
                 <p className="py-4 text-sm text-stone-500">Noch keine Rechnungen verfügbar.</p>
               ) : (
                 memberInvoices.filter((invoice) => invoiceYear === "all" || invoice.billing_month.startsWith(invoiceYear)).map((invoice) => (
-                  <div key={invoice.id} className="flex flex-col justify-between gap-3 py-4 first:pt-0 sm:flex-row sm:items-center">
-                    <div>
-                      <p className="font-semibold">{invoice.invoice_number}</p>
-                      <p className="mt-1 text-sm text-stone-500">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto · {invoice.status === "paid" && invoice.paid_at ? `bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : invoice.issue_date > todayVienna ? "Vorausrechnung" : invoiceIsOverdue(invoice, todayVienna) ? "überfällig" : "offen"} · fällig am {new Date(invoice.due_date).toLocaleDateString("de-AT")}</p>
+                  <div key={invoice.id} className={`flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 sm:flex-row sm:items-center ${invoiceStatus(invoice, todayVienna).surface}`}>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><p className="break-words font-semibold">{invoice.invoice_number}</p><InvoiceStatusBadge invoice={invoice} today={todayVienna} /></div>
+                      <p className="mt-2 text-sm text-stone-700">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · <span className="font-semibold">{invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto</span></p>
+                      <p className="mt-1 text-sm text-stone-600">{invoice.status === "paid" ? invoice.paid_at ? `Bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : "Zahlung bestätigt" : `Fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p>
                     </div>
-                    <button onClick={() => downloadInvoice(invoice)} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 px-4 text-sm font-semibold hover:bg-stone-100">
+                    <button onClick={() => downloadInvoice(invoice)} className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold hover:bg-stone-100">
                       <Download size={16} /> PDF
                     </button>
                   </div>
@@ -1887,8 +1890,8 @@ function BookingApp({ demo }: { demo: boolean }) {
                   <div className={`grid gap-6 p-5 sm:p-7 ${isTeamMember(selectedDossier) ? "" : "xl:grid-cols-2"}`}>
                     {(!isTeamMember(selectedDossier) || dossierInvoices.length > 0) && <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Finanzen</p><h4 className="mt-1 text-lg font-semibold">Alle Rechnungen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierInvoices.length}</span></div>
-                      <div className="mt-4 divide-y divide-stone-100 rounded-2xl border border-stone-100">
-                        {dossierInvoices.length === 0 ? <p className="p-4 text-sm text-stone-500">Noch keine Rechnungen vorhanden.</p> : dossierInvoices.map((invoice) => <div key={invoice.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{invoice.invoice_number || "Entwurf"}</p><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : invoice.status === "final" ? "bg-amber-50 text-amber-800" : "bg-stone-100 text-stone-600"}`}>{invoice.status === "paid" ? "Bezahlt" : invoice.status === "final" ? "Offen" : "Entwurf"}</span></div><p className="mt-1 text-xs text-stone-500">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div><div className="flex flex-wrap gap-2">{invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-9 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white">Als bezahlt</button>}{invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-9 rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-700">Wieder offen</button>}<button onClick={() => downloadInvoice(invoice)} className="flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-xs font-semibold"><Download size={14} /> PDF</button></div></div>)}
+                      <div className="mt-4 space-y-3">
+                        {dossierInvoices.length === 0 ? <p className="p-4 text-sm text-stone-500">Noch keine Rechnungen vorhanden.</p> : dossierInvoices.map((invoice) => <div key={invoice.id} className={`flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 sm:flex-row sm:items-center ${invoiceStatus(invoice, todayVienna).surface}`}><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{invoice.invoice_number || "Entwurf"}</p><InvoiceStatusBadge invoice={invoice} today={todayVienna} /></div><p className="mt-2 text-sm text-stone-600">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div><div className="flex flex-wrap gap-2">{invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-9 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white">Als bezahlt</button>}{invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-9 rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-700">Wieder offen</button>}<button onClick={() => downloadInvoice(invoice)} className="flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-xs font-semibold"><Download size={14} /> PDF</button></div></div>)}
                       </div>
                     </div>}
 
@@ -1979,17 +1982,17 @@ function BookingApp({ demo }: { demo: boolean }) {
                     <article key={group.member.id} className="overflow-hidden rounded-2xl border border-stone-200">
                       <div className="flex flex-col justify-between gap-3 bg-stone-50 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
                         <div><p className="font-semibold">{group.member.billing_name || group.member.name}</p><p className="mt-1 text-xs text-stone-500">{group.member.office_name || group.member.email}</p></div>
-                        <div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${groupOpen.length ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{groupOpen.length ? `${groupOpen.length} offen` : group.invoices.every((invoice) => invoice.status === "paid") ? "Alles bezahlt" : "Keine aktuelle Forderung"}</span><span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-500">{group.invoices.length} Rechnungen</span></div>
+                        <div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${groupOpen.length ? "bg-red-100 text-red-900" : group.invoices.every((invoice) => invoice.status === "paid") ? "bg-emerald-100 text-emerald-900" : "bg-stone-100 text-stone-700"}`}>{groupOpen.length ? `${groupOpen.length} offen` : group.invoices.every((invoice) => invoice.status === "paid") ? "Alles bezahlt" : "Keine aktuelle Forderung"}</span><span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-500">{group.invoices.length} Rechnungen</span></div>
                       </div>
                       <div className="divide-y divide-stone-100">
                         {group.invoices.map((invoice) => (
-                          <div key={invoice.id} className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:px-5">
+                          <div key={invoice.id} className={`flex flex-col justify-between gap-4 border-l-4 p-4 sm:flex-row sm:items-center sm:px-5 ${invoiceStatus(invoice, todayVienna).surface}`}>
                             <div className="flex min-w-0 items-center gap-3">
                               <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${invoice.status === "paid" ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-700"}`}><FileText size={18} /></div>
                               <div className="min-w-0"><p className="truncate font-semibold">{invoice.invoice_number || "Alter Entwurf"} · {new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })}</p><p className="mt-1 text-sm text-stone-500">{invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${invoice.status === "draft" ? "bg-amber-50 text-amber-800" : invoice.status === "paid" ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-700"}`}>{invoice.status === "draft" ? "Alter Entwurf" : invoice.status === "paid" ? "Bezahlt" : invoice.issue_date > todayVienna ? "Vorausrechnung" : invoiceIsOverdue(invoice, todayVienna) ? "Überfällig" : "Offen"}</span>
+                              <InvoiceStatusBadge invoice={invoice} today={todayVienna} />
                               {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Einmalig finalisieren</button>}
                               {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-10 rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800">Als bezahlt markieren</button>}
                               {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Korrigieren</button>}
