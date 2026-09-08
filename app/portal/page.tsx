@@ -52,6 +52,7 @@ import { InvoiceReminder } from "./invoice-reminder";
 import { MonthExport } from "./month-export";
 import { InvoiceStatusBadge } from "./invoice-status-badge";
 import { invoiceStatus } from "@/lib/invoices/status";
+import { initialPortalView, portalNavigation, visiblePortalView, type PortalView } from "@/lib/portal/navigation";
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
 import { MeetingSettings } from "./meeting-settings";
 import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
@@ -206,7 +207,12 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
-  const [view, setView] = useState<"dashboard" | "calendar" | "tour" | "about" | "admin">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "admin" : "dashboard");
+  const [requestedView, setRequestedView] = useState<PortalView>(() => typeof window !== "undefined" ? initialPortalView(window.location.search, window.location.hash) : "dashboard");
+  const view = visiblePortalView(requestedView, member?.role ?? "employee");
+  function setView(next: PortalView) {
+    setRequestedView(next);
+    if (next === "invoices") window.scrollTo(0, 0);
+  }
   const [adminTab, setAdminTab] = useState<"overview" | "people" | "invoices" | "documents" | "issues" | "emails" | "contacts">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "issues" ? "issues" : "overview");
   const [issueDraft, setIssueDraft] = useState<IssueDraft | null>(null);
   const [sendingIssue, setSendingIssue] = useState(false);
@@ -1314,6 +1320,18 @@ function BookingApp({ demo }: { demo: boolean }) {
     );
   }
 
+  const navigationItems = portalNavigation(member.role);
+  const bottomNavigation = (
+    <nav className="mt-6 grid grid-cols-2 gap-2 md:hidden" aria-label="Weitere Portalnavigation">
+      {navigationItems.map(item => (
+        <button key={item.view} onClick={() => setView(item.view)} aria-current={view === item.view ? "page" : undefined}
+          className={`min-h-12 rounded-xl px-2 py-3 text-sm font-semibold ${view === item.view ? "bg-[#17231c] text-white" : "bg-white text-stone-700 shadow-sm"}`}>
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5_0,_#fafaf9_28rem)] text-stone-900">
       <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-white/88 backdrop-blur-xl">
@@ -1325,39 +1343,14 @@ function BookingApp({ demo }: { demo: boolean }) {
               <p className="hidden max-w-40 truncate text-xs text-stone-500 sm:block">Meetingraum · Hallo {member.name}</p>
             </div>
           </div>
-          <nav className="hidden shrink-0 items-center rounded-xl bg-stone-100 p-1 lg:flex" aria-label="Hauptnavigation">
-            <button
-              onClick={() => setView("dashboard")}
-              className={`h-9 rounded-lg px-4 text-sm font-medium transition ${view === "dashboard" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
-            >
-              Startseite
-            </button>
-            <button
-              onClick={() => setView("calendar")}
-              className={`h-9 rounded-lg px-4 text-sm font-medium transition ${view === "calendar" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
-            >
-              Meetingraum
-            </button>
-            <button
-              onClick={() => setView("tour")}
-              className={`h-9 rounded-lg px-4 text-sm font-medium transition ${view === "tour" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
-            >
-              Rundgang
-            </button>
-            <button
-              onClick={() => setView("about")}
-              className={`h-9 rounded-lg px-4 text-sm font-medium transition ${view === "about" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
-            >
-              Über uns
-            </button>
-            {member.role === "admin" && (
-              <button
-                onClick={() => setView("admin")}
-                className={`h-9 rounded-lg px-4 text-sm font-medium transition ${view === "admin" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
-              >
-                Admin
+          <nav className="hidden shrink-0 items-center rounded-xl bg-stone-100 p-1 xl:flex" aria-label="Hauptnavigation">
+            {navigationItems.map(item => (
+              <button key={item.view} onClick={() => setView(item.view)} aria-current={view === item.view ? "page" : undefined}
+                className={`flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium transition ${view === item.view ? "bg-white text-stone-900 shadow-sm" : "text-stone-600 hover:text-stone-900"}`}>
+                {item.label}
+                {item.view === "invoices" && memberOpenInvoices.length > 0 && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-900" aria-label={`${memberOpenInvoices.length} offene Rechnungen`}>{memberOpenInvoices.length}</span>}
               </button>
-            )}
+            ))}
           </nav>
           <div className="flex items-center gap-2">
             {member.role === "admin" && (
@@ -1396,9 +1389,13 @@ function BookingApp({ demo }: { demo: boolean }) {
             </button>
           </div>
         </div>
-        <nav className={`mx-auto grid max-w-[1500px] gap-1 px-2 pb-2 lg:hidden ${member.role === "admin" ? "grid-cols-5" : "grid-cols-4"}`} aria-label="Hauptnavigation mobil">
-          {([["dashboard", "Start"], ["calendar", "Kalender"], ["tour", "Rundgang"], ["about", "Über uns"], ...(member.role === "admin" ? [["admin", "Admin"]] : [])] as Array<[typeof view, string]>).map(([target, label]) => (
-            <button key={target} onClick={() => setView(target)} className={`min-h-11 min-w-0 rounded-xl px-1 text-xs font-semibold ${view === target ? "bg-[#17231c] text-white" : "text-stone-600"}`}>{label}</button>
+        <nav className={`mx-auto grid max-w-[1500px] gap-1 px-4 pb-2 sm:flex sm:justify-center sm:px-6 xl:hidden ${navigationItems.length > 4 ? "grid-cols-3" : "grid-cols-2"}`} aria-label="Hauptnavigation mobil">
+          {navigationItems.map(item => (
+            <button key={item.view} onClick={() => setView(item.view)} aria-current={view === item.view ? "page" : undefined}
+              className={`flex min-h-11 min-w-0 flex-wrap items-center justify-center gap-1 rounded-xl px-1 py-2 text-sm font-semibold sm:flex-1 ${view === item.view ? "bg-[#17231c] text-white" : "text-stone-600 hover:bg-stone-100"}`}>
+              {item.label}
+              {item.view === "invoices" && memberOpenInvoices.length > 0 && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-900" aria-label={`${memberOpenInvoices.length} offene Rechnungen`}>{memberOpenInvoices.length}</span>}
+            </button>
           ))}
         </nav>
       </header>
@@ -1412,7 +1409,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           )}
 
-          {invoiceNotice && (
+          {member.role !== "employee" && invoiceNotice && (
             <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-emerald-950 shadow-sm sm:flex-row sm:items-center sm:px-5" role="status">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-700 text-white"><FileText size={21} /></span>
               <span className="min-w-0 flex-1">
@@ -1424,11 +1421,13 @@ function BookingApp({ demo }: { demo: boolean }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    downloadInvoice(invoiceNotice);
+                    setInvoiceYear("all");
+                    setView("invoices");
+                    dismissInvoiceNotice(invoiceNotice.id);
                   }}
                   className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 sm:flex-none"
                 >
-                  <Download size={16} /> PDF öffnen
+                  <FileText size={16} /> Rechnung ansehen
                 </button>
                 <button
                   onClick={() => dismissInvoiceNotice(invoiceNotice.id)}
@@ -1442,16 +1441,16 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           )}
 
-          {!invoiceNotice && memberOpenInvoices.length > 0 && (
+          {member.role !== "employee" && !invoiceNotice && memberOpenInvoices.length > 0 && (
             <button
-              onClick={() => document.getElementById("member-invoices")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-left text-amber-950 shadow-sm transition hover:bg-amber-100 sm:px-5"
+              onClick={() => { setInvoiceYear("all"); setView("invoices"); }}
+              className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-left text-red-950 shadow-sm transition hover:bg-red-100 sm:px-5"
               aria-label="Offene Rechnungen anzeigen"
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800"><Bell size={20} /></span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-100 text-red-800"><CircleAlert size={20} /></span>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{memberOpenInvoices.length === 1 ? "Eine Rechnung ist noch offen" : `${memberOpenInvoices.length} Rechnungen sind noch offen`}</span>
-                <span className="mt-0.5 block text-sm text-amber-800">
+                <span className="mt-0.5 block text-sm text-red-800">
                   Offener Betrag: {memberOpenInvoices.reduce((sum, invoice) => sum + invoiceGross(invoice), 0).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} · Antippen für Details und PDF.
                 </span>
               </span>
@@ -1567,40 +1566,6 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </article>
 
-          {member.role !== "employee" && <article id="member-invoices" className="mt-6 scroll-mt-24 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-emerald-700">Deine Dokumente</p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight">Rechnungen</h2>
-                <label className="mt-3 flex items-center gap-3 text-sm text-stone-600">Jahr
-                  <select aria-label="Rechnungsjahr" value={invoiceYear} onChange={(event) => setInvoiceYear(event.target.value)} className="min-h-11 rounded-xl border border-stone-300 bg-white px-3">
-                    <option value="all">Alle Jahre ({memberInvoices.length})</option>
-                    {invoiceYears.map((year) => <option key={year}>{year}</option>)}
-                  </select>
-                </label>
-              </div>
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-stone-100 text-stone-700"><FileText size={20} /></div>
-            </div>
-            <div className="mt-5 space-y-3">
-              {memberInvoices.length === 0 ? (
-                <p className="py-4 text-sm text-stone-500">Noch keine Rechnungen verfügbar.</p>
-              ) : (
-                memberInvoices.filter((invoice) => invoiceYear === "all" || invoice.billing_month.startsWith(invoiceYear)).map((invoice) => (
-                  <div key={invoice.id} className={`flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 sm:flex-row sm:items-center ${invoiceStatus(invoice, todayVienna).surface}`}>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><p className="break-words font-semibold">{invoice.invoice_number}</p><InvoiceStatusBadge invoice={invoice} today={todayVienna} /></div>
-                      <p className="mt-2 text-sm text-stone-700">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · <span className="font-semibold">{invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto</span></p>
-                      <p className="mt-1 text-sm text-stone-600">{invoice.status === "paid" ? invoice.paid_at ? `Bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : "Zahlung bestätigt" : `Fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p>
-                    </div>
-                    <button onClick={() => downloadInvoice(invoice)} className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold hover:bg-stone-100">
-                      <Download size={16} /> PDF
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </article>}
-
           <div className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
             <article className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
               <div className="flex items-center justify-between">
@@ -1648,13 +1613,46 @@ function BookingApp({ demo }: { demo: boolean }) {
             </article>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 md:hidden">
-            <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-[#17231c] text-sm font-semibold text-white">Startseite</button>
-            <button onClick={() => setView("calendar")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Meetingraum</button>
-            <button onClick={() => setView("tour")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Rundgang</button>
-            <button onClick={() => setView("about")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Über uns</button>
-            {member.role === "admin" && <button onClick={() => setView("admin")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Admin</button>}
-          </div>
+          {bottomNavigation}
+        </section>
+      )}
+
+      {view === "invoices" && member.role !== "employee" && (
+        <section className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 sm:py-10">
+          <article id="member-invoices" className="scroll-mt-24 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-emerald-700">Deine Abrechnung</p>
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight">Rechnungen</h1>
+                <label className="mt-3 flex items-center gap-3 text-sm text-stone-600">Jahr
+                  <select aria-label="Rechnungsjahr" value={invoiceYear} onChange={(event) => setInvoiceYear(event.target.value)} className="min-h-11 rounded-xl border border-stone-300 bg-white px-3">
+                    <option value="all">Alle Jahre ({memberInvoices.length})</option>
+                    {invoiceYears.map((year) => <option key={year}>{year}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-stone-100 text-stone-700"><FileText size={20} /></div>
+            </div>
+            <div className="mt-5 space-y-3">
+              {memberInvoices.length === 0 ? (
+                <p className="py-4 text-sm text-stone-500">Noch keine Rechnungen verfügbar.</p>
+              ) : (
+                memberInvoices.filter((invoice) => invoiceYear === "all" || invoice.billing_month.startsWith(invoiceYear)).map((invoice) => (
+                  <div key={invoice.id} className={`flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 sm:flex-row sm:items-center ${invoiceStatus(invoice, todayVienna).surface}`}>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3"><p className="break-words font-semibold">{invoice.invoice_number}</p><InvoiceStatusBadge invoice={invoice} today={todayVienna} /></div>
+                      <p className="mt-2 text-sm text-stone-700">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · <span className="font-semibold">{invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto</span></p>
+                      <p className="mt-1 text-sm text-stone-600">{invoice.status === "paid" ? invoice.paid_at ? `Bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : "Zahlung bestätigt" : `Fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p>
+                    </div>
+                    <button onClick={() => downloadInvoice(invoice)} className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold hover:bg-stone-100">
+                      <Download size={16} /> PDF
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </article>
+          {bottomNavigation}
         </section>
       )}
 
@@ -1666,13 +1664,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             <p className="mt-4 text-lg leading-8 text-stone-500">Vier Büros, ein Meetingraum und kurze Wege. Tippe einen Bereich an und lerne das AUFELD21 kennen.</p>
           </div>
           <SpacePlan />
-          <div className="mt-6 grid grid-cols-2 gap-2 md:hidden">
-            <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Startseite</button>
-            <button onClick={() => setView("calendar")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Meetingraum</button>
-            <button onClick={() => setView("tour")} className="h-12 rounded-xl bg-[#17231c] text-sm font-semibold text-white">Rundgang</button>
-            <button onClick={() => setView("about")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Über uns</button>
-            {member.role === "admin" && <button onClick={() => setView("admin")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Admin</button>}
-          </div>
+          {bottomNavigation}
         </section>
       )}
 
@@ -1727,13 +1719,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             <p className="mx-auto mt-4 max-w-2xl leading-7 text-stone-500">Wir möchten einen Ort schaffen, den wir selbst gerne jeden Tag betreten – und an dem aus guter Nachbarschaft neue Ideen, Empfehlungen und gemeinsame Projekte entstehen können.</p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 md:hidden">
-            <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Startseite</button>
-            <button onClick={() => setView("calendar")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Meetingraum</button>
-            <button onClick={() => setView("tour")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Rundgang</button>
-            <button onClick={() => setView("about")} className="h-12 rounded-xl bg-[#17231c] text-sm font-semibold text-white">Über uns</button>
-            {member.role === "admin" && <button onClick={() => setView("admin")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Admin</button>}
-          </div>
+          {bottomNavigation}
         </section>
       )}
 
@@ -2010,13 +1996,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               </div>
             </section>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 md:hidden">
-            <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Startseite</button>
-            <button onClick={() => setView("calendar")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Meetingraum</button>
-            <button onClick={() => setView("tour")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Rundgang</button>
-            <button onClick={() => setView("about")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Über uns</button>
-            <button onClick={() => setView("admin")} className="h-12 rounded-xl bg-[#17231c] text-sm font-semibold text-white">Admin</button>
-          </div>
+          {bottomNavigation}
         </section>
       )}
 
@@ -2201,13 +2181,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             })}
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 md:hidden">
-          <button onClick={() => setView("dashboard")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Startseite</button>
-          <button onClick={() => setView("calendar")} className="h-12 rounded-xl bg-[#17231c] text-sm font-semibold text-white">Meetingraum</button>
-          <button onClick={() => setView("tour")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Rundgang</button>
-          <button onClick={() => setView("about")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Über uns</button>
-          {member.role === "admin" && <button onClick={() => setView("admin")} className="h-12 rounded-xl bg-white text-sm font-semibold shadow-sm">Admin</button>}
-        </div>
+        {bottomNavigation}
       </section>
       )}
 
