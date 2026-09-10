@@ -55,6 +55,7 @@ import { invoiceStatus } from "@/lib/invoices/status";
 import { initialPortalView, portalNavigation, visiblePortalView, type PortalView } from "@/lib/portal/navigation";
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
 import { MeetingSettings } from "./meeting-settings";
+import { WifiAccessCard } from "./wifi-access";
 import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 
@@ -1495,6 +1496,8 @@ function BookingApp({ demo }: { demo: boolean }) {
               </button>
             </div>
           </div>
+
+          <WifiAccessCard key={member.id} supabase={supabase} />
 
           <div className="mt-6 grid gap-5 md:grid-cols-3">
             <article className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm md:col-span-2">
