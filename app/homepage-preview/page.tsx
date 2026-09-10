@@ -138,10 +138,10 @@ export default function HomepagePreview() {
           <div className="max-w-3xl">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Arbeitsplätze & Büro</p>
             <h2 className="mt-4 text-[2rem] font-semibold leading-[1.02] tracking-[-0.06em] sm:mt-5 sm:text-6xl">Einfach wählen. Alles Wesentliche ist dabei.</h2>
-            <p className="mt-6 text-lg leading-8 text-stone-600">Keine komplizierten Optionen. Drei klare Möglichkeiten – je nachdem, wie viel eigener Raum gerade richtig ist.</p>
+            <p className="mt-6 text-lg leading-8 text-stone-600">Flex, Fix oder ein eigenes Büro – je nachdem, wie viel eigener Raum gerade richtig ist.</p>
           </div>
 
-          <div className="mt-9 grid gap-4 sm:mt-12 lg:grid-cols-3">
+          <div className="mt-9 grid gap-4 sm:mt-12 md:grid-cols-2 xl:grid-cols-4">
             {[
               {
                 name: "Flex",
@@ -159,7 +159,14 @@ export default function HomepagePreview() {
                 featured: true,
               },
               {
-                name: "Privates Büro",
+                name: "Büro · 17 m²",
+                price: 490,
+                unit: "für das gesamte Büro",
+                detail: "17 m² für konzentriertes Arbeiten",
+                items: ["12 Stunden Meetingraum gemeinsam je Büro / Monat", "Abschließbarer eigener Raum", "Highspeed-Internet", "Gemeinsame Infrastruktur"],
+              },
+              {
+                name: `Büro · ${officeArea}`,
                 price: packages.office.net,
                 unit: "für das gesamte Büro",
                 detail: `${officeArea} für ein kleines Team`,
