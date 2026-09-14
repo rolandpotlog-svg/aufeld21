@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   addDays,
@@ -58,6 +58,7 @@ import { MeetingSettings } from "./meeting-settings";
 import { WifiAccessCard } from "./wifi-access";
 import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
+import { bookingCancellationError, cancelOwnBooking } from "@/lib/bookings/cancellation";
 
 const TZ = "Europe/Vienna";
 const SLOT_HEIGHT = 52;
@@ -180,6 +181,10 @@ function BookingApp({ demo }: { demo: boolean }) {
   );
   const [revision, refreshPortal] = usePortalRefresh(Boolean(member && supabase));
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [confirmCancellation, setConfirmCancellation] = useState(false);
+  const [cancellingBooking, setCancellingBooking] = useState(false);
+  const [cancellationError, setCancellationError] = useState("");
+  const cancellationInFlight = useRef(false);
   const [invoiceYear, setInvoiceYear] = useState("all");
   const [invoiceScope, setInvoiceScope] = useState("month");
   const [billingRun, setBillingRun] = useState<{ started_at: string; finished_at: string | null; created_count: number; errors: Array<{ name?: string; month?: string; message: string }> } | null>(null);
@@ -384,6 +389,8 @@ function BookingApp({ demo }: { demo: boolean }) {
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const mobileDay = days[mobileDayOffset] ?? days[0];
+  const cancellableBookings = bookings.filter((booking) => !bookingCancellationError(booking, member))
+    .sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at));
   const includedHours = meetingUsage ? Number(meetingUsage.included_hours) : demo ? 12 : 0;
   const availableHours = includedHours + monthlyBonusHours;
   const remainingHours = Math.max(availableHours - monthlyUsedHours, 0);
@@ -750,29 +757,45 @@ function BookingApp({ demo }: { demo: boolean }) {
     setToast("Der Raum ist gebucht.");
   }
 
-  async function cancelBooking(booking: Booking) {
-    if (booking.member_id !== member?.id || new Date(booking.start_at) <= new Date()) {
-      setToast("Begonnene oder vergangene Buchungen können nicht storniert werden.");
-      return;
-    }
-    if (!window.confirm("Diese Buchung wirklich stornieren?")) return;
-    if (!supabase) {
-      setBookings((current) => current.filter((item) => item.id !== booking.id));
-      setMonthlyUsedHours((current) =>
-        Math.max(current - (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000, 0),
-      );
-      setSelectedBooking(null);
-      setToast("Demo-Buchung storniert.");
-      return;
-    }
-    const { data, error } = await supabase.from("bookings").delete().eq("id", booking.id).select("id").maybeSingle();
-    if (error || !data) {
-      setToast("Die Buchung konnte nicht storniert werden.");
-      return;
-    }
-    setBookings((current) => current.filter((item) => item.id !== booking.id));
+  function openBookingDetails(booking: Booking, confirm = false) {
+    setCancellationError("");
+    setConfirmCancellation(confirm);
+    setSelectedBooking(booking);
+  }
+
+  function closeBookingDetails() {
+    if (cancellationInFlight.current) return;
     setSelectedBooking(null);
-    setToast("Buchung storniert.");
+    setConfirmCancellation(false);
+    setCancellationError("");
+  }
+
+  async function cancelBooking(booking: Booking) {
+    if (cancellationInFlight.current) return;
+    const blocked = bookingCancellationError(booking, member);
+    if (blocked) { setCancellationError(blocked); return; }
+    cancellationInFlight.current = true;
+    setCancellingBooking(true);
+    setCancellationError("");
+    try {
+      if (supabase) await cancelOwnBooking(supabase, booking, member);
+      setBookings((current) => current.filter((item) => item.id !== booking.id));
+      if (!supabase && formatInTimeZone(booking.start_at, TZ, "yyyy-MM") === formatInTimeZone(new Date(), TZ, "yyyy-MM")) {
+        setMonthlyUsedHours((current) =>
+          Math.max(current - (new Date(booking.end_at).getTime() - new Date(booking.start_at).getTime()) / 3_600_000, 0),
+        );
+      }
+      // The usage effect reloads the authoritative shared monthly quota when
+      // bookings change. Do not alter invoices or optimistically credit other months.
+      setSelectedBooking(null);
+      setConfirmCancellation(false);
+      setToast(supabase ? "Buchung storniert. Der Termin ist wieder frei." : "Demo-Buchung storniert. Der Termin ist wieder frei.");
+    } catch (error) {
+      setCancellationError(error instanceof Error ? error.message : "Die Buchung konnte nicht storniert werden. Bitte versuche es erneut.");
+    } finally {
+      cancellationInFlight.current = false;
+      setCancellingBooking(false);
+    }
   }
 
   async function submitIssue(event: React.FormEvent) {
@@ -2043,6 +2066,29 @@ function BookingApp({ demo }: { demo: boolean }) {
           </div>
         </div>
 
+        {cancellableBookings.length > 0 && (
+          <section aria-labelledby="my-bookings-title" className="mb-5 rounded-2xl border border-emerald-200 bg-white p-4 sm:p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-1">
+              <h2 id="my-bookings-title" className="font-semibold text-emerald-950">Meine Buchungen</h2>
+              <p className="text-xs text-stone-500">In dieser Woche · bis zum Beginn stornierbar</p>
+            </div>
+            <ul className="mt-3 divide-y divide-stone-100">
+              {cancellableBookings.map((booking) => (
+                <li key={booking.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <button type="button" onClick={() => openBookingDetails(booking)} className="min-h-11 min-w-0 flex-1 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">
+                    <span className="block text-sm font-semibold">{formatInTimeZone(booking.start_at, TZ, "EEE, dd.MM.", { locale: de })} · {formatInTimeZone(booking.start_at, TZ, "HH:mm")}–{formatInTimeZone(booking.end_at, TZ, "HH:mm")} Uhr</span>
+                    <span className="mt-1 block break-words text-sm text-stone-500">{booking.note || "Meetingraum"}</span>
+                  </button>
+                  <button type="button" onClick={() => openBookingDetails(booking, true)} aria-label={`Buchung am ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} stornieren`} className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">
+                    <Trash2 size={16} /> Stornieren
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <p className="mb-3 text-sm text-stone-500">Termin antippen für Details. Eigene Buchungen kannst du vor Beginn stornieren.</p>
+
         <div className="md:hidden">
           <div className="mb-3 grid grid-cols-7 gap-1 rounded-2xl bg-stone-100 p-1" aria-label="Tag auswählen">
             {days.map((day, index) => {
@@ -2100,7 +2146,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                   return (
                     <button type="button"
                       key={booking.id}
-                      onClick={() => setSelectedBooking(booking)}
+                      onClick={() => openBookingDetails(booking)}
                       aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
                       className={`absolute left-1.5 right-1.5 z-10 overflow-hidden rounded-lg border px-2.5 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
                       style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 32) }}
@@ -2168,7 +2214,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                     return (
                       <button type="button"
                         key={booking.id}
-                        onClick={() => setSelectedBooking(booking)}
+                        onClick={() => openBookingDetails(booking)}
                         aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
                         className={`absolute left-1 right-1 z-10 overflow-hidden rounded-lg border px-2 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
                         style={{ top: Math.max(top + 2, 2), height: Math.max(height - 4, 40) }}
@@ -2189,19 +2235,32 @@ function BookingApp({ demo }: { demo: boolean }) {
       )}
 
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setSelectedBooking(null)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && closeBookingDetails()}>
           <section role="dialog" aria-modal="true" aria-labelledby="booking-detail-title" className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="text-sm font-medium text-emerald-700">Meetingraum</p><h2 id="booking-detail-title" className="mt-1 text-2xl font-semibold">{memberName(selectedBooking)}</h2></div>
-              <button onClick={() => setSelectedBooking(null)} aria-label="Schließen" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100"><X size={20} /></button>
+              <div className="min-w-0"><p className="text-sm font-medium text-emerald-700">Meetingraum</p><h2 id="booking-detail-title" className="mt-1 break-words text-2xl font-semibold">{confirmCancellation ? "Buchung stornieren?" : memberName(selectedBooking)}</h2></div>
+              <button onClick={closeBookingDetails} disabled={cancellingBooking} aria-label="Schließen" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 disabled:opacity-50"><X size={20} /></button>
             </div>
             <p className="mt-5 font-medium">{formatInTimeZone(selectedBooking.start_at, TZ, "EEEE, dd. MMMM yyyy", { locale: de })}</p>
             <p className="mt-1 text-stone-500">{formatInTimeZone(selectedBooking.start_at, TZ, "HH:mm")}–{formatInTimeZone(selectedBooking.end_at, TZ, "HH:mm")} Uhr</p>
             {selectedBooking.note && <p className="mt-4 break-words rounded-xl bg-stone-50 p-4 text-sm">{selectedBooking.note}</p>}
-            <a href={googleCalendarUrl(selectedBooking)} target="_blank" rel="noopener noreferrer" className="mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white"><CalendarPlus size={18} /> In Google Kalender</a>
-            {selectedBooking.member_id === member.id && (new Date(selectedBooking.start_at) > new Date()
-              ? <button onClick={() => cancelBooking(selectedBooking)} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 font-semibold text-red-700"><Trash2 size={17} /> Buchung stornieren</button>
-              : <p className="mt-4 text-sm leading-6 text-stone-500">Begonnene und vergangene Buchungen bleiben als Nachweis erhalten. Für Korrekturen bitte Roland kontaktieren.</p>)}
+            {confirmCancellation ? (
+              <div className="mt-5">
+                <p className="text-sm leading-6 text-stone-600">Der Termin wird für alle wieder frei und zählt nicht mehr zu deinen gebuchten Meetingstunden. Ein eventuell übernommener Google-Kalender-Eintrag muss separat entfernt werden.</p>
+                {cancellationError && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm leading-6 text-red-800">{cancellationError}</p>}
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <button type="button" onClick={closeBookingDetails} disabled={cancellingBooking} className="min-h-12 flex-1 rounded-xl border border-stone-200 px-4 font-semibold disabled:opacity-50">Buchung behalten</button>
+                  <button type="button" onClick={() => cancelBooking(selectedBooking)} disabled={cancellingBooking} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-red-700 px-4 font-semibold text-white hover:bg-red-800 disabled:cursor-wait disabled:opacity-60"><Trash2 size={17} />{cancellingBooking ? "Wird storniert …" : "Jetzt stornieren"}</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {selectedBooking.member_id === member.id && (!bookingCancellationError(selectedBooking, member)
+                  ? <button onClick={() => setConfirmCancellation(true)} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 font-semibold text-red-700 hover:bg-red-100"><Trash2 size={17} /> Buchung stornieren</button>
+                  : <p className="mt-4 text-sm leading-6 text-stone-500">Begonnene und vergangene Buchungen bleiben als Nachweis erhalten. Für Korrekturen bitte Roland kontaktieren.</p>)}
+                <a href={googleCalendarUrl(selectedBooking)} target="_blank" rel="noopener noreferrer" className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white"><CalendarPlus size={18} /> In Google Kalender</a>
+              </>
+            )}
           </section>
         </div>
       )}
