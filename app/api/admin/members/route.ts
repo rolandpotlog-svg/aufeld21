@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { formatInTimeZone } from "date-fns-tz";
-import { isPackageId, packages, type MeetingUsage, type PackageId } from "@/lib/members/packages";
+import { hasUnlimitedMeeting, isPackageId, packages, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 
 export async function GET(request: Request) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   }
   return NextResponse.json({ members: members.map(item => {
     const quota = (quotas as MeetingUsage[]).find(row => row.member_id === item.id)!;
-    return { ...item, includedHours: Number(quota.included_hours), meetingPackage: quota.package, meetingAccountId: quota.account_id, usedHours: Number(quota.used_hours), bonusHours: Number(quota.bonus_hours) };
+    return { ...item, meetingUnlimited: hasUnlimitedMeeting(quota), includedHours: Number(quota.included_hours), meetingPackage: quota.package, meetingAccountId: quota.account_id, usedHours: Number(quota.used_hours), bonusHours: Number(quota.bonus_hours) };
   }) }, { headers: { 'Cache-Control': 'no-store' } });
 }
 

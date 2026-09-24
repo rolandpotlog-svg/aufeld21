@@ -74,7 +74,7 @@ function MemberActions({ member, open, onClose, onToggle, ...props }: Omit<Props
       }
     }}>
       {member.role !== "employee" && <button role="menuitem" type="button" className={neutralActionClass} onClick={() => run(props.onBilling)}><FileText size={17} aria-hidden="true" /> Abrechnung bearbeiten</button>}
-      <button role="menuitem" type="button" className={neutralActionClass} onClick={() => run(props.onGift)}><Gift size={17} aria-hidden="true" /> Stunden schenken</button>
+      {!member.meetingUnlimited && <button role="menuitem" type="button" className={neutralActionClass} onClick={() => run(props.onGift)}><Gift size={17} aria-hidden="true" /> Stunden schenken</button>}
       <button role="menuitem" type="button" className={neutralActionClass} disabled={!member.active || props.passwordResetMemberId === member.id} onClick={() => run(props.onPasswordReset)}><KeyRound size={17} aria-hidden="true" /> {props.passwordResetMemberId === member.id ? "Wird gesendet …" : "Passwort-Link senden"}</button>
       {member.role !== "admin" && <div className="mt-1 border-t border-stone-100 pt-1"><button role="menuitem" type="button" className={`${actionClass} ${member.active ? "text-red-700 hover:bg-red-50 focus:bg-red-50" : "text-emerald-700 hover:bg-emerald-50 focus:bg-emerald-50"}`} onClick={() => run(props.onToggleActive)}>
         {member.active ? <UserRoundX size={17} aria-hidden="true" /> : <UserRoundCheck size={17} aria-hidden="true" />}{member.active ? "Zugang deaktivieren" : "Zugang aktivieren"}
@@ -130,15 +130,15 @@ export function MemberDirectory(props: Props) {
             </div>
             <div className="min-w-0">
               <p className="mb-1 text-[11px] text-stone-500 xl:hidden">Meetingstunden</p>
-              <p className="text-sm tabular-nums"><span className="font-semibold text-stone-900">{hours(member.usedHours)} h</span><span className="text-stone-500"> / {hours(summary.allowance)} h</span></p>
-              <div className="my-2 h-1.5 max-w-44 overflow-hidden rounded-full bg-stone-100" aria-hidden="true"><div className={`h-full rounded-full ${summary.extraHours > 0 ? "bg-amber-500" : "bg-emerald-600"}`} style={{ width: `${summary.progress}%` }} /></div>
-              <p className="text-xs leading-5 text-stone-500"><span className="whitespace-nowrap">{hours(member.includedHours ?? 12)} h inklusive{member.meetingAccountId && member.meetingAccountId !== member.id ? ' · gemeinsam' : ''}</span>{member.bonusHours > 0 && <> <span className="whitespace-nowrap text-emerald-700">· +{hours(member.bonusHours)} h Bonus</span></>}</p>
+              <p className="text-sm tabular-nums"><span className="font-semibold text-stone-900">{hours(member.usedHours)} h</span><span className="text-stone-500">{member.meetingUnlimited ? ' genutzt' : ` / ${hours(summary.allowance)} h`}</span></p>
+              {!member.meetingUnlimited && <div className="my-2 h-1.5 max-w-44 overflow-hidden rounded-full bg-stone-100" aria-hidden="true"><div className={`h-full rounded-full ${summary.extraHours > 0 ? "bg-amber-500" : "bg-emerald-600"}`} style={{ width: `${summary.progress}%` }} /></div>}
+              <p className="text-xs leading-5 text-stone-500"><span>{member.meetingUnlimited ? 'Unbegrenzt verfügbar' : `${hours(member.includedHours ?? 12)} h inklusive`}{member.meetingAccountId && member.meetingAccountId !== member.id ? ' · gemeinsam' : ''}</span>{!member.meetingUnlimited && member.bonusHours > 0 && <> <span className="whitespace-nowrap text-emerald-700">· +{hours(member.bonusHours)} h Bonus</span></>}</p>
             </div>
             <div className="min-w-0">
               <p className="mb-1 text-[11px] text-stone-500 xl:hidden">Zusatznutzung</p>
               {summary.extraNet === null ? <p className="text-xs leading-5 text-stone-500">Keine Abrechnung</p> : <>
                 <p className={`whitespace-nowrap text-sm font-semibold tabular-nums ${summary.extraNet > 0 ? "text-amber-800" : "text-stone-500"}`}>{money(summary.extraNet)}</p>
-                <p className="mt-1 text-xs leading-5 text-stone-400">{summary.extraHours > 0 ? `${hours(summary.extraHours)} h · netto` : "Keine Zusatzstunden"}</p>
+                <p className="mt-1 text-xs leading-5 text-stone-400">{member.meetingUnlimited ? 'Dauerhaft kostenfrei' : summary.extraHours > 0 ? `${hours(summary.extraHours)} h · netto` : "Keine Zusatzstunden"}</p>
               </>}
             </div>
             <div className="col-span-2 flex items-center justify-between gap-2 border-t border-stone-100 pt-3 xl:contents">

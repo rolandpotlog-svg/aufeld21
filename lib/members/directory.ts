@@ -13,6 +13,7 @@ export type ManagedMember = Member & {
   usedHours: number;
   bonusHours: number;
   includedHours?: number;
+  meetingUnlimited?: boolean;
   meetingPackage?: PackageId;
   meetingAccountId?: string;
   office_name?: string | null;
@@ -49,6 +50,7 @@ export function filterMembers(members: ManagedMember[], query: string, filter: M
 
 // Display only: the database remains authoritative for quotas and invoicing.
 export function meetingSummary(member: ManagedMember) {
+  if (member.meetingUnlimited) return { allowance: Infinity, extraHours: 0, extraNet: 0, progress: 0 };
   const allowance = (member.includedHours ?? 12) + member.bonusHours;
   const extraHours = Math.max(member.usedHours - allowance, 0);
   return {

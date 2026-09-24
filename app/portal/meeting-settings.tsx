@@ -48,6 +48,10 @@ export function MeetingSettings({ member, supabase, onSaved }: { member: Managed
     } catch (error) { setError(error instanceof Error ? error.message : 'Speichern fehlgeschlagen.'); }
     finally { setBusy(false); }
   }
+  if (member.meetingUnlimited) return <section className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+    <h3 className="font-semibold text-emerald-950">Meetingraum · unbegrenzt & kostenfrei</h3>
+    <p className="mt-2 text-sm leading-6 text-emerald-900">Für dieses Konto gilt eine dauerhafte Ausnahme ohne Stundenlimit und ohne Meetingraum-Zusatzkosten. Bonusstunden sind nicht erforderlich. Die Grundmiete bleibt unverändert.</p>
+  </section>;
   return <details className="mt-5 rounded-2xl border border-stone-200 bg-white p-5">
     <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Meetingkontingent & Paket bearbeiten</summary>
     <p className="mt-3 text-sm leading-6 text-stone-600">Gilt monatlich für das Hauptkonto und seine zugeordneten Zusatzlogins. Eine Paketauswahl ändert keine Grundmiete. Genutzte Konten können frühestens für den Folgemonat umgestellt werden; bereits ausgestellte Rechnungen bleiben geschützt.</p>

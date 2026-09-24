@@ -19,12 +19,15 @@ export async function POST(request: Request) {
   if (!body.memberId || !body.contractEnd?.match(/^\d{4}-\d{2}-\d{2}$/)) {
     return Response.json({ error: "Mieter und Vertragsende sind erforderlich. Vertretung und Firmenbuchnummer sind optional." }, { status: 400 });
   }
-  const { data: member } = await admin.from("members").select("id,email,name,role,office_name,billing_name,billing_address,billing_uid,monthly_rent_net,contract_start").eq("id", body.memberId).single();
+  const { data: member } = await admin.from("members").select("id,email,name,role,office_name,billing_name,billing_address,billing_uid,monthly_rent_net,contract_start,meeting_unlimited").eq("id", body.memberId).single();
   if (!member || !["member", "admin"].includes(member.role) || !member.billing_address || member.monthly_rent_net == null || !member.contract_start) {
     return Response.json({ error: "Die Mieter- und Abrechnungsdaten sind noch unvollständig." }, { status: 409 });
   }
   // This existing PDF template is specifically for office rental with 12 h.
   // Do not silently give a postal/business package the terms of an office lease.
+  if (member.meeting_unlimited) {
+    return Response.json({ error: 'Dieses Konto nutzt den Meetingraum unbegrenzt und kostenfrei. Die Standardvorlage mit 12 Stunden passt nicht; bitte eine individuelle Vereinbarung hochladen.' }, { status: 409 });
+  }
   const { data: terms, error: termsError } = await admin.from('meeting_terms')
     .select('package,included_hours,account_id').eq('member_id', member.id)
     .order('effective_month', { ascending: false });

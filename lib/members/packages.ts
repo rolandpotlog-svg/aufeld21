@@ -16,6 +16,9 @@ export const extraMeetingHourNet = 12;
 export const officeArea = '24,78 m²';
 export type MeetingUsage = {
   member_id: string; account_id: string; package: PackageId;
-  included_hours: number; used_hours: number; bonus_hours: number;
+  // A null allowance is the database's explicit unlimited entitlement.
+  included_hours: number | null; used_hours: number; bonus_hours: number;
   billable: boolean; account_name: string;
 };
+export const hasUnlimitedMeeting = (usage: Pick<MeetingUsage, 'included_hours'> | null | undefined) =>
+  usage?.included_hours === null;

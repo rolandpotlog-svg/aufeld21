@@ -32,13 +32,14 @@ async function setup(withExistingInvoice=false) {
   if(withExistingInvoice) await db.query('select create_monthly_invoice($1,$2,$3)',[tenant,'2024-01-01',admin]);
   const before=JSON.stringify((await db.query('select to_jsonb(i) row from invoices i union all select to_jsonb(i) from invoice_items i union all select to_jsonb(i) from invoice_snapshots i')).rows);
   await db.exec(await readFile(new URL('../../supabase/migrations/20260907201350_meeting_package_terms.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../../supabase/migrations/20260924085420_unlimited_meeting_access.sql',import.meta.url),'utf8'));
   const after=JSON.stringify((await db.query('select to_jsonb(i) row from invoices i union all select to_jsonb(i) from invoice_items i union all select to_jsonb(i) from invoice_snapshots i')).rows);
   assert.equal(after,before,'Migration must not alter existing financial records');
   return db;
 }
 async function month(db:PGlite, offset=0) {return (await db.query<{m:string}>(`select (date_trunc('month',now() at time zone 'Europe/Vienna')+make_interval(months=>$1))::date::text m`,[offset])).rows[0].m;}
 async function set(db:PGlite,id:string,m:string,p:string,h:number,owner=id,by=admin){return db.query('select set_meeting_terms($1,$2,$3,$4,$5,$6)',[id,m,p,h,owner,by]);}
-async function usage(db:PGlite,id:string,m:string){return (await db.query<{account_id:string,included_hours:string,used_hours:string,bonus_hours:string,package:string}>('select * from meeting_usage($1) where member_id=$2',[m,id])).rows[0];}
+async function usage(db:PGlite,id:string,m:string){return (await db.query<{account_id:string,included_hours:string|null,used_hours:string,bonus_hours:string,package:string,billable:boolean}>('select * from meeting_usage($1) where member_id=$2',[m,id])).rows[0];}
 async function book(db:PGlite,id:string,m:string,h:number,day=2){return db.query(`insert into bookings(member_id,start_at,end_at) values($1,($2::date+($4::int-1)+time '08:00') at time zone 'Europe/Vienna',($2::date+($4::int-1)+time '08:00'+make_interval(hours=>$3::int)) at time zone 'Europe/Vienna')`,[id,m,h,day]);}
 
 test('packages: unchanged list prices, 0/1/12 hours and zero-safe display',()=>{
@@ -147,5 +148,52 @@ test('meeting terms: migration preserves finalized invoices and Post bills all m
     await set(db,staff,current,'shared',0,tenant);
     await db.query('update members set active=false where id=$1',[tenant]);
     await assert.rejects(book(db,staff,current,1),/shared_account_inactive/);
+  } finally {await db.close();}
+});
+
+test('unlimited meeting: permanent free usage, unchanged rent, historical catch-up exempt, existing invoices immutable',async()=>{
+  const db=await setup(true);
+  try {
+    const original=JSON.stringify((await db.query('select to_jsonb(i) row from invoices i union all select to_jsonb(i) from invoice_items i union all select to_jsonb(i) from invoice_snapshots i')).rows);
+    await db.query('update members set role=\'admin\',meeting_unlimited=true where id=$1',[tenant]);
+    for (let day=2; day<=21; day++) await book(db,tenant,'2024-02-01',10,day);
+    const u=await usage(db,tenant,'2024-02-01');
+    assert.equal(Number(u.used_hours),200); assert.equal(u.included_hours,null); assert.equal(u.billable,false);
+    assert.equal(JSON.stringify((await db.query('select to_jsonb(i) row from invoices i union all select to_jsonb(i) from invoice_items i union all select to_jsonb(i) from invoice_snapshots i')).rows),original);
+    for (const m of ['2024-04-01','2024-05-01']) {
+      const result=(await db.query<{r:{id:string}}>('select create_monthly_invoice($1,$2,$3) r',[tenant,m,admin])).rows[0].r;
+      const items=(await db.query<{unit_price_net:string}>('select unit_price_net from invoice_items where invoice_id=$1',[result.id])).rows;
+      assert.equal(items.length,1); assert.equal(Number(items[0].unit_price_net),69);
+    }
+    assert.equal((await db.query<{n:number}>('select count(*)::int n from invoice_usage_periods')).rows[0].n,0);
+    await set(db,tenant,await month(db,1),'custom',1);
+    assert.equal((await usage(db,tenant,await month(db,1))).included_hours,null,'Package changes cannot remove the permanent exemption');
+    assert.equal((await usage(db,tenant,'2099-01-01')).billable,false);
+    assert.equal((await usage(db,admin,await month(db))).included_hours,'12.00','Other admins are not automatically unlimited');
+  } finally {await db.close();}
+});
+
+test('unlimited meeting: shared staff inherit free account access; limited staff and browser privileges stay protected',async()=>{
+  const db=await setup();
+  try {
+    const current=await month(db);
+    await set(db,staff,current,'shared',0,tenant);
+    await db.query('update members set meeting_unlimited=true where id=$1',[tenant]);
+    await book(db,staff,current,10,2); await book(db,staff,current,10,3);
+    assert.equal((await usage(db,staff,current)).included_hours,null);
+    assert.equal((await usage(db,staff,current)).billable,false);
+    await book(db,second,current,12,4);
+    await assert.rejects(book(db,second,current,1,5),/employee_quota_exceeded/);
+    for(const role of ['anon','authenticated']) {
+      await db.exec(`set role ${role}`);
+      await assert.rejects(db.query('update members set meeting_unlimited=true where id=$1',[second]),/permission denied/);
+      await assert.rejects(db.query('select create_monthly_invoice($1,$2,$3)',[tenant,'2024-06-01',admin]),/permission denied/);
+      await db.exec('reset role');
+    }
+    // Supabase legacy defaults may grant anon table privileges; RLS must still deny all writes.
+    await db.exec('alter table members enable row level security; grant select,update on members to anon; set role anon');
+    assert.equal((await db.query('update members set meeting_unlimited=true where id=$1 returning id',[second])).rows.length,0);
+    await db.exec('reset role');
+    assert.equal((await db.query<{meeting_unlimited:boolean}>('select meeting_unlimited from members where id=$1',[second])).rows[0].meeting_unlimited,false);
   } finally {await db.close();}
 });

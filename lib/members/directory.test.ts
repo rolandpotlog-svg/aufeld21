@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { filterMembers, meetingSummary, memberRoleLabel, type ManagedMember } from "./directory.ts";
+import { hasUnlimitedMeeting } from './packages.ts';
 
 const tenant: ManagedMember = { id: "tenant", name: "Buchhandlung Neugebauer", billing_name: "Neugebauer GmbH", email: "kevin@example.test", office_name: "Büro 1", role: "member", plan: "pro", active: true, usedHours: 14.5, bonusHours: 2, monthly_rent_net: 400 };
 const rentingAdmin: ManagedMember = { ...tenant, id: "admin-tenant", name: "Roland", role: "admin", monthly_rent_net: 250 };
@@ -31,4 +32,17 @@ test("meeting display includes bonus, caps the bar and does not invoice staff", 
   assert.equal(meetingSummary(employee).extraNet, null);
   assert.equal(meetingSummary(teamAdmin).extraNet, null);
   assert.equal(meetingSummary(rentingAdmin).extraNet, 6);
+});
+
+test('unlimited access has no overage at any usage and does not change the renting-admin classification', () => {
+  for (const usedHours of [0, 12, 168, 1000]) {
+    const member = { ...rentingAdmin, meetingUnlimited: true, usedHours };
+    assert.deepEqual(meetingSummary(member), { allowance: Infinity, extraHours: 0, extraNet: 0, progress: 0 });
+    assert.equal(memberRoleLabel(member), 'Admin · Mieter');
+  }
+  assert.equal(meetingSummary({ ...rentingAdmin, usedHours: 20 }).extraNet, 72);
+  assert.equal(hasUnlimitedMeeting({ included_hours: null }), true);
+  for (const value of [null, undefined, { included_hours: 0 }, { included_hours: 12 }]) {
+    assert.equal(hasUnlimitedMeeting(value), false, 'missing/zero quota is not unlimited');
+  }
 });

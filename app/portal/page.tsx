@@ -56,7 +56,7 @@ import { initialPortalView, portalNavigation, visiblePortalView, type PortalView
 import { PushSettings, disconnectPushBeforeLogout } from "./push-settings";
 import { MeetingSettings } from "./meeting-settings";
 import { WifiAccessCard } from "./wifi-access";
-import { packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
+import { hasUnlimitedMeeting, packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 import { bookingCancellationError, cancelOwnBooking } from "@/lib/bookings/cancellation";
 
@@ -392,9 +392,10 @@ function BookingApp({ demo }: { demo: boolean }) {
   const cancellableBookings = bookings.filter((booking) => !bookingCancellationError(booking, member))
     .sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at));
   const includedHours = meetingUsage ? Number(meetingUsage.included_hours) : demo ? 12 : 0;
+  const unlimitedMeeting = hasUnlimitedMeeting(meetingUsage);
   const availableHours = includedHours + monthlyBonusHours;
-  const remainingHours = Math.max(availableHours - monthlyUsedHours, 0);
-  const billableHours = Math.max(monthlyUsedHours - availableHours, 0);
+  const remainingHours = unlimitedMeeting ? Infinity : Math.max(availableHours - monthlyUsedHours, 0);
+  const billableHours = unlimitedMeeting ? 0 : Math.max(monthlyUsedHours - availableHours, 0);
   const billableNet = (meetingUsage ? meetingUsage.billable : demo && member?.role !== 'employee') ? billableHours * extraMeetingHourNet : 0;
   const billingMembers = managedMembers.filter((item) => item.active && item.role !== "employee" && item.monthly_rent_net != null);
   const todayVienna = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
@@ -688,7 +689,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     const requestedHours = (end.getTime() - start.getTime()) / 3_600_000;
     const bookingMonth = formatInTimeZone(start, TZ, "yyyy-MM");
     const currentMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM");
-    if (member.role === "employee" && (demo || meetingUsage) && bookingMonth === currentMonth && monthlyUsedHours + requestedHours > availableHours) {
+    if (!unlimitedMeeting && member.role === "employee" && (demo || meetingUsage) && bookingMonth === currentMonth && monthlyUsedHours + requestedHours > availableHours) {
       setFormError(`Dein Monatskontingent reicht für diese Buchung nicht aus. Verfügbar sind noch ${remainingHours.toLocaleString("de-AT")} Stunden. Bitte wende dich für Bonusstunden an Roland.`);
       setSaving(false);
       return;
@@ -1548,11 +1549,11 @@ function BookingApp({ demo }: { demo: boolean }) {
               <div>
                 <p className="text-sm font-medium text-emerald-700">Dein Meetingraum-Kontingent · {format(new Date(), "MMMM yyyy", { locale: de })}</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
-                  {!demo && !meetingUsage ? 'Kontingent wird geladen …' : `${remainingHours.toLocaleString("de-AT")} Stunden verfügbar`}
+                  {!demo && !meetingUsage ? 'Kontingent wird geladen …' : unlimitedMeeting ? 'Unbegrenzt verfügbar' : `${remainingHours.toLocaleString("de-AT")} Stunden verfügbar`}
                 </h2>
                 <p className="mt-2 text-sm text-stone-500">
-                  {monthlyUsedHours.toLocaleString("de-AT")} von {availableHours.toLocaleString("de-AT")} Stunden verwendet
-                  {monthlyBonusHours > 0 ? ` · inklusive ${monthlyBonusHours.toLocaleString("de-AT")} Bonusstunden` : ""}
+                  {unlimitedMeeting ? `${monthlyUsedHours.toLocaleString("de-AT")} Stunden genutzt · ohne Stundenlimit` : `${monthlyUsedHours.toLocaleString("de-AT")} von ${availableHours.toLocaleString("de-AT")} Stunden verwendet`}
+                  {!unlimitedMeeting && monthlyBonusHours > 0 ? ` · inklusive ${monthlyBonusHours.toLocaleString("de-AT")} Bonusstunden` : ""}
                 </p>
                 {meetingUsage && meetingUsage.account_id !== member.id && <p className="mt-2 text-sm text-emerald-800">Gemeinsam mit {meetingUsage.account_name}. Kein zusätzliches Kontingent je Login.</p>}
               </div>
@@ -1569,17 +1570,17 @@ function BookingApp({ demo }: { demo: boolean }) {
               ) : (
                 <div className="rounded-2xl bg-emerald-50 px-5 py-4 text-emerald-950">
                   <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Aktueller Tarif</p>
-                  <p className="mt-1 text-xl font-semibold">{meetingUsage ? packages[meetingUsage.package].name : demo ? 'Bestehende Vereinbarung' : 'Wird geladen …'} · {includedHours} h/Monat</p>
+                  <p className="mt-1 text-xl font-semibold">{unlimitedMeeting ? 'Dauerhaft kostenfrei' : `${meetingUsage ? packages[meetingUsage.package].name : demo ? 'Bestehende Vereinbarung' : 'Wird geladen …'} · ${includedHours} h/Monat`}</p>
                 </div>
               )}
             </div>
-            <div className="mt-6 h-3 overflow-hidden rounded-full bg-stone-100">
+            {!unlimitedMeeting && <div className="mt-6 h-3 overflow-hidden rounded-full bg-stone-100">
               <div
                 className={`h-full rounded-full ${billableHours > 0 ? "bg-amber-500" : "bg-emerald-600"}`}
                 style={{ width: `${availableHours > 0 ? Math.min(monthlyUsedHours / availableHours * 100, 100) : monthlyUsedHours > 0 ? 100 : 0}%` }}
               />
-            </div>
-            <p className="mt-3 text-xs text-stone-400">{member.role === "employee" ? "Wenn du mehr Zeit brauchst, kann Roland dir zusätzliche Bonusstunden freischalten." : "Weitere Nutzung wird in 30-Minuten-Schritten zu 12 € netto pro Stunde verrechnet."}</p>
+            </div>}
+            <p className="mt-3 text-xs text-stone-400">{unlimitedMeeting ? "Für dein Konto fallen keine Meetingraum-Zusatzkosten an – unabhängig von der genutzten Stundenzahl. Reservierung und Verfügbarkeit gelten weiterhin." : member.role === "employee" ? "Wenn du mehr Zeit brauchst, kann Roland dir zusätzliche Bonusstunden freischalten." : "Weitere Nutzung wird in 30-Minuten-Schritten zu 12 € netto pro Stunde verrechnet."}</p>
           </article>
 
           <article className="mt-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
@@ -1880,7 +1881,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Vertrag</p><p className="mt-2 font-semibold">{selectedDossier.contract_start ? `ab ${new Date(selectedDossier.contract_start).toLocaleDateString("de-AT")}` : "Nicht hinterlegt"}</p><p className="mt-1 text-xs text-stone-400">{selectedDossier.contract_end ? `bis ${new Date(selectedDossier.contract_end).toLocaleDateString("de-AT")}` : "unbefristet / offen"}</p></div>
                     <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Kaution</p><p className="mt-2 font-semibold">{dossierDeposit ? Number(dossierDeposit.received_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" }) : "Nicht erfasst"}</p><p className="mt-1 text-xs text-stone-400">{dossierDeposit ? `von ${Number(dossierDeposit.agreed_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} vereinbart` : "noch zu prüfen"}</p></div>
                     </>}
-                    <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Meetingraum</p><p className="mt-2 text-xl font-semibold">{selectedDossier.usedHours.toLocaleString("de-AT")} h</p><p className="mt-1 text-xs text-stone-500">{selectedDossier.includedHours ?? 12} h inklusive · +{selectedDossier.bonusHours.toLocaleString("de-AT")} h Bonus{selectedDossier.meetingAccountId && selectedDossier.meetingAccountId !== selectedDossier.id ? ' · gemeinsames Kontingent' : ''}</p></div>
+                    <div className="bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Meetingraum</p><p className="mt-2 text-xl font-semibold">{selectedDossier.usedHours.toLocaleString("de-AT")} h</p><p className="mt-1 text-xs text-stone-500">{selectedDossier.meetingUnlimited ? 'Unbegrenzt · dauerhaft kostenfrei' : `${selectedDossier.includedHours ?? 12} h inklusive · +${selectedDossier.bonusHours.toLocaleString("de-AT")} h Bonus`}{selectedDossier.meetingAccountId && selectedDossier.meetingAccountId !== selectedDossier.id ? ' · gemeinsames Kontingent' : ''}</p></div>
                   </div>
 
                   <div className="border-t border-stone-200 bg-emerald-50/45 p-5 sm:p-7">
@@ -2304,11 +2305,11 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <div className={`rounded-xl p-4 text-sm ${draftDurationHours(draft) > remainingHours ? "bg-amber-50 text-amber-950" : "bg-emerald-50 text-emerald-950"}`}>
                   <p className="font-semibold">
                     {draftDurationHours(draft).toLocaleString("de-AT")} Stunden ·{" "}
-                    {draftDurationHours(draft) > remainingHours
+                    {unlimitedMeeting ? "kostenfrei · unbegrenzte Nutzung" : draftDurationHours(draft) > remainingHours
                       ? `${((draftDurationHours(draft) - remainingHours) * 12).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} netto zusätzlich`
                       : "im Monatskontingent enthalten"}
                   </p>
-                  <p className="mt-1 opacity-70">Nach der Buchung bleiben {Math.max(remainingHours - draftDurationHours(draft), 0).toLocaleString("de-AT")} Freistunden.</p>
+                  <p className="mt-1 opacity-70">{unlimitedMeeting ? 'Es entstehen keine Meetingraum-Zusatzkosten.' : `Nach der Buchung bleiben ${Math.max(remainingHours - draftDurationHours(draft), 0).toLocaleString("de-AT")} Freistunden.`}</p>
                 </div>
               )}
               {formError && <p className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800" role="alert">{formError}</p>}
