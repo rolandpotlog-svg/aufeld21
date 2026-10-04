@@ -13,6 +13,7 @@ export function MarketingHeader() {
       <nav aria-label="Hauptnavigation" className="hidden items-center gap-4 text-sm font-semibold lg:flex xl:gap-7">
         <Link href="/#prices">Angebot</Link>
         <Link href="/buero-service">Büroservice</Link>
+        <Link href="/blog">Blog</Link>
         <Link href="/community">Community</Link>
         <Link href="/ueber-uns">Über uns</Link>
         <Link href="/presse/aufeld21-im-trauner">Presse</Link>

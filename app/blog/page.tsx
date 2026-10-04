@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { MarketingPage } from "@/app/homepage-preview/marketing-shell";
+import { blogPosts } from "@/lib/blog";
+import { siteUrl } from "@/lib/site";
+export const metadata: Metadata = {title:"Coworking & Büro: Tipps aus Traun",description:"Entscheidungshilfen rund um Coworking, Homeoffice und kleine Büros. Der AUFELD21-Blog aus Traun-Oedt.",alternates:{canonical:siteUrl+"/blog"}};
+export default function BlogPage(){return <MarketingPage eyebrow="Das AUFELD21 Journal" title="Raum für gute Arbeit." intro="Praktische Gedanken zu Coworking, Homeoffice und deinem nächsten Büro – von Julia und Roland aus Traun-Oedt."><section aria-label="Alle Artikel" className="mx-auto grid max-w-[1200px] gap-6 px-5 pb-20 sm:px-8 lg:grid-cols-3">{blogPosts.map(p=><article key={p.slug} className="flex flex-col rounded-3xl border border-stone-200 bg-white p-7"><p className="text-xs font-bold uppercase tracking-widest text-emerald-800">{p.category}</p><h2 className="mt-4 text-2xl font-semibold tracking-tight"><Link className="hover:underline focus-visible:outline-2" href={`/blog/${p.slug}`}>{p.title}</Link></h2><p className="mt-4 grow leading-7 text-stone-600">{p.description}</p><Link href={`/blog/${p.slug}`} className="mt-6 inline-flex min-h-11 items-center font-semibold text-emerald-800">Artikel lesen →</Link></article>)}</section></MarketingPage>}
