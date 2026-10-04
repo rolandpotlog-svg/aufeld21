@@ -6,6 +6,8 @@ import { SpacePhoto } from "./space-photo";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactForm } from "./contact-form";
+import { ContactOfferLink } from "./contact-offer-link";
+import type { ContactSelectionKey } from "@/lib/contacts/selection";
 import Link from "next/link";
 import {
   ArrowDownRight,
@@ -75,7 +77,7 @@ export default function HomepagePreview() {
             </h1>
             <p className="mt-7 max-w-2xl text-base font-medium leading-7 text-slate-600 sm:mt-8 sm:text-xl sm:leading-8">Einziehen. Loslegen. Möblierte Büros, flexible Arbeitsplätze und ein digital buchbarer Meetingraum – unkompliziert an einem Ort.</p>
             <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
-              <a href="#contact" className="flex h-14 items-center justify-center gap-3 rounded-full bg-[linear-gradient(105deg,#7c3aed,#2563eb_52%,#0891b2)] px-7 font-black text-white shadow-lg transition hover:-translate-y-0.5">Besichtigung anfragen <ArrowDownRight size={19} /></a>
+              <ContactOfferLink offer="visit" className="flex h-14 items-center justify-center gap-3 rounded-full bg-[linear-gradient(105deg,#7c3aed,#2563eb_52%,#0891b2)] px-7 font-black text-white shadow-lg transition hover:-translate-y-0.5">Besichtigung anfragen <ArrowDownRight size={19} /></ContactOfferLink>
               <a href="#prices" className="flex h-14 items-center justify-center rounded-full border border-slate-300 bg-white/75 px-7 font-bold backdrop-blur transition hover:border-violet-300 hover:bg-white">Preise ansehen</a>
             </div>
           </div>
@@ -156,21 +158,24 @@ export default function HomepagePreview() {
             {[
               {
                 name: "Flex",
+                enquiry: "flex",
                 price: packages.flex.net,
                 unit: "pro Person",
                 detail: "Freie Platzwahl im Coworking-Bereich",
-                items: ["12 Stunden Meetingraum je Person / Monat", "Highspeed-Internet", "Küche & Getränke", "Flexible Platzwahl"],
+                items: ["12 Stunden Meetingraum je Person / Monat", "Highspeed-Internet", "Küchennutzung & kostenloser Kaffee", "Flexible Platzwahl"],
               },
               {
                 name: "Fix",
+                enquiry: "fix",
                 price: packages.fix.net,
                 unit: "pro Person",
                 detail: "Dein persönlicher Schreibtisch",
-                items: ["12 Stunden Meetingraum je Person / Monat", "Eigener fixer Arbeitsplatz", "Highspeed-Internet", "Küche & Getränke"],
+                items: ["12 Stunden Meetingraum je Person / Monat", "Eigener fixer Arbeitsplatz", "Highspeed-Internet", "Küchennutzung & kostenloser Kaffee"],
                 featured: true,
               },
               {
                 name: "Büro · 17 m²",
+                enquiry: "office-17",
                 price: 490,
                 unit: "für das gesamte Büro",
                 detail: "17 m² für konzentriertes Arbeiten",
@@ -178,6 +183,7 @@ export default function HomepagePreview() {
               },
               {
                 name: `Büro · ${officeArea}`,
+                enquiry: "office-25",
                 price: packages.office.net,
                 unit: "für das gesamte Büro",
                 detail: `${officeArea} für ein kleines Team`,
@@ -192,10 +198,11 @@ export default function HomepagePreview() {
                 <ul className={`mb-7 mt-6 space-y-4 border-t pt-6 ${offer.featured ? "border-white/15" : "border-stone-200"}`}>
                   {offer.items.map((item) => <li key={item} className="flex gap-3 text-sm leading-6"><Check size={18} className="mt-0.5 shrink-0 text-emerald-500" />{item}</li>)}
                 </ul>
-                <a href="#contact" className={`mt-auto flex min-h-12 shrink-0 items-center justify-center rounded-full px-3 py-3 text-center font-bold transition hover:-translate-y-0.5 ${offer.featured ? "bg-[#c9ff70] text-[#162119]" : "bg-[#162119] text-white"}`}>Verfügbarkeit anfragen</a>
+                <ContactOfferLink offer={offer.enquiry as ContactSelectionKey} className={`mt-auto flex min-h-12 shrink-0 items-center justify-center rounded-full px-3 py-3 text-center font-bold transition hover:-translate-y-0.5 ${offer.featured ? "bg-[#c9ff70] text-[#162119]" : "bg-[#162119] text-white"}`}>Verfügbarkeit anfragen</ContactOfferLink>
               </article>
             ))}
           </div>
+          <p className="mt-5 text-sm leading-6 text-stone-600">Kaffee ist kostenlos. Softdrinks, Bier und Spritzer sind nicht im Paketpreis enthalten und werden separat gemäß Preisliste vor Ort verrechnet.</p>
           <p className="mt-5 text-sm leading-6 text-stone-600">Zusätzliche Meetingraum-Zeit: 12 € netto (14,40 € inkl. 20 % USt) je Stunde, abgerechnet in 30-Minuten-Schritten. Nicht genutzte Inklusivstunden verfallen am Monatsende. Zusätzliche Logins im selben Büro teilen dessen Kontingent.</p>
           <p className="mt-2 text-sm leading-6 text-stone-600">Verfügbarkeit, Nutzerzahl, Laufzeit, Kündigungsfrist und gegebenenfalls Kaution werden vor Vertragsabschluss schriftlich vereinbart. Bestehende individuelle Vereinbarungen bleiben unverändert.</p>
         </div>
@@ -381,8 +388,8 @@ export default function HomepagePreview() {
         </article>
       </section>
 
-      <section id="contact" className="px-5 pb-5 sm:px-8 sm:pb-8 lg:px-12 lg:pb-12">
-        <div className="mx-auto max-w-[1344px] overflow-hidden rounded-[2.3rem] bg-[#c9ff70] p-7 sm:p-10 lg:p-14">
+      <section id="contact" className="px-4 pb-5 sm:px-8 sm:pb-8 lg:px-12 lg:pb-12">
+        <div className="mx-auto max-w-[1344px] overflow-hidden rounded-[2.3rem] bg-[#c9ff70] p-4 sm:p-10 lg:p-14">
           <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900">Interesse?</p>
