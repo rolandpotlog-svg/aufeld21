@@ -9,6 +9,7 @@ import Link from "next/link";
 import {
   ArrowDownRight,
   ArrowRight,
+  ArrowUpRight,
   Building2,
   CalendarDays,
   Coffee,
@@ -19,6 +20,7 @@ import {
   MapPin,
   MessageCircle,
   Network,
+  Newspaper,
   ParkingCircle,
   Presentation,
   Printer,
@@ -347,6 +349,30 @@ export default function HomepagePreview() {
             <Link href="/ueber-uns" className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-violet-700">Unsere Geschichte lesen <ArrowRight size={17}/></Link>
           </div>
         </div>
+
+        <article id="presse" aria-labelledby="press-title" className="mt-5 grid gap-6 rounded-[1.8rem] bg-[#162119] p-5 text-white sm:mt-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 text-[#c9ff70]">
+              <Newspaper size={20} aria-hidden="true" className="shrink-0" />
+              <p className="text-xs font-bold uppercase tracking-[0.18em]">In der Presse</p>
+            </div>
+            <h3 id="press-title" className="mt-4 text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-3xl">AUFELD21 im TRAUNER</h3>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300 sm:text-base sm:leading-7">Das Stadtmarketing-Traun-Magazin stellt unseren Coworking-Space vor: persönlich geführt von Julia und Roland, mit Raum zum Arbeiten und Vernetzen.</p>
+            <p className="mt-3 text-xs leading-5 text-stone-300">Stadtmarketing Traun · Ausgabe 4/2026 · Seite 4</p>
+          </div>
+          <div className="flex flex-col gap-2 lg:items-center">
+            <a
+              href="https://www.stadtmarketing-traun.at/wp-content/uploads/2026/09/Trauner_4_2026_web-1.pdf#page=4"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#c9ff70] px-6 py-3 text-center font-bold text-[#162119] transition hover:bg-[#d9ff9c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#c9ff70]"
+            >
+              Beitrag lesen <ArrowUpRight size={18} aria-hidden="true" className="shrink-0" />
+              <span className="sr-only">: TRAUNER 4/2026, Seite 4 (PDF, öffnet in neuem Tab)</span>
+            </a>
+            <p className="text-center text-xs leading-5 text-stone-300">Originalausgabe · PDF</p>
+          </div>
+        </article>
       </section>
 
       <section id="contact" className="px-5 pb-5 sm:px-8 sm:pb-8 lg:px-12 lg:pb-12">
