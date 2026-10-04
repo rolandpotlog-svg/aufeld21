@@ -2,6 +2,7 @@ import { MarketingHeader } from "./marketing-shell";
 import { siteUrl } from "@/lib/site";
 import { packages, officeArea } from "@/lib/members/packages";
 import { MarketingPrice } from "./marketing-price";
+import { SpacePhoto } from "./space-photo";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactForm } from "./contact-form";
@@ -64,20 +65,23 @@ export default function HomepagePreview() {
       <section className="relative mx-auto max-w-[1440px] px-5 pb-12 pt-5 sm:px-8 sm:pt-8 lg:px-12 lg:pb-20 lg:pt-14">
         <div className="pointer-events-none absolute left-[15%] top-0 h-72 w-72 rounded-full bg-violet-400/15 blur-[100px]" />
         <div className="pointer-events-none absolute right-[10%] top-32 h-72 w-72 rounded-full bg-cyan-300/20 blur-[110px]" />
-        <div className="relative flex items-center py-6 sm:py-8 lg:py-12">
-          <div className="max-w-5xl">
+        <div className="relative grid items-center gap-7 py-6 sm:gap-9 sm:py-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-x-10 lg:gap-y-6 lg:py-8">
+          <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.15em] text-violet-700 shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-[#7c3aed] shadow-[0_0_12px_#7c3aed]" /> Neubau · Traun · persönlich geführt
             </div>
-            <h1 className="mt-7 max-w-3xl text-[clamp(3.35rem,15vw,7.5rem)] font-black leading-[0.88] tracking-[-0.078em] sm:mt-8">
+            <h1 className="mt-7 text-[clamp(3.1rem,14vw,5rem)] font-black leading-[0.9] tracking-[-0.078em] sm:mt-8 lg:text-[clamp(4rem,7.4vw,6.5rem)]">
               Dein Büro<br /><span className="bg-[linear-gradient(105deg,#7c3aed_4%,#2563eb_49%,#0891b2_72%,#65a30d_104%)] bg-clip-text text-transparent">in Traun.</span>
             </h1>
             <p className="mt-7 max-w-2xl text-base font-medium leading-7 text-slate-600 sm:mt-8 sm:text-xl sm:leading-8">Einziehen. Loslegen. Möblierte Büros, flexible Arbeitsplätze und ein digital buchbarer Meetingraum – unkompliziert an einem Ort.</p>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
               <a href="#contact" className="flex h-14 items-center justify-center gap-3 rounded-full bg-[linear-gradient(105deg,#7c3aed,#2563eb_52%,#0891b2)] px-7 font-black text-white shadow-lg transition hover:-translate-y-0.5">Besichtigung anfragen <ArrowDownRight size={19} /></a>
               <a href="#prices" className="flex h-14 items-center justify-center rounded-full border border-slate-300 bg-white/75 px-7 font-bold backdrop-blur transition hover:border-violet-300 hover:bg-white">Preise ansehen</a>
             </div>
-            <div className="mt-8 grid max-w-2xl grid-cols-3 gap-2 border-t border-slate-200 pt-5 sm:gap-5">
+          </div>
+          <SpacePhoto photo="office" priority caption sizes="(min-width: 1440px) 618px, (min-width: 1024px) 46vw, (min-width: 640px) 90vw, 100vw" className="min-w-0 overflow-hidden rounded-[1.7rem] border border-[#162119]/10 bg-white shadow-xl shadow-[#162119]/5 sm:rounded-[2rem]" />
+          <div className="max-w-2xl lg:col-span-2">
+            <div className="grid grid-cols-3 gap-2 border-t border-slate-200 pt-5 sm:gap-5">
               {[["~100 m²", "Fläche"], ["24/7", "Zugang"], ["12 h", "Meeting*"]].map(([value, label]) => <div className="min-w-0" key={label}><p className="text-xl font-black tracking-[-0.04em] sm:text-2xl">{value}</p><p className="mt-1 text-sm font-medium text-slate-600">{label}</p></div>)}
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-500">* Pro Monat bei Flex, Fix und Büro. Details beim jeweiligen Angebot.</p>
@@ -87,15 +91,16 @@ export default function HomepagePreview() {
 
       <section id="offers" className="mx-auto max-w-[1440px] px-4 pb-12 sm:px-8 sm:pb-16 lg:px-12 lg:pb-20">
         <div className="overflow-hidden rounded-[2.3rem] border border-[#162119]/10 bg-white">
-          <div className="grid gap-6 border-b border-stone-200 p-6 sm:gap-8 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end lg:p-14">
+          <div className="grid gap-6 border-b border-stone-200 p-6 sm:gap-8 sm:p-10 lg:grid-cols-2 lg:items-center lg:p-12">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Die Räume</p>
-              <h2 className="mt-4 max-w-3xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.06em] sm:mt-5 sm:text-6xl">Vier Büros. Ein Raum, der flexibel bleibt.</h2>
+              <h2 className="mt-4 max-w-3xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.06em] sm:mt-5 sm:text-5xl">Vier Büros. Ein Raum, der flexibel bleibt.</h2>
+              <div className="mt-6 max-w-md rounded-2xl bg-emerald-50 px-5 py-4 text-sm leading-6 text-emerald-950">
+                <p className="font-bold">Privates Büro oder Coworking</p>
+                <p className="mt-1 text-emerald-900/70">Der große Raum funktioniert als Team-Büro oder mit vier einzelnen Arbeitsplätzen. Verfügbarkeit einfach anfragen.</p>
+              </div>
             </div>
-            <div className="max-w-sm rounded-2xl bg-emerald-50 px-5 py-4 text-sm leading-6 text-emerald-950">
-              <p className="font-bold">Privates Büro oder Coworking</p>
-              <p className="mt-1 text-emerald-900/70">Der große Raum funktioniert als Team-Büro oder mit vier einzelnen Arbeitsplätzen. Verfügbarkeit einfach anfragen.</p>
-            </div>
+            <SpacePhoto photo="hallway" sizes="(min-width: 1440px) 607px, (min-width: 1024px) 43vw, (min-width: 640px) 85vw, 100vw" className="overflow-hidden rounded-2xl" />
           </div>
 
           <div className="grid gap-px bg-stone-200 sm:grid-cols-2 lg:grid-cols-4">
@@ -120,15 +125,20 @@ export default function HomepagePreview() {
           </div>
 
           <div className="grid gap-px bg-stone-200 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="bg-[#162119] p-7 text-white sm:p-10 lg:p-14">
-              <div className="flex items-center gap-3 text-[#c9ff70]"><Presentation size={23} /><p className="text-xs font-bold uppercase tracking-[0.18em]">Meetingraum · 15,64 m²</p></div>
-              <h3 className="mt-8 max-w-2xl text-3xl font-semibold tracking-[-0.05em] sm:text-5xl">Kundentermine und Besprechungen, ohne Umwege.</h3>
-              <p className="mt-5 max-w-2xl leading-7 text-stone-300">Der gemeinsame Meetingraum lässt sich von Mitgliedern direkt über das AUFELD21-Portal reservieren – auch unterwegs am Handy.</p>
+            <div className="grid items-center bg-[#162119] text-white lg:col-span-2 lg:grid-cols-2">
+              <SpacePhoto photo="meeting" sizes="(min-width: 1440px) 671px, (min-width: 1024px) 48vw, 100vw" />
+              <div className="p-7 sm:p-10 lg:p-12">
+                <div className="flex items-center gap-3 text-[#c9ff70]"><Presentation size={23} /><p className="text-xs font-bold uppercase tracking-[0.18em]">Meetingraum · 15,64 m²</p></div>
+                <h3 className="mt-6 max-w-2xl text-3xl font-semibold tracking-[-0.05em] sm:text-4xl">Kundentermine und Besprechungen, ohne Umwege.</h3>
+                <p className="mt-5 max-w-2xl leading-7 text-stone-300">Der gemeinsame Meetingraum lässt sich von Mitgliedern direkt über das AUFELD21-Portal reservieren – auch unterwegs am Handy.</p>
+              </div>
             </div>
-            <div className="bg-[#f6efd4] p-7 sm:p-10 lg:p-14">
-              <Coffee size={24} className="text-amber-800" />
-              <h3 className="mt-8 text-3xl font-semibold tracking-[-0.05em]">Küche & Balkon</h3>
-              <p className="mt-4 leading-7 text-stone-600">Gemeinsame Küche und ein 17,15 m² großer Balkon schaffen Platz für eine Pause und unkomplizierten Austausch.</p>
+            <div className="flex items-start gap-4 bg-[#f6efd4] p-7 sm:p-10 lg:col-span-2 lg:px-12">
+              <Coffee size={24} className="mt-1 shrink-0 text-amber-800" />
+              <div>
+                <h3 className="text-2xl font-semibold tracking-[-0.05em] sm:text-3xl">Küche & Balkon</h3>
+                <p className="mt-3 max-w-3xl leading-7 text-stone-600">Gemeinsame Küche und ein 17,15 m² großer Balkon schaffen Platz für eine Pause und unkomplizierten Austausch.</p>
+              </div>
             </div>
           </div>
         </div>
