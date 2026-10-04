@@ -10,11 +10,12 @@ export function MarketingHeader() {
         <span className="grid h-11 w-11 place-items-center rounded-[13px] bg-[#c9ff70] text-sm font-black tracking-[-0.06em]">A21</span>
         <span><span className="block text-[15px] font-bold tracking-[0.1em]">AUFELD21</span><span className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500 min-[360px]:block">Co-Working Traun</span></span>
       </Link>
-      <nav className="hidden items-center gap-7 text-sm font-semibold lg:flex">
+      <nav aria-label="Hauptnavigation" className="hidden items-center gap-4 text-sm font-semibold lg:flex xl:gap-7">
         <Link href="/#prices">Angebot</Link>
         <Link href="/buero-service">Büroservice</Link>
         <Link href="/community">Community</Link>
         <Link href="/ueber-uns">Über uns</Link>
+        <Link href="/presse/aufeld21-im-trauner">Presse</Link>
         <Link href="/#contact">Kontakt</Link>
       </nav>
       <div className="flex items-center gap-2">

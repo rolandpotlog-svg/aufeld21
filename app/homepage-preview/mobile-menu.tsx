@@ -13,7 +13,7 @@ export function MobileMenu() {
         {open ? <X size={20} /> : <Menu size={20} />}
       </button>
       {open && <nav id="mobile-navigation" aria-label="Mobile Hauptnavigation" className="absolute right-0 top-14 z-50 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-stone-200 bg-white p-2 shadow-xl">
-        {[["/#prices", "Angebot & Preise"], ["/buero-service", "Büroservice"], ["/community", "Community"], ["/ueber-uns", "Über uns"], ["/#contact", "Kontakt"], ["/portal", "Mitgliederportal"]].map(([href, title]) => (
+        {[["/#prices", "Angebot & Preise"], ["/buero-service", "Büroservice"], ["/community", "Community"], ["/ueber-uns", "Über uns"], ["/presse/aufeld21-im-trauner", "Presse"], ["/#contact", "Kontakt"], ["/portal", "Mitgliederportal"]].map(([href, title]) => (
           <Link key={href} href={href} onClick={() => setOpen(false)} className="flex min-h-12 items-center rounded-xl px-4 text-sm font-semibold hover:bg-emerald-50">{title}</Link>
         ))}
       </nav>}
