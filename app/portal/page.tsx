@@ -2051,8 +2051,12 @@ function BookingApp({ demo }: { demo: boolean }) {
               <ChevronLeft size={20} />
             </button>
             <button
-              onClick={() => setWeekStart(startOfWeek(toZonedTime(new Date(), TZ), { weekStartsOn: 1 }))}
-              disabled={isSameWeek(weekStart, toZonedTime(new Date(), TZ), { weekStartsOn: 1 })}
+              onClick={() => {
+                const today = toZonedTime(new Date(), TZ);
+                setWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+                setMobileDayOffset((today.getDay() + 6) % 7);
+              }}
+              disabled={isSameWeek(weekStart, toZonedTime(new Date(), TZ), { weekStartsOn: 1 }) && isSameDay(mobileDay, toZonedTime(new Date(), TZ))}
               className="h-11 rounded-xl border border-stone-200 bg-white px-4 text-sm font-medium hover:bg-stone-100 disabled:text-stone-400"
             >
               Heute
@@ -2090,7 +2094,7 @@ function BookingApp({ demo }: { demo: boolean }) {
         )}
         <p className="mb-3 text-sm text-stone-500">Termin antippen für Details. Eigene Buchungen kannst du vor Beginn stornieren.</p>
 
-        <div className="md:hidden">
+        <section className="xl:hidden" aria-label="Tageskalender">
           <div className="mb-3 grid grid-cols-7 gap-1 rounded-2xl bg-stone-100 p-1" aria-label="Tag auswählen">
             {days.map((day, index) => {
               const selected = index === mobileDayOffset;
@@ -2164,9 +2168,9 @@ function BookingApp({ demo }: { demo: boolean }) {
             </div>
           </div>
           <p className="mt-3 text-center text-xs text-stone-500">Freie Zeit buchen · Termin antippen für Details</p>
-        </div>
+        </section>
 
-        <div className="-mx-4 hidden overflow-x-auto px-4 pb-5 sm:-mx-6 sm:px-6 md:block">
+        <section className="-mx-4 hidden overflow-x-auto px-4 pb-5 sm:-mx-6 sm:px-6 xl:block" aria-label="Wochenkalender">
           <div className="grid min-w-[1120px] grid-cols-[56px_repeat(7,minmax(145px,1fr))] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
             <div className="sticky left-0 z-20 border-r border-stone-200 bg-white" />
             {days.map((day) => {
@@ -2230,7 +2234,7 @@ function BookingApp({ demo }: { demo: boolean }) {
               );
             })}
           </div>
-        </div>
+        </section>
         {bottomNavigation}
       </section>
       )}
