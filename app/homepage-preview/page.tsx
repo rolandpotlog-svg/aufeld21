@@ -9,7 +9,6 @@ import Link from "next/link";
 import {
   ArrowDownRight,
   ArrowRight,
-  ArrowUpRight,
   Building2,
   CalendarDays,
   Coffee,
@@ -361,16 +360,13 @@ export default function HomepagePreview() {
             <p className="mt-3 text-xs leading-5 text-stone-300">Stadtmarketing Traun · Ausgabe 4/2026 · Seite 4</p>
           </div>
           <div className="flex flex-col gap-2 lg:items-center">
-            <a
-              href="https://www.stadtmarketing-traun.at/wp-content/uploads/2026/09/Trauner_4_2026_web-1.pdf#page=4"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/presse/aufeld21-im-trauner"
               className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#c9ff70] px-6 py-3 text-center font-bold text-[#162119] transition hover:bg-[#d9ff9c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#c9ff70]"
             >
-              Beitrag lesen <ArrowUpRight size={18} aria-hidden="true" className="shrink-0" />
-              <span className="sr-only">: TRAUNER 4/2026, Seite 4 (PDF, öffnet in neuem Tab)</span>
-            </a>
-            <p className="text-center text-xs leading-5 text-stone-300">Originalausgabe · PDF</p>
+              Beitrag lesen <ArrowRight size={18} aria-hidden="true" className="shrink-0" />
+            </Link>
+            <p className="text-center text-xs leading-5 text-stone-300">Mit Original-Zeitungsseite</p>
           </div>
         </article>
       </section>
