@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   },
   description: "Persönlicher Co-Working-Space, Büros und Geschäftsadresse in Traun.",
   applicationName: "AUFELD21",
+  verification: {
+    google: "KT6OsEf1cVls40D_p9xMyHDZowdb5iLvsU2B0Cdcntc",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "AUFELD21" },
   icons: {
