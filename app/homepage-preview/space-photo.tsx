@@ -17,11 +17,11 @@ const photos = [
   { id: "office-windows", src: "/spaces/aufeld21-buero-fenster-hq.webp", title: "Büro mit viel Tageslicht", alt: "Weiteres Büro im AUFELD21 mit großem Schreibtisch und zwei hellen Fenstern", height: 1919, credit: "Reisinger Immobilien" },
   { id: "single-office", src: "/spaces/aufeld21-einzelbuero-hq.webp", title: "Ruhiges Einzelbüro", alt: "Helles Einzelbüro im AUFELD21 mit eigenem Schreibtisch und Bürostuhl", height: 1920, credit: "Reisinger Immobilien" },
   { id: "kitchen", src: "/spaces/aufeld21-kueche-hq.webp", title: "Unsere Gemeinschaftsküche", alt: "Gemeinschaftsküche im AUFELD21 mit Holzarbeitsplatte, Spüle, Backofen und Kaffeevollautomat", height: 2168, credit: "AUFELD21" },
-  { id: "coffee", src: "/spaces/aufeld21-kaffeepause-hq.webp", title: "Zeit für eine Kaffeepause", alt: "Kaffeeecke in der AUFELD21-Küche mit Kaffeevollautomat und Holzarbeitsplatte", height: 2168, credit: "AUFELD21" },
+  { id: "lounge", src: "/spaces/aufeld21-ess-aufenthaltsbereich-hq.webp", title: "Ess- & Aufenthaltsbereich", alt: "Ess- und Aufenthaltsbereich im AUFELD21 mit Holztisch, vier grauen Polsterstühlen und Wandbildern", height: 3825, credit: "AUFELD21" },
 ] as const;
 
 type SpacePhotoProps = {
-  photo: "office" | "meeting" | "hallway" | "kitchen";
+  photo: "office" | "meeting" | "hallway" | "kitchen" | "lounge";
   sizes: string;
   priority?: boolean;
   caption?: boolean;

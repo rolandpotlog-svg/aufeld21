@@ -135,13 +135,16 @@ export default function HomepagePreview() {
                 <p className="mt-5 max-w-2xl leading-7 text-stone-300">Der gemeinsame Meetingraum lässt sich von Mitgliedern direkt über das AUFELD21-Portal reservieren – auch unterwegs am Handy.</p>
               </div>
             </div>
-            <div className="grid items-center bg-[#f6efd4] lg:col-span-2 lg:grid-cols-2">
-              <SpacePhoto photo="kitchen" sizes="(min-width: 1440px) 671px, (min-width: 1024px) 48vw, 100vw" className="lg:order-2" />
-              <div className="p-7 sm:p-10 lg:p-12">
-                <div className="flex items-center gap-3 text-amber-800"><Coffee size={23} /><p className="text-xs font-bold uppercase tracking-[0.18em]">Gemeinsame Küche · Kaffee inklusive</p></div>
-                <h3 className="mt-6 max-w-2xl text-3xl font-semibold tracking-[-0.05em] sm:text-4xl">Gute Arbeit braucht auch eine gute Pause.</h3>
-                <p className="mt-5 max-w-2xl leading-7 text-stone-600">Kurz durchatmen, einen Kaffee holen und miteinander ins Gespräch kommen. Unsere Gemeinschaftsküche gehört zum Arbeitsalltag im AUFELD21 dazu – und der Kaffee ist für Mitglieder kostenlos.</p>
+            <div className="grid bg-[#f6efd4] lg:col-span-2 lg:grid-cols-2">
+              <div className="flex min-w-0 flex-col justify-between">
+                <div className="p-7 sm:p-10 lg:p-12">
+                  <div className="flex items-center gap-3 text-amber-800"><Coffee size={23} className="shrink-0" /><p className="text-xs font-bold uppercase tracking-[0.18em]">Küche & Aufenthaltsbereich · Kaffee inklusive</p></div>
+                  <h3 className="mt-6 max-w-2xl text-3xl font-semibold tracking-[-0.05em] sm:text-4xl">Gute Arbeit braucht auch eine gute Pause.</h3>
+                  <p className="mt-5 max-w-2xl leading-7 text-stone-600">Gemeinsam Mittag essen, einen Kaffee trinken oder kurz ins Gespräch kommen: Unsere Gemeinschaftsküche und der gemütliche Ess- und Aufenthaltsbereich gehören zum Arbeitsalltag im AUFELD21 dazu. Kaffee ist für Mitglieder kostenlos.</p>
+                </div>
+                <SpacePhoto photo="kitchen" sizes="(min-width: 1440px) 671px, (min-width: 1024px) 48vw, 100vw" />
               </div>
+              <SpacePhoto photo="lounge" sizes="(min-width: 1440px) 671px, (min-width: 1024px) 48vw, 100vw" caption className="min-w-0 bg-[#eee7d2]" />
             </div>
           </div>
         </div>
