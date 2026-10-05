@@ -62,7 +62,7 @@ import { bookingCancellationError, cancelOwnBooking } from "@/lib/bookings/cance
 
 const TZ = "Europe/Vienna";
 const SLOT_HEIGHT = 52;
-const MOBILE_SLOT_HEIGHT = 36;
+const MOBILE_SLOT_HEIGHT = 48;
 const START_HOUR = 7;
 const END_HOUR = 20;
 
@@ -1358,7 +1358,7 @@ function BookingApp({ demo }: { demo: boolean }) {
   );
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5_0,_#fafaf9_28rem)] text-stone-900">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ecfdf5_0,_#fafaf9_28rem)] text-stone-900 max-xl:[&_input]:text-base max-xl:[&_select]:text-base max-xl:[&_textarea]:text-base">
       <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-white/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -1904,18 +1904,18 @@ function BookingApp({ demo }: { demo: boolean }) {
                     {(!isTeamMember(selectedDossier) || dossierInvoices.length > 0) && <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Finanzen</p><h4 className="mt-1 text-lg font-semibold">Alle Rechnungen</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierInvoices.length}</span></div>
                       <div className="mt-4 space-y-3">
-                        {dossierInvoices.length === 0 ? <p className="p-4 text-sm text-stone-500">Noch keine Rechnungen vorhanden.</p> : dossierInvoices.map((invoice) => <div key={invoice.id} className={`flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 sm:flex-row sm:items-center ${invoiceStatus(invoice, todayVienna).surface}`}><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{invoice.invoice_number || "Entwurf"}</p><InvoiceStatusBadge invoice={invoice} today={todayVienna} /></div><p className="mt-2 text-sm text-stone-600">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div><div className="flex flex-wrap gap-2">{invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-9 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white">Als bezahlt</button>}{invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-9 rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-700">Wieder offen</button>}<button onClick={() => downloadInvoice(invoice)} className="flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-xs font-semibold"><Download size={14} /> PDF</button></div></div>)}
+                        {dossierInvoices.length === 0 ? <p className="p-4 text-sm text-stone-500">Noch keine Rechnungen vorhanden.</p> : dossierInvoices.map((invoice) => <div key={invoice.id} className={`flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 sm:flex-row sm:items-center ${invoiceStatus(invoice, todayVienna).surface}`}><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{invoice.invoice_number || "Entwurf"}</p><InvoiceStatusBadge invoice={invoice} today={todayVienna} /></div><p className="mt-2 text-sm text-stone-600">{new Date(invoice.billing_month).toLocaleDateString("de-AT", { month: "long", year: "numeric" })} · {invoiceGross(invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })}{invoice.paid_at ? ` · bezahlt am ${formatInTimeZone(invoice.paid_at, TZ, "dd.MM.yyyy")}` : ` · fällig am ${new Date(invoice.due_date).toLocaleDateString("de-AT")}`}</p></div><div className="flex flex-wrap gap-2">{invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="min-h-11 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white">Als bezahlt</button>}{invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="min-h-11 rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-700">Wieder offen</button>}<button onClick={() => downloadInvoice(invoice)} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-xs font-semibold"><Download size={14} /> PDF</button></div></div>)}
                       </div>
                     </div>}
 
                     <div>
                       <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-emerald-700">Ablage</p><h4 className="mt-1 text-lg font-semibold">{isTeamMember(selectedDossier) ? "Unterlagen" : "Vertrag & Unterlagen"}</h4></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500">{dossierDocuments.length}</span></div>
                       <div className="mt-4 rounded-2xl border border-stone-100 p-4">
-                        {dossierDocuments.length === 0 ? <p className="text-sm text-stone-500">Noch kein hochgeladenes Original hinterlegt.</p> : dossierDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex w-full items-center gap-2 border-b border-stone-100 py-3 text-left text-sm font-medium last:border-0"><FileText size={16} className="text-emerald-700" />{document.title}<Download size={14} className="ml-auto text-stone-400" /></button>)}
+                        {dossierDocuments.length === 0 ? <p className="text-sm text-stone-500">Noch kein hochgeladenes Original hinterlegt.</p> : dossierDocuments.map((document) => <button key={document.id} onClick={() => downloadMemberDocument(document)} className="flex min-h-11 w-full min-w-0 items-center gap-2 border-b border-stone-100 py-3 text-left text-sm font-medium last:border-0"><FileText size={16} className="shrink-0 text-emerald-700" /><span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{document.title}</span><Download size={14} className="shrink-0 text-stone-400" /></button>)}
                         <div className="mt-4 flex flex-wrap gap-2">
-                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => { const isNeugebauer = (selectedDossier.billing_name || selectedDossier.name).toLowerCase().includes("neugebauer"); setContractDraft({ member: selectedDossier, representative: "", companyRegister: isNeugebauer ? "FN 625636 d" : "", phone: "", officeArea: selectedDossier.office_name === "Büro 1" ? "16,31" : selectedDossier.office_name === "Büro 2" ? "12,62" : selectedDossier.office_name === "Büro 3" ? "14,13" : "", contractEnd: selectedDossier.contract_end || (selectedDossier.contract_start ? format(addDays(addMonths(new Date(`${selectedDossier.contract_start}T12:00:00`), isNeugebauer ? 60 : 36), -1), "yyyy-MM-dd") : "") }); }} className="flex h-10 items-center gap-2 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white"><FileText size={15} /> Nutzungsvertrag erstellen</button>}
-                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-stone-100 px-3 text-sm font-semibold"><Upload size={15} /> Original hochladen<input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(selectedDossier, file, "mietvertrag"); event.target.value = ""; }} /></label>}
-                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => { if (!dossierDeposit) setDeposits((current) => [...current, { member_id: selectedDossier.id, agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: null }]); setDepositMember(selectedDossier); }} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold">Kaution bearbeiten</button>}
+                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => { const isNeugebauer = (selectedDossier.billing_name || selectedDossier.name).toLowerCase().includes("neugebauer"); setContractDraft({ member: selectedDossier, representative: "", companyRegister: isNeugebauer ? "FN 625636 d" : "", phone: "", officeArea: selectedDossier.office_name === "Büro 1" ? "16,31" : selectedDossier.office_name === "Büro 2" ? "12,62" : selectedDossier.office_name === "Büro 3" ? "14,13" : "", contractEnd: selectedDossier.contract_end || (selectedDossier.contract_start ? format(addDays(addMonths(new Date(`${selectedDossier.contract_start}T12:00:00`), isNeugebauer ? 60 : 36), -1), "yyyy-MM-dd") : "") }); }} className="flex min-h-11 items-center gap-2 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white"><FileText size={15} /> Nutzungsvertrag erstellen</button>}
+                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-stone-100 px-3 text-sm font-semibold"><Upload size={15} /> Original hochladen<input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(selectedDossier, file, "mietvertrag"); event.target.value = ""; }} /></label>}
+                          {(selectedDossier.role === "member" || selectedDossier.role === "admin") && <button onClick={() => { if (!dossierDeposit) setDeposits((current) => [...current, { member_id: selectedDossier.id, agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: null }]); setDepositMember(selectedDossier); }} className="min-h-11 rounded-xl border border-stone-200 px-3 text-sm font-semibold">Kaution bearbeiten</button>}
                         </div>
                       </div>
                     </div>
@@ -1925,21 +1925,30 @@ function BookingApp({ demo }: { demo: boolean }) {
             )}
           </div>
 
-          <div id="admin-files" className={`${adminTab !== "documents" ? "hidden " : ""}mt-6 scroll-mt-6 grid gap-6 xl:grid-cols-2`}>
-            <section className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div id="admin-files" className={`${adminTab !== "documents" ? "hidden " : ""}mt-6 min-w-0 scroll-mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2`}>
+            <section className="min-w-0 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
               <div><p className="text-sm font-medium text-emerald-700">Getrennt von Rechnungen</p><h2 className="mt-1 text-xl font-semibold">Kautionen</h2></div>
               <div className="mt-5 divide-y divide-stone-100">
                 {managedMembers.filter((item) => item.role === "member" || item.role === "admin").map((item) => { const deposit = deposits.find((entry) => entry.member_id === item.id); const open = Math.max((deposit?.agreed_amount ?? 0) - (deposit?.received_amount ?? 0), 0); return (
-                  <div key={item.id} className="flex items-center justify-between gap-3 py-4"><div><p className="font-semibold">{item.name}</p><p className={`mt-1 text-sm ${open > 0 ? "text-amber-700" : "text-emerald-700"}`}>{deposit ? `${Number(deposit.received_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} eingegangen${open > 0 ? ` · ${open.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} offen` : ""}` : "Noch nicht erfasst"}</p></div><button onClick={() => { if (!deposit) setDeposits((current) => [...current, { member_id: item.id, agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: null }]); setDepositMember(item); }} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Bearbeiten</button></div>
+                  <div key={item.id} className="flex min-w-0 flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center">
+                    <div className="min-w-0 [overflow-wrap:anywhere]"><p className="font-semibold">{item.name}</p><p className={`mt-1 text-sm ${open > 0 ? "text-amber-700" : "text-emerald-700"}`}>{deposit ? `${Number(deposit.received_amount).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} eingegangen${open > 0 ? ` · ${open.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} offen` : ""}` : "Noch nicht erfasst"}</p></div>
+                    <button onClick={() => { if (!deposit) setDeposits((current) => [...current, { member_id: item.id, agreed_amount: 0, received_amount: 0, returned_amount: 0, received_at: null, note: null }]); setDepositMember(item); }} className="min-h-11 shrink-0 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Bearbeiten</button>
+                  </div>
                 ); })}
               </div>
             </section>
 
-            <section className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <section className="min-w-0 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
               <div><p className="text-sm font-medium text-emerald-700">Privater Dokumentenspeicher</p><h2 className="mt-1 text-xl font-semibold">Verträge & Hausordnung</h2></div>
               <div className="mt-5 space-y-3">
                 {managedMembers.filter((item) => item.role === "member" || item.role === "admin").map((item) => (
-                  <div key={item.id} className="rounded-2xl bg-stone-50 p-4"><div className="flex items-center justify-between"><div><p className="font-semibold">{item.name}</p><p className="mt-1 text-xs text-stone-500">{documents.filter((doc) => doc.member_id === item.id).length} Dokumente</p></div><label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold shadow-sm"><Upload size={15} /> Mietvertrag<input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(item, file, "mietvertrag"); event.target.value = ""; }} /></label></div>{documents.filter((doc) => doc.member_id === item.id).map((doc) => <button key={doc.id} onClick={() => downloadMemberDocument(doc)} className="mt-3 flex w-full items-center gap-2 text-left text-sm text-stone-600 hover:text-emerald-800"><FileText size={15} />{doc.title}<Download size={14} className="ml-auto" /></button>)}</div>
+                  <div key={item.id} className="min-w-0 rounded-2xl bg-stone-50 p-4">
+                    <div className="flex min-w-0 flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                      <div className="min-w-0 [overflow-wrap:anywhere]"><p className="font-semibold">{item.name}</p><p className="mt-1 text-xs text-stone-500">{documents.filter((doc) => doc.member_id === item.id).length} Dokumente</p></div>
+                      <label className="relative flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold shadow-sm focus-within:ring-2 focus-within:ring-emerald-700"><Upload size={15} className="shrink-0" /> Mietvertrag<input type="file" accept="application/pdf" aria-label={`Mietvertrag für ${item.name} hochladen`} className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadMemberDocument(item, file, "mietvertrag"); event.target.value = ""; }} /></label>
+                    </div>
+                    {documents.filter((doc) => doc.member_id === item.id).map((doc) => <button key={doc.id} onClick={() => downloadMemberDocument(doc)} className="mt-3 flex min-h-11 w-full min-w-0 items-center gap-2 text-left text-sm text-stone-600 hover:text-emerald-800"><FileText size={15} className="shrink-0" /><span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{doc.title}</span><Download size={14} className="shrink-0" /></button>)}
+                  </div>
                 ))}
               </div>
             </section>
@@ -2006,13 +2015,13 @@ function BookingApp({ demo }: { demo: boolean }) {
                             </div>
                             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                               <InvoiceStatusBadge invoice={invoice} today={todayVienna} />
-                              {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="h-10 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Einmalig finalisieren</button>}
-                              {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="h-10 rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800">Als bezahlt markieren</button>}
-                              {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="h-10 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Korrigieren</button>}
+                              {invoice.status === "draft" && <button onClick={() => finalizeInvoice(invoice)} className="min-h-11 rounded-xl bg-[#17231c] px-3 text-sm font-semibold text-white">Einmalig finalisieren</button>}
+                              {invoice.status === "final" && <button onClick={() => setPaymentDraft({ invoice, paidOn: formatInTimeZone(new Date(), TZ, "yyyy-MM-dd") })} className="min-h-11 rounded-xl bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800">Als bezahlt markieren</button>}
+                              {invoice.status === "paid" && <button onClick={() => undoInvoicePayment(invoice)} className="min-h-11 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100">Korrigieren</button>}
                               {invoiceIsOverdue(invoice, todayVienna) && <InvoiceReminder invoice={invoice.id} supabase={supabase} />}
-                              {(invoice.status === "final" || invoice.status === "paid") && <button onClick={() => prepareInvoiceEmail(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100"><Send size={15} /> E-Mail</button>}
-                              <button onClick={() => downloadInvoice(invoice)} className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100" aria-label="Rechnung herunterladen"><Download size={15} /> PDF</button>
-                              {(invoice.status === "draft" || invoice.status === "final") && <button onClick={() => cancelInvoice(invoice)} className="h-10 rounded-xl px-2 text-xs font-medium text-stone-400 hover:bg-red-50 hover:text-red-700">Stornieren</button>}
+                              {(invoice.status === "final" || invoice.status === "paid") && <button onClick={() => prepareInvoiceEmail(invoice)} className="flex min-h-11 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100"><Send size={15} /> E-Mail</button>}
+                              <button onClick={() => downloadInvoice(invoice)} className="flex min-h-11 items-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold hover:bg-stone-100" aria-label="Rechnung herunterladen"><Download size={15} /> PDF</button>
+                              {(invoice.status === "draft" || invoice.status === "final") && <button onClick={() => cancelInvoice(invoice)} className="min-h-11 rounded-xl px-2 text-xs font-medium text-stone-400 hover:bg-red-50 hover:text-red-700">Stornieren</button>}
                             </div>
                           </div>
                         ))}
@@ -2095,7 +2104,7 @@ function BookingApp({ demo }: { demo: boolean }) {
         <p className="mb-3 text-sm text-stone-500">Termin antippen für Details. Eigene Buchungen kannst du vor Beginn stornieren.</p>
 
         <section className="xl:hidden" aria-label="Tageskalender">
-          <div className="mb-3 grid grid-cols-7 gap-1 rounded-2xl bg-stone-100 p-1" aria-label="Tag auswählen">
+          <div className="mb-3 grid grid-cols-4 gap-1 rounded-2xl bg-stone-100 p-1 min-[400px]:grid-cols-7" aria-label="Tag auswählen">
             {days.map((day, index) => {
               const selected = index === mobileDayOffset;
               const today = isSameDay(day, toZonedTime(new Date(), TZ));
@@ -2146,7 +2155,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                   const start = toZonedTime(new Date(booking.start_at), TZ);
                   const end = toZonedTime(new Date(booking.end_at), TZ);
                   const top = ((start.getHours() * 60 + start.getMinutes() - START_HOUR * 60) / 30) * MOBILE_SLOT_HEIGHT;
-                  const height = Math.max(((end.getTime() - start.getTime()) / 1_800_000) * MOBILE_SLOT_HEIGHT, 34);
+                  const height = Math.max(((end.getTime() - start.getTime()) / 1_800_000) * MOBILE_SLOT_HEIGHT, 46);
                   const own = booking.member_id === member.id;
                   return (
                     <button type="button"
@@ -2154,7 +2163,7 @@ function BookingApp({ demo }: { demo: boolean }) {
                       onClick={() => openBookingDetails(booking)}
                       aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
                       className={`absolute left-1.5 right-1.5 z-10 overflow-hidden rounded-lg border px-2.5 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
-                      style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 32) }}
+                      style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 44) }}
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</span>
@@ -2241,7 +2250,7 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {selectedBooking && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && closeBookingDetails()}>
-          <section role="dialog" aria-modal="true" aria-labelledby="booking-detail-title" className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7">
+          <section role="dialog" aria-modal="true" aria-labelledby="booking-detail-title" className="max-h-[90dvh] min-w-0 w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0"><p className="text-sm font-medium text-emerald-700">Meetingraum</p><h2 id="booking-detail-title" className="mt-1 break-words text-2xl font-semibold">{confirmCancellation ? "Buchung stornieren?" : memberName(selectedBooking)}</h2></div>
               <button onClick={closeBookingDetails} disabled={cancellingBooking} aria-label="Schließen" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 disabled:opacity-50"><X size={20} /></button>
@@ -2272,13 +2281,13 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {draft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setDraft(null)}>
-          <section className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="booking-title">
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="booking-title">
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Meetingraum</p>
                 <h2 id="booking-title" className="mt-1 text-2xl font-semibold tracking-tight">Buchen</h2>
               </div>
-              <button onClick={() => setDraft(null)} className="grid h-11 w-11 place-items-center rounded-xl bg-stone-100 hover:bg-stone-200" aria-label="Schließen">
+              <button onClick={() => setDraft(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 hover:bg-stone-200" aria-label="Schließen">
                 <X size={20} />
               </button>
             </div>
@@ -2328,10 +2337,10 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {issueDraft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setIssueDraft(null)}>
-          <section className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="issue-title">
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="issue-title">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-800"><CircleAlert size={21} /></div>
+                <div className="mb-4 grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800"><CircleAlert size={21} /></div>
                 <h2 id="issue-title" className="text-2xl font-semibold tracking-tight">Etwas melden</h2>
                 <p className="mt-2 text-sm leading-6 text-stone-500">Kurz auswählen, abschicken – wir kümmern uns darum.</p>
               </div>
@@ -2379,8 +2388,8 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {bonusTarget && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setBonusTarget(null)}>
-          <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="bonus-title">
-            <div className="flex items-start justify-between">
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="bonus-title">
+            <div className="flex items-start justify-between gap-3 [&>div]:min-w-0">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Monatliche Gutschrift</p>
                 <h2 id="bonus-title" className="mt-1 text-2xl font-semibold tracking-tight">Stunden für {bonusTarget.name}</h2>
@@ -2406,8 +2415,8 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {inviteDraft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setInviteDraft(null)}>
-          <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="invite-title">
-            <div className="flex items-start justify-between">
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="invite-title">
+            <div className="flex items-start justify-between gap-3 [&>div]:min-w-0">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Persönlicher Zugang</p>
                 <h2 id="invite-title" className="mt-1 text-2xl font-semibold tracking-tight">Person einladen</h2>
@@ -2443,8 +2452,8 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {billingMember && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setBillingMember(null)}>
-          <section className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="billing-title">
-            <div className="flex items-start justify-between">
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="billing-title">
+            <div className="flex items-start justify-between gap-3 [&>div]:min-w-0">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Mieterprofil</p>
                 <h2 id="billing-title" className="mt-1 text-2xl font-semibold tracking-tight">Abrechnung für {billingMember.name}</h2>
@@ -2471,8 +2480,8 @@ function BookingApp({ demo }: { demo: boolean }) {
       )}
       {contractDraft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 sm:items-center sm:p-6" onMouseDown={(event) => event.target === event.currentTarget && !generatingContract && setContractDraft(null)}>
-          <section className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="contract-title">
-            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Automatischer Entwurf</p><h2 id="contract-title" className="mt-1 text-2xl font-semibold">Nutzungsvertrag erstellen</h2><p className="mt-2 text-sm text-stone-500">{contractDraft.member.billing_name || contractDraft.member.name} · {contractDraft.member.office_name || "Büro"}</p></div><button disabled={generatingContract} onClick={() => setContractDraft(null)} className="grid h-11 w-11 place-items-center rounded-full bg-stone-100 disabled:opacity-40" aria-label="Schließen"><X size={19} /></button></div>
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="contract-title">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Automatischer Entwurf</p><h2 id="contract-title" className="mt-1 text-2xl font-semibold">Nutzungsvertrag erstellen</h2><p className="mt-2 text-sm text-stone-500">{contractDraft.member.billing_name || contractDraft.member.name} · {contractDraft.member.office_name || "Büro"}</p></div><button disabled={generatingContract} onClick={() => setContractDraft(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-stone-100 disabled:opacity-40" aria-label="Schließen"><X size={19} /></button></div>
             <div className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-950"><p className="font-semibold">Wird automatisch übernommen</p><p className="mt-1">Adresse, UID, Büro, Mietbeginn, Monatsmiete, USt, Kaution und 12 Stunden Meetingraum.</p></div>
             <form onSubmit={generateContract} className="mt-6 grid gap-4 sm:grid-cols-2">
               <label className="sm:col-span-2"><span className="mb-2 block text-sm font-medium">Vertretungsberechtigte Person (optional)</span><input value={contractDraft.representative} onChange={(event) => setContractDraft({ ...contractDraft, representative: event.target.value })} placeholder="Kann leer bleiben" className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
@@ -2489,8 +2498,8 @@ function BookingApp({ demo }: { demo: boolean }) {
 
       {paymentDraft && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 sm:items-center sm:p-6">
-          <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="payment-title">
-            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Zahlungseingang</p><h2 id="payment-title" className="mt-1 text-2xl font-semibold">Bezahlt am</h2><p className="mt-2 text-sm text-stone-500">{paymentDraft.invoice.invoice_number} · {invoiceGross(paymentDraft.invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto</p></div><button onClick={() => setPaymentDraft(null)} className="grid h-11 w-11 place-items-center rounded-full bg-stone-100" aria-label="Schließen"><X size={19} /></button></div>
+          <section className="max-h-[90dvh] min-w-0 w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-700">Zahlungseingang</p><h2 id="payment-title" className="mt-1 text-2xl font-semibold">Bezahlt am</h2><p className="mt-2 text-sm text-stone-500">{paymentDraft.invoice.invoice_number} · {invoiceGross(paymentDraft.invoice).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} brutto</p></div><button onClick={() => setPaymentDraft(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-stone-100" aria-label="Schließen"><X size={19} /></button></div>
             <form onSubmit={markInvoicePaid} className="mt-6 space-y-5">
               <label><span className="mb-2 block text-sm font-medium text-stone-700">Zahlungsdatum</span><input required type="date" max={formatInTimeZone(new Date(), TZ, "yyyy-MM-dd")} value={paymentDraft.paidOn} onChange={(event) => setPaymentDraft({ ...paymentDraft, paidOn: event.target.value })} className="h-12 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700" /></label>
               <button type="submit" className="h-12 w-full rounded-xl bg-emerald-700 text-sm font-semibold text-white">Zahlung speichern</button>
@@ -2504,8 +2513,8 @@ function BookingApp({ demo }: { demo: boolean }) {
         const update = (changes: Partial<AccessInventory>) => setAccessInventory((items) => [...items.filter((item) => item.member_id !== accessMember.id), { ...access, ...changes }]);
         return (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setAccessMember(null)}>
-            <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="access-title">
-              <div className="flex items-start justify-between gap-4"><div><p className="flex items-center gap-2 text-sm font-medium text-emerald-700"><KeyRound size={16} /> Interne Ausgabeübersicht</p><h2 id="access-title" className="mt-1 text-2xl font-semibold">Schlüssel & Chips</h2><p className="mt-1 text-sm text-stone-500">{accessMember.name}</p></div><button onClick={() => setAccessMember(null)} className="grid h-11 w-11 place-items-center rounded-xl bg-stone-100" aria-label="Schließen"><X size={20} /></button></div>
+            <section className="max-h-[90dvh] min-w-0 w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="access-title">
+              <div className="flex items-start justify-between gap-4"><div><p className="flex items-center gap-2 text-sm font-medium text-emerald-700"><KeyRound size={16} /> Interne Ausgabeübersicht</p><h2 id="access-title" className="mt-1 text-2xl font-semibold">Schlüssel & Chips</h2><p className="mt-1 text-sm text-stone-500">{accessMember.name}</p></div><button onClick={() => setAccessMember(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100" aria-label="Schließen"><X size={20} /></button></div>
               <form onSubmit={saveAccessInventory} className="mt-6 space-y-4">
                 <div className="grid grid-cols-3 gap-3">
                   <label><span className="mb-2 block text-xs font-medium leading-4">Loxone-Chips</span><input type="number" min="0" step="1" value={access.loxone_chip_count} onChange={(event) => update({ loxone_chip_count: Number(event.target.value) })} className="h-12 w-full rounded-xl border border-stone-300 px-3" /></label>
@@ -2527,8 +2536,8 @@ function BookingApp({ demo }: { demo: boolean }) {
         const update = (changes: Partial<Deposit>) => setDeposits((items) => [...items.filter((item) => item.member_id !== depositMember.id), { ...deposit, ...changes }]);
         return (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setDepositMember(null)}>
-            <section className="w-full max-w-md rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="deposit-title">
-              <div className="flex items-start justify-between"><div><p className="text-sm font-medium text-emerald-700">Sicherheitsleistung</p><h2 id="deposit-title" className="mt-1 text-2xl font-semibold">Kaution · {depositMember.name}</h2></div><button onClick={() => setDepositMember(null)} className="grid h-11 w-11 place-items-center rounded-xl bg-stone-100"><X size={20} /></button></div>
+            <section className="max-h-[90dvh] min-w-0 w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="deposit-title">
+              <div className="flex items-start justify-between"><div><p className="text-sm font-medium text-emerald-700">Sicherheitsleistung</p><h2 id="deposit-title" className="mt-1 text-2xl font-semibold">Kaution · {depositMember.name}</h2></div><button onClick={() => setDepositMember(null)} aria-label="Schließen" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100"><X size={20} /></button></div>
               <form onSubmit={saveDeposit} className="mt-6 space-y-4">
                 <label className="block"><span className="mb-2 block text-sm font-medium">Vereinbarte Kaution</span><input type="number" min="0" step="0.01" value={deposit.agreed_amount} onChange={(event) => update({ agreed_amount: Number(event.target.value) })} className="h-12 w-full rounded-xl border border-stone-300 px-4" /></label>
                 <label className="block"><span className="mb-2 block text-sm font-medium">Bereits eingegangen</span><input type="number" min="0" step="0.01" value={deposit.received_amount} onChange={(event) => update({ received_amount: Number(event.target.value) })} className="h-12 w-full rounded-xl border border-stone-300 px-4" /></label>

@@ -94,13 +94,13 @@ export function MemberDirectory(props: Props) {
   return <div>
     <div className="flex flex-col gap-4 border-b border-stone-100 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
       <div className="grid grid-cols-2 gap-1 rounded-xl bg-stone-100 p-1 min-[400px]:flex min-[400px]:flex-wrap" role="group" aria-label="Personen filtern">
-        {filters.map((item) => <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => { setFilter(item.value); setOpenActionsId(null); }} className={`min-h-10 rounded-lg px-3 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-emerald-700 ${filter === item.value ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{item.label}</button>)}
+        {filters.map((item) => <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => { setFilter(item.value); setOpenActionsId(null); }} className={`min-h-11 rounded-lg px-3 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-emerald-700 ${filter === item.value ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`}>{item.label}</button>)}
       </div>
       <div className="flex min-w-0 items-center gap-3 lg:w-80">
         <div className="relative min-w-0 flex-1">
           <Search size={17} className="pointer-events-none absolute left-3 top-3.5 text-stone-400" aria-hidden="true" />
           <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setOpenActionsId(null); }} aria-label="Person, Firma, E-Mail oder Büro suchen" placeholder="Person oder Büro suchen" className="h-11 w-full min-w-0 rounded-xl border border-stone-200 bg-white pl-10 pr-10 text-sm outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 [&::-webkit-search-cancel-button]:appearance-none" />
-          {query && <button type="button" aria-label="Suche löschen" onClick={() => setQuery("")} className="absolute right-0 top-0 grid h-11 w-10 place-items-center text-stone-500"><X size={15} /></button>}
+          {query && <button type="button" aria-label="Suche löschen" onClick={() => setQuery("")} className="absolute right-0 top-0 grid h-11 w-11 place-items-center text-stone-500"><X size={15} /></button>}
         </div>
       </div>
     </div>
@@ -120,7 +120,7 @@ export function MemberDirectory(props: Props) {
             <div className="col-span-2 flex min-w-0 items-start gap-3 xl:col-span-1 xl:items-center">
               <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-sm font-semibold ${member.active ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-500"}`} aria-hidden="true">{name.slice(0, 1)}</div>
               <div className="min-w-0">
-                <button type="button" onClick={() => props.onOpen(member)} className="block max-w-full break-words text-left text-[15px] font-semibold leading-5 text-stone-900 outline-none hover:text-emerald-800 focus-visible:rounded focus-visible:ring-2 focus-visible:ring-emerald-700">{name}</button>
+                <button type="button" onClick={() => props.onOpen(member)} className="block min-h-11 min-w-11 max-w-full break-words text-left text-[15px] font-semibold leading-5 text-stone-900 outline-none hover:text-emerald-800 focus-visible:rounded focus-visible:ring-2 focus-visible:ring-emerald-700">{name}</button>
                 <p className="mt-1 break-all text-xs leading-5 text-stone-500">{member.email}</p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5">
                   {member.office_name && <span className="inline-flex items-center gap-1.5 text-stone-600"><DoorOpen size={12} className="shrink-0" aria-hidden="true" />{member.office_name}</span>}
