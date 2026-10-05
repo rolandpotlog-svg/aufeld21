@@ -135,11 +135,12 @@ export default function HomepagePreview() {
                 <p className="mt-5 max-w-2xl leading-7 text-stone-300">Der gemeinsame Meetingraum lässt sich von Mitgliedern direkt über das AUFELD21-Portal reservieren – auch unterwegs am Handy.</p>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-[#f6efd4] p-7 sm:p-10 lg:col-span-2 lg:px-12">
-              <Coffee size={24} className="mt-1 shrink-0 text-amber-800" />
-              <div>
-                <h3 className="text-2xl font-semibold tracking-[-0.05em] sm:text-3xl">Küche & Balkon</h3>
-                <p className="mt-3 max-w-3xl leading-7 text-stone-600">Gemeinsame Küche und ein 17,15 m² großer Balkon schaffen Platz für eine Pause und unkomplizierten Austausch.</p>
+            <div className="grid items-center bg-[#f6efd4] lg:col-span-2 lg:grid-cols-2">
+              <SpacePhoto photo="kitchen" sizes="(min-width: 1440px) 671px, (min-width: 1024px) 48vw, 100vw" className="lg:order-2" />
+              <div className="p-7 sm:p-10 lg:p-12">
+                <div className="flex items-center gap-3 text-amber-800"><Coffee size={23} /><p className="text-xs font-bold uppercase tracking-[0.18em]">Gemeinsame Küche · Kaffee inklusive</p></div>
+                <h3 className="mt-6 max-w-2xl text-3xl font-semibold tracking-[-0.05em] sm:text-4xl">Gute Arbeit braucht auch eine gute Pause.</h3>
+                <p className="mt-5 max-w-2xl leading-7 text-stone-600">Kurz durchatmen, einen Kaffee holen und miteinander ins Gespräch kommen. Unsere Gemeinschaftsküche gehört zum Arbeitsalltag im AUFELD21 dazu – und der Kaffee ist für Mitglieder kostenlos.</p>
               </div>
             </div>
           </div>

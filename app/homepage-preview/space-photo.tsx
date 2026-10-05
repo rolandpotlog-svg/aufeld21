@@ -4,22 +4,24 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Expand, Images, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
-// Generated from the high-resolution broker originals, not listing thumbnails.
+// Generated from broker originals and current AUFELD21 photos, not thumbnails.
 // 2880 px keeps the gallery sharp on Retina displays; Next serves smaller sizes
-// on mobile. The new URLs bypass cached listing images. Keep the complete frame
-// and the photographer's watermark visible; unfinished areas are not included.
+// on mobile. Keep the complete frame and any photographer's watermark visible;
+// unfinished areas are not included. Credits follow the currently displayed photo.
 const photos = [
-  { id: "office", src: "/spaces/aufeld21-buero-hq.webp", title: "Helles Büro", alt: "Helles Büro im AUFELD21 mit zwei Schreibtischen und großen Fenstern", height: 1920 },
-  { id: "meeting", src: "/spaces/aufeld21-meetingraum-hq.webp", title: "Unser Meetingraum", alt: "Meetingraum im AUFELD21 mit Besprechungstisch, Bildschirm und Flipchart", height: 1921 },
-  { id: "hallway", src: "/spaces/aufeld21-einblicke-hq.webp", title: "Einblicke in den Space", alt: "Heller Flur im AUFELD21 mit Pflanze und Blick in die angrenzenden Räume", height: 1920 },
-  { id: "office-detail", src: "/spaces/aufeld21-buero-weitere-ansicht-hq.webp", title: "Büro · weitere Ansicht", alt: "Weitere Perspektive auf ein möbliertes Büro im AUFELD21", height: 1920 },
-  { id: "meeting-detail", src: "/spaces/aufeld21-meetingraum-weitere-ansicht-hq.webp", title: "Meetingraum · weitere Ansicht", alt: "Weitere Ansicht des AUFELD21-Meetingraums mit Tisch und Bildschirm", height: 1920 },
-  { id: "office-windows", src: "/spaces/aufeld21-buero-fenster-hq.webp", title: "Büro mit viel Tageslicht", alt: "Weiteres Büro im AUFELD21 mit großem Schreibtisch und zwei hellen Fenstern", height: 1919 },
-  { id: "single-office", src: "/spaces/aufeld21-einzelbuero-hq.webp", title: "Ruhiges Einzelbüro", alt: "Helles Einzelbüro im AUFELD21 mit eigenem Schreibtisch und Bürostuhl", height: 1920 },
+  { id: "office", src: "/spaces/aufeld21-buero-hq.webp", title: "Helles Büro", alt: "Helles Büro im AUFELD21 mit zwei Schreibtischen und großen Fenstern", height: 1920, credit: "Reisinger Immobilien" },
+  { id: "meeting", src: "/spaces/aufeld21-meetingraum-hq.webp", title: "Unser Meetingraum", alt: "Meetingraum im AUFELD21 mit Besprechungstisch, Bildschirm und Flipchart", height: 1921, credit: "Reisinger Immobilien" },
+  { id: "hallway", src: "/spaces/aufeld21-einblicke-hq.webp", title: "Einblicke in den Space", alt: "Heller Flur im AUFELD21 mit Pflanze und Blick in die angrenzenden Räume", height: 1920, credit: "Reisinger Immobilien" },
+  { id: "office-detail", src: "/spaces/aufeld21-buero-weitere-ansicht-hq.webp", title: "Büro · weitere Ansicht", alt: "Weitere Perspektive auf ein möbliertes Büro im AUFELD21", height: 1920, credit: "Reisinger Immobilien" },
+  { id: "meeting-detail", src: "/spaces/aufeld21-meetingraum-weitere-ansicht-hq.webp", title: "Meetingraum · weitere Ansicht", alt: "Weitere Ansicht des AUFELD21-Meetingraums mit Tisch und Bildschirm", height: 1920, credit: "Reisinger Immobilien" },
+  { id: "office-windows", src: "/spaces/aufeld21-buero-fenster-hq.webp", title: "Büro mit viel Tageslicht", alt: "Weiteres Büro im AUFELD21 mit großem Schreibtisch und zwei hellen Fenstern", height: 1919, credit: "Reisinger Immobilien" },
+  { id: "single-office", src: "/spaces/aufeld21-einzelbuero-hq.webp", title: "Ruhiges Einzelbüro", alt: "Helles Einzelbüro im AUFELD21 mit eigenem Schreibtisch und Bürostuhl", height: 1920, credit: "Reisinger Immobilien" },
+  { id: "kitchen", src: "/spaces/aufeld21-kueche-hq.webp", title: "Unsere Gemeinschaftsküche", alt: "Gemeinschaftsküche im AUFELD21 mit Holzarbeitsplatte, Spüle, Backofen und Kaffeevollautomat", height: 2168, credit: "AUFELD21" },
+  { id: "coffee", src: "/spaces/aufeld21-kaffeepause-hq.webp", title: "Zeit für eine Kaffeepause", alt: "Kaffeeecke in der AUFELD21-Küche mit Kaffeevollautomat und Holzarbeitsplatte", height: 2168, credit: "AUFELD21" },
 ] as const;
 
 type SpacePhotoProps = {
-  photo: "office" | "meeting" | "hallway";
+  photo: "office" | "meeting" | "hallway" | "kitchen";
   sizes: string;
   priority?: boolean;
   caption?: boolean;
@@ -96,7 +98,7 @@ export function SpacePhoto({ photo, sizes, priority = false, caption = false, cl
             <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-semibold">Foto {activeIndex === null ? 1 : activeIndex + 1} von {photos.length}</p>
             <button type="button" onClick={() => move(1)} aria-label="Nächstes Foto" className="grid h-12 w-12 place-items-center rounded-full border border-stone-200 hover:bg-emerald-50"><ChevronRight size={22} /></button>
           </div>
-          <p className="mt-2 text-center text-xs text-stone-500">Fotos: Reisinger Immobilien</p>
+          <p className="mt-2 text-center text-xs text-stone-500">Foto: {active?.credit ?? preview.credit}</p>
         </div>
       </dialog>
     </>
