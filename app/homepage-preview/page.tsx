@@ -154,6 +154,7 @@ export default function HomepagePreview() {
             <p className="mt-6 text-lg leading-8 text-stone-600">Flex, Fix oder ein eigenes Büro – je nachdem, wie viel eigener Raum gerade richtig ist.</p>
           </div>
 
+          <div className="mt-6 flex flex-wrap gap-4"><Link href="/coworking-traun" className="inline-flex min-h-11 items-center font-semibold text-emerald-800 underline underline-offset-4">Coworking in Traun im Detail →</Link><Link href="/buero-mieten-traun" className="inline-flex min-h-11 items-center font-semibold text-emerald-800 underline underline-offset-4">Büros in Traun im Detail →</Link></div>
           <div className="mt-9 grid gap-4 sm:mt-12 md:grid-cols-2 xl:grid-cols-4">
             {[
               {
