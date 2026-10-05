@@ -4,14 +4,18 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Expand, Images, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
-// Stable filenames let us replace the broker photos with the originals later.
-// Keep the full frame visible, including the photographer's watermark.
+// Generated from the high-resolution broker originals, not listing thumbnails.
+// 2880 px keeps the gallery sharp on Retina displays; Next serves smaller sizes
+// on mobile. The new URLs bypass cached listing images. Keep the complete frame
+// and the photographer's watermark visible; unfinished areas are not included.
 const photos = [
-  { id: "office", src: "/spaces/aufeld21-buero.webp", title: "Helles Büro", alt: "Helles Büro im AUFELD21 mit zwei Schreibtischen und großen Fenstern", height: 799 },
-  { id: "meeting", src: "/spaces/aufeld21-meetingraum.webp", title: "Unser Meetingraum", alt: "Meetingraum im AUFELD21 mit Besprechungstisch, Bildschirm und Flipchart", height: 800 },
-  { id: "hallway", src: "/spaces/aufeld21-einblicke.webp", title: "Einblicke in den Space", alt: "Heller Flur im AUFELD21 mit Pflanze und Blick in die angrenzenden Räume", height: 800 },
-  { id: "office-detail", src: "/spaces/aufeld21-buero-weitere-ansicht.webp", title: "Büro · weitere Ansicht", alt: "Weitere Perspektive auf ein möbliertes Büro im AUFELD21", height: 800 },
-  { id: "meeting-detail", src: "/spaces/aufeld21-meetingraum-weitere-ansicht.webp", title: "Meetingraum · weitere Ansicht", alt: "Weitere Ansicht des AUFELD21-Meetingraums mit Tisch und Bildschirm", height: 799 },
+  { id: "office", src: "/spaces/aufeld21-buero-hq.webp", title: "Helles Büro", alt: "Helles Büro im AUFELD21 mit zwei Schreibtischen und großen Fenstern", height: 1920 },
+  { id: "meeting", src: "/spaces/aufeld21-meetingraum-hq.webp", title: "Unser Meetingraum", alt: "Meetingraum im AUFELD21 mit Besprechungstisch, Bildschirm und Flipchart", height: 1921 },
+  { id: "hallway", src: "/spaces/aufeld21-einblicke-hq.webp", title: "Einblicke in den Space", alt: "Heller Flur im AUFELD21 mit Pflanze und Blick in die angrenzenden Räume", height: 1920 },
+  { id: "office-detail", src: "/spaces/aufeld21-buero-weitere-ansicht-hq.webp", title: "Büro · weitere Ansicht", alt: "Weitere Perspektive auf ein möbliertes Büro im AUFELD21", height: 1920 },
+  { id: "meeting-detail", src: "/spaces/aufeld21-meetingraum-weitere-ansicht-hq.webp", title: "Meetingraum · weitere Ansicht", alt: "Weitere Ansicht des AUFELD21-Meetingraums mit Tisch und Bildschirm", height: 1920 },
+  { id: "office-windows", src: "/spaces/aufeld21-buero-fenster-hq.webp", title: "Büro mit viel Tageslicht", alt: "Weiteres Büro im AUFELD21 mit großem Schreibtisch und zwei hellen Fenstern", height: 1919 },
+  { id: "single-office", src: "/spaces/aufeld21-einzelbuero-hq.webp", title: "Ruhiges Einzelbüro", alt: "Helles Einzelbüro im AUFELD21 mit eigenem Schreibtisch und Bürostuhl", height: 1920 },
 ] as const;
 
 type SpacePhotoProps = {
@@ -52,7 +56,7 @@ export function SpacePhoto({ photo, sizes, priority = false, caption = false, cl
       <figure className={className}>
         <button type="button" onClick={openGallery} aria-label={`Foto vergrößern: ${preview.title}`} aria-haspopup="dialog"
           className="group relative block w-full overflow-hidden rounded-[inherit] bg-stone-100 text-[#162119] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">
-          <Image src={preview.src} alt={preview.alt} width={1200} height={preview.height} sizes={sizes} preload={priority} className="block h-auto w-full" />
+          <Image src={preview.src} alt={preview.alt} width={2880} height={preview.height} quality={90} sizes={sizes} preload={priority} className="block h-auto w-full" />
           <span aria-hidden="true" className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full border border-white/60 bg-white/90 shadow-sm transition group-hover:bg-[#c9ff70]">
             <Expand size={18} />
           </span>
@@ -84,7 +88,7 @@ export function SpacePhoto({ photo, sizes, priority = false, caption = false, cl
           </button>
         </div>
         {active && <div className="flex justify-center bg-stone-100">
-          <Image src={active.src} alt={active.alt} width={1200} height={active.height} sizes="(max-width: 768px) 94vw, 1152px" className="h-auto max-h-[calc(94dvh-12rem)] w-full object-contain" />
+          <Image src={active.src} alt={active.alt} width={2880} height={active.height} quality={90} sizes="(max-width: 1225px) 94vw, 1152px" className="h-auto max-h-[calc(94dvh-12rem)] w-full object-contain" />
         </div>}
         <div className="px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between gap-3">
