@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "kundentermine-im-coworking-vorbereiten",
+    "title": "Kundentermine im Coworking: So bereitest du dein Meeting vor",
+    "category": "Besprechungen & Arbeitsalltag",
+    "description": "Kunden im Coworking empfangen: Raum reservieren, Technik testen und das Gespräch vorbereiten. Praktische Tipps mit Einblick in den Meetingraum von AUFELD21 in Traun.",
+    "date": "2026-10-06",
+    "sections": [
+      {
+        "heading": "Ein Arbeitsplatz für dich – ein eigener Raum für das Gespräch",
+        "text": "Du arbeitest allein mit dem Laptop, empfängst aber regelmäßig Kunden? Dann brauchst du nicht unbedingt dauerhaft einen großen Besprechungstisch im eigenen Büro. Ein gemeinsam genutzter Meetingraum kann diese Aufgabe übernehmen. Entscheidend ist, dass du ihn rechtzeitig reservierst und die Ausstattung zu deinem Termin passt. Am offenen Coworking-Schreibtisch können andere Gespräche mithören oder durch den Besuch gestört werden. Für ein ungestörtes Gespräch solltest du deshalb einen separaten Raum einplanen."
+      },
+      {
+        "heading": "Vom gewünschten Ergebnis rückwärts planen",
+        "text": "Schreibe vor der Einladung auf, was am Ende des Termins feststehen soll: eine Entscheidung, eine gemeinsame Aufgabenliste oder die nächsten Schritte eines Projekts. Daraus ergeben sich die benötigten Unterlagen und die passende Gesprächsdauer. Für eine Entwurfsbesprechung kann ein großer Bildschirm hilfreich sein; für eine gemeinsame Ideensammlung eher ein Flipchart. Lade nur die Personen ein, die etwas zum Ziel beitragen können, und teile ihnen vorab Thema, Dauer und benötigte Vorbereitung mit."
+      },
+      {
+        "heading": "Reservierung und Ankunft gehören zur Vorbereitung",
+        "text": "Plane neben der eigentlichen Gesprächszeit auch Aufbau und Abschluss ein. Wenn der Raum direkt danach wieder gebucht ist, sollten Unterlagen bereits eingepackt und persönliche Notizen entfernt sein. Schicke deinen Gästen die genaue Adresse und vereinbare, wie du sie am Standort empfängst. Bei AUFELD21 lautet die Adresse Aufeldstraße 21, 4050 Traun. Der Zugang rund um die Uhr gilt für Mitglieder; daraus folgt kein frei zugänglicher Empfang für unangemeldete Besucher. Stimme die Ankunft deiner Gäste deshalb persönlich ab."
+      },
+      {
+        "heading": "Bei Videoterminen Bild und Ton wirklich ausprobieren",
+        "text": "Öffne die verwendete Konferenzanwendung vor dem Termin und prüfe mit deinen eigenen Geräten, ob Bildschirm, Kamera und Ton wie gewünscht funktionieren. Ein vorhandener Bildschirm bedeutet nicht automatisch, dass jeder Laptop ohne Adapter angeschlossen werden kann. Bei zugeschalteten Gästen lohnt sich ein kurzer Probeanruf: Sind alle Personen im Raum verständlich, ist die Kamera passend ausgerichtet und sind freigegebene Inhalte lesbar? Schließe unnötige Fenster und Benachrichtigungen, bevor du deinen Bildschirm teilst."
+      },
+      {
+        "heading": "Der Meetingraum bei AUFELD21 in Traun",
+        "text": "Im Meetingraum sitzen sieben Personen bequem. Zur Ausstattung gehören Fernseher, Kamera, Flipchart und ein elektrisches Samsung-Smartboard. Mitglieder reservieren den Raum digital über das AUFELD21-Portal. Flex- und Fixplätze enthalten jeweils zwölf Meetingraumstunden pro Person und Monat. Bei einem Büro gelten zwölf Stunden gemeinsam für das gesamte Büro, auch wenn mehrere Nutzer eigene Logins haben. Nicht genutzte Inklusivstunden verfallen am Monatsende. Zusätzliche Zeit für Mitglieder kostet 12 Euro netto beziehungsweise 14,40 Euro inklusive 20 Prozent Umsatzsteuer je Stunde und wird in 30-Minuten-Schritten abgerechnet. Das ist der Mitgliedertarif; ein externer Mietpreis wird damit nicht angeboten."
+      },
+      {
+        "heading": "Mit klaren nächsten Schritten abschließen",
+        "text": "Reserviere am Ende ein paar Minuten für die Ergebnisse: Wer erledigt was und bis wann? Halte offene Fragen fest und vereinbare, wie ihr sie klärt. Nimm anschließend deine Unterlagen mit, entferne persönliche Inhalte von gemeinsam genutzten Flächen und hinterlasse den Raum für die nächste Buchung. So bleibt der Meetingraum für alle gut nutzbar. Wenn du dauerhaft einen Arbeitsplatz mit Möglichkeiten für Kundentermine suchst, zeigen dir Julia und Roland bei einer vereinbarten Besichtigung die Arbeitsplätze, Büros und den Meetingraum von AUFELD21."
+      }
+    ]
+  },
+  {
     "slug": "homeoffice-oder-coworking-traun",
     "title": "Homeoffice oder Coworking: Welcher Arbeitsplatz passt zu dir?",
     "category": "Arbeitsalltag",
@@ -20,7 +53,7 @@ export const blogPosts = [
       },
       {
         "heading": "Coworking bei AUFELD21 in Traun-Oedt",
-        "text": "Bei AUFELD21 gibt es flexible Arbeitsplätze und feste Schreibtische. Highspeed-Internet, Küche und Getränke gehören zum Angebot. Mitglieder haben 24/7-Zugang; Besichtigungen vereinbaren wir persönlich. Der gemeinsam genutzte Meetingraum kann von Mitgliedern digital reserviert werden. Welche Plätze aktuell zu deinem Bedarf passen, klären Julia und Roland mit dir."
+        "text": "Bei AUFELD21 gibt es flexible Arbeitsplätze und feste Schreibtische. Highspeed-Internet, Küchennutzung und kostenloser Kaffee gehören zum Angebot. Andere Getränke werden separat gemäß Preisliste vor Ort verrechnet. Mitglieder haben 24/7-Zugang; Besichtigungen vereinbaren wir persönlich. Der gemeinsam genutzte Meetingraum kann von Mitgliedern digital reserviert werden. Welche Plätze aktuell zu deinem Bedarf passen, klären Julia und Roland mit dir."
       },
       {
         "heading": "Eine Entscheidung ohne großen Sprung",
