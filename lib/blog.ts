@@ -1,5 +1,42 @@
 export const blogPosts = [
   {
+    "slug": "erste-woche-im-coworking",
+    "title": "Deine erste Woche im Coworking: Ankommen und eine Routine finden",
+    "category": "Coworking im Alltag",
+    "description": "Was mitnehmen, wie den Tag planen und gemeinsame Räume nutzen? Ein praktischer Wochenplan für deinen Start im Coworking – mit Hinweisen zu AUFELD21 in Traun.",
+    "date": "2026-10-09",
+    "sections": [
+      {
+        "heading": "Vor dem ersten Tag: Zugang und Arbeitsmittel klären",
+        "text": "Der Vertrag ist geklärt, der Arbeitsplatz ausgewählt – jetzt geht es darum, im neuen Alltag anzukommen. Vereinbare vor deinem ersten Arbeitstag, wie die Übergabe des Zugangs funktioniert und an wen du dich bei Fragen wenden kannst. Bei AUFELD21 haben Mitglieder rund um die Uhr Zugang; eine Besichtigung oder erstmalige Einweisung vereinbarst du persönlich. Packe Laptop, Ladegerät, Kopfhörer und die Adapter ein, die du tatsächlich verwendest. Frage vorher, welche Ausstattung an deinem Platz vorhanden ist und was du selbst mitbringen sollst. So musst du deine erste Arbeitsphase nicht wegen eines fehlenden Kabels unterbrechen."
+      },
+      {
+        "heading": "Montag: Erst orientieren, dann konzentriert starten",
+        "text": "Plane am ersten Tag etwas Zeit ein, um Küche, Sanitärbereiche, Meetingraum und die Abläufe beim Kommen und Gehen kennenzulernen. Teste deine Internetverbindung und richte deinen Arbeitsplatz für die erste Aufgabe ein. Beginne mit einem überschaubaren Arbeitspaket, statt den Tag sofort mit Terminen zu füllen. Notiere offene Fragen gesammelt: Wo werden eigene Sachen aufbewahrt? Was darf am Schreibtisch bleiben? Wer hilft bei einer technischen Frage? Ein kurzer Austausch mit der Ansprechperson ist dafür oft praktischer als viele einzelne Unterbrechungen."
+      },
+      {
+        "heading": "Dienstag: Einen realistischen Tagesrhythmus ausprobieren",
+        "text": "Lege für einen Tag bewusst eine Startzeit, eine längere Arbeitsphase, eine Pause und einen Abschluss fest. Das muss kein starrer Stundenplan werden. Es geht darum, herauszufinden, welche Reihenfolge zu deinen Aufgaben passt. Ein einfaches Beispiel: zuerst ein Angebot fertigstellen, danach E-Mails beantworten und am Nachmittag telefonieren. Halte am Ende kurz fest, was gut funktioniert hat und wo du abgelenkt warst. Ein neuer Arbeitsort erledigt die Tagesplanung nicht für dich, kann aber einen klaren Rahmen dafür geben."
+      },
+      {
+        "heading": "Mittwoch: Telefonate und gemeinsame Räume organisieren",
+        "text": "Prüfe, welche deiner Gespräche am Arbeitsplatz möglich sind und für welche du einen separaten Raum brauchst. Kopfhörer verhindern nicht, dass andere deine Stimme hören. Stimme längere Telefonate mit den Regeln vor Ort ab und reserviere benötigte Räume rechtzeitig. Bei AUFELD21 können Mitglieder den Meetingraum digital buchen. Mache dich mit dem Buchungsablauf vertraut, bevor der erste wichtige Termin ansteht. Kläre dabei auch, wie du eine nicht mehr benötigte Reservierung wieder freigibst. Für die Vorbereitung eines Kundentermins findest du einen eigenen Artikel im Journal."
+      },
+      {
+        "heading": "Donnerstag: Kontakt aufnehmen, ohne Arbeit zu unterbrechen",
+        "text": "Ein kurzes Vorstellen in der Küche reicht oft für den Anfang: Wer bist du und woran arbeitest du? Du brauchst dafür weder eine Präsentation noch ein Netzwerkprogramm. Achte darauf, ob dein Gegenüber gerade Zeit hat. Wer konzentriert am Bildschirm sitzt oder Kopfhörer trägt, möchte vielleicht erst später sprechen. Gemeinsame Flächen funktionieren außerdem besser, wenn jede Person ihren Teil übernimmt: benutztes Geschirr wegräumen, Arbeitsmittel zurücklegen und Besprechungsflächen nach dem Termin frei machen. Frage nach den konkreten Absprachen am Standort, statt sie vorauszusetzen."
+      },
+      {
+        "heading": "Freitag: Die nächste Woche mit drei Entscheidungen vorbereiten",
+        "text": "Ziehe nach einigen Arbeitstagen eine kleine Bilanz: Welche Aufgaben sind dir am neuen Ort gut gelungen? Zu welchen Zeiten hast du Ruhe gebraucht? Was hat dir an Ausstattung oder Organisation gefehlt? Entscheide daraus drei konkrete Dinge für die nächste Woche, zum Beispiel feste Ankunftszeiten, eine rechtzeitige Raumbuchung und eine bessere Packliste. Besprich offene Punkte mit dem Betreiber. Es ist hilfreicher, eine konkrete Situation zu beschreiben, als nach wenigen Tagen pauschal zu urteilen, ob Coworking funktioniert."
+      },
+      {
+        "heading": "Bei AUFELD21 persönlich ankommen",
+        "text": "Julia und Roland führen AUFELD21 in Traun-Oedt persönlich. Flexible Arbeitsplätze, fixe Schreibtische und möblierte Büros bieten unterschiedliche Möglichkeiten für deinen Arbeitsalltag. Kaffee und die Nutzung der gemeinsamen Küche gehören zum Angebot; andere Getränke werden separat nach der Preisliste vor Ort verrechnet. Wenn du noch vor deinem Start stehst, vereinbare eine Besichtigung und bring deine Fragen zu Arbeitszeiten, Ausstattung und Gesprächen mit. Welche Plätze aktuell verfügbar sind und welche Vereinbarung zu deinem Bedarf passt, klären wir direkt mit dir."
+      }
+    ]
+  },
+  {
     "slug": "kundentermine-im-coworking-vorbereiten",
     "title": "Kundentermine im Coworking: So bereitest du dein Meeting vor",
     "category": "Besprechungen & Arbeitsalltag",
