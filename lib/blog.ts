@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "coworking-zu-zweit-organisieren",
+    "title": "Coworking zu zweit: Gemeinsame Arbeitstage sinnvoll organisieren",
+    "category": "Zusammenarbeit im kleinen Team",
+    "description": "Zu zweit im Coworking arbeiten: Aufgaben aufteilen, Gespräche planen und gemeinsame Entscheidungen festhalten. Praktische Tipps für kleine Teams in Traun.",
+    "date": "2026-10-13",
+    "sections": [
+      {
+        "heading": "Zwei Arbeitsplätze ergeben noch keinen gemeinsamen Arbeitstag",
+        "text": "Wenn ihr zu zweit an einem Projekt arbeitet, kann ein gemeinsamer Arbeitsort Abstimmungen erleichtern. Entscheidend ist aber, welche Aufgaben ihr tatsächlich zusammen erledigen müsst. Zwei Personen, die den ganzen Tag unterschiedliche Telefonate führen, brauchen eine andere Umgebung als ein Team, das gemeinsam Entwürfe bespricht. Nehmt deshalb vor der Planung eine konkrete Arbeitswoche als Ausgangspunkt: Welche Ergebnisse wollt ihr erreichen, wo braucht ihr einander und welche Arbeit gelingt besser allein?"
+      },
+      {
+        "heading": "Aufgaben vor dem Treffen in drei Gruppen teilen",
+        "text": "Ordnet eure Aufgaben drei Gruppen zu: gemeinsam entscheiden, allein bearbeiten und gegenseitig prüfen. Gemeinsam entscheiden könnt ihr etwa über den Umfang eines Angebots. Die einzelnen Teile schreibt danach jede Person für sich. Zum Abschluss lest ihr den Entwurf gegenseitig gegen. So muss nicht jede Aufgabe zum Gespräch werden. Haltet vorher fest, wer welchen Teil übernimmt und welches Ergebnis bis zur nächsten Abstimmung vorliegen soll. Ein gemeinsames Dokument oder eine einfache Aufgabenliste reicht dafür oft aus."
+      },
+      {
+        "heading": "Einen gemeinsamen Tag mit klaren Gesprächszeiten planen",
+        "text": "Ein möglicher Ablauf: Zu Beginn klärt ihr offene Fragen und verteilt die Aufgaben. Danach folgt eine längere Phase ohne gegenseitige Unterbrechungen. Für Rückfragen sammelt ihr Stichpunkte und besprecht sie zu einer vereinbarten Zeit. Am Ende prüft ihr gemeinsam das Ergebnis und legt die nächsten Schritte fest. Das ist ein Planungsbeispiel, kein fester Stundenplan. Wenn eine dringende Rückfrage die Arbeit blockiert, braucht es natürlich eine kurze Abstimmung. Für alles andere hilft die Vereinbarung, wann ihr wieder miteinander sprecht."
+      },
+      {
+        "heading": "Die anderen Menschen im Raum mitdenken",
+        "text": "Ein offener Coworking-Bereich ist kein dauerhaft reservierter Besprechungsraum. Klärt vorab, welche kurzen Gespräche am Platz passen und wann ihr einen separaten Raum buchen solltet. Zwei benachbarte Schreibtische sind bei freier Platzwahl nicht automatisch garantiert. Fragt deshalb konkret nach, wenn ihr nebeneinander sitzen oder Unterlagen gemeinsam ansehen möchtet. Plant längere Diskussionen und Videotermine so, dass ihr andere nicht fortlaufend unterbrecht. Falls euer Alltag überwiegend aus gemeinsamen Gesprächen besteht, solltet ihr auch ein eigenes Büro als Möglichkeit prüfen."
+      },
+      {
+        "heading": "Auch zwischen gemeinsamen Tagen handlungsfähig bleiben",
+        "text": "Notiert nach einer Entscheidung knapp das Ergebnis, die zuständige Person und den nächsten Termin. Eine abwesende Person sollte erkennen können, was bereits geklärt ist und wo noch eine Antwort fehlt. Vereinbart außerdem, welcher Kanal für dringende Fragen gedacht ist und welche Themen bis zum nächsten gemeinsamen Tag warten können. So bleibt der gemeinsame Arbeitsort eine Ergänzung zu einer verlässlichen Zusammenarbeit. Ihr müsst nicht jede Information bis zum nächsten Treffen zurückhalten oder jede Kleinigkeit sofort telefonisch klären."
+      },
+      {
+        "heading": "Gemeinsam bei AUFELD21 in Traun arbeiten",
+        "text": "Bei AUFELD21 in Traun-Oedt gibt es Coworking-Arbeitsplätze und möblierte Büros. Welche Kombination für euch geeignet und aktuell verfügbar ist, besprecht ihr mit Julia und Roland bei einer Besichtigung nach Vereinbarung. Bringt mit, wie viele Personen gleichzeitig arbeiten, wie viel gemeinsame Gesprächszeit ihr braucht und wann ihr starten möchtet. Mitglieder können den Meetingraum digital reservieren; dort sitzen sieben Personen bequem. Ob ihr offene Arbeitsplätze oder ein eigenes Büro wählt: Klärt vor Vertragsabschluss die erlaubte Nutzerzahl, enthaltenen Leistungen und Regeln für gemeinsame Räume. Der Zugang rund um die Uhr gilt für Mitglieder."
+      }
+    ]
+  },
+  {
     "slug": "erste-woche-im-coworking",
     "title": "Deine erste Woche im Coworking: Ankommen und eine Routine finden",
     "category": "Coworking im Alltag",
