@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "arbeitsweg-coworking-traun",
+    "title": "Passt der Arbeitsweg? So prüfst du einen Coworking-Standort in Traun",
+    "category": "Standort & Alltag",
+    "description": "Den Weg zum Coworking realistisch prüfen: Tür-zu-Tür-Zeit, typische Arbeitstage und Alternativen. Eine praktische Anleitung für deine Standortwahl in Traun.",
+    "date": "2026-10-17",
+    "sections": [
+      {
+        "heading": "Die Strecke auf der Karte ist erst der Anfang",
+        "text": "Ein Arbeitsplatz kann gut ausgestattet sein und trotzdem schlecht in deinen Alltag passen. Entscheidend ist auch, wie du dorthin kommst und wieder nach Hause gelangst. Prüfe deshalb den gesamten Weg von deiner Haustür bis zum Schreibtisch. Zur reinen Fahrzeit kommen je nach Verkehrsmittel Fußwege, Wartezeiten, Umstiege oder die Suche nach einem Stellplatz hinzu. Notiere diese Teile getrennt. So erkennst du, ob ein kurzer Weg auf der Karte auch im Alltag kurz bleibt."
+      },
+      {
+        "heading": "Zu deiner tatsächlichen Arbeitszeit ausprobieren",
+        "text": "Eine Besichtigung am freien Nachmittag zeigt dir den Raum, aber nicht unbedingt den späteren Arbeitsweg. Probiere die Strecke zusätzlich an einem normalen Arbeitstag zur geplanten Ankunftszeit aus. Berücksichtige auch den Rückweg: Wann möchtest du aufbrechen, und welche weiteren Termine liegen danach? Bei öffentlichen Verkehrsmitteln prüfst du die Verbindung für das konkrete Datum und beide Richtungen in der aktuellen Fahrplanauskunft. Einzelne Fahrzeiten und Verbindungen können sich ändern; verlasse dich deshalb nicht auf eine alte Wegbeschreibung."
+      },
+      {
+        "heading": "Deine Arbeitswoche statt einer einzelnen Fahrt betrachten",
+        "text": "Überlege, an wie vielen Tagen du den Standort voraussichtlich nutzt. Ein reines Rechenbeispiel: Bei 20 Minuten je Richtung und drei Tagen vor Ort ergeben sich zwei Stunden Wegzeit pro Woche. Bei fünf Tagen sind es drei Stunden und 20 Minuten. Das ist keine Aussage über die Anfahrt zu AUFELD21, sondern eine Methode für deinen eigenen Vergleich. Notiere neben der Zeit auch die für dich anfallenden Fahrtkosten. Ein Standort mit einer passenden Monatsmiete sollte auch hinsichtlich Anfahrt und Wochenplanung zu dir passen."
+      },
+      {
+        "heading": "Den Arbeitstag mit weiteren Wegen verbinden",
+        "text": "Nicht jeder Tag beginnt zu Hause und endet direkt nach der Büroarbeit. Vielleicht kommst du von einem Kundentermin oder musst danach etwas erledigen. Zeichne deshalb zwei oder drei typische Tagesabläufe auf: Zuhause–Arbeitsplatz–Zuhause, Kundentermin–Arbeitsplatz und Arbeitsplatz–privater Termin. Vergleiche die Wege, die tatsächlich häufig vorkommen. Eine seltene Fahrt sollte die Standortentscheidung nicht allein bestimmen. Umgekehrt kann ein regelmäßig notwendiger Umweg wichtiger sein als die Entfernung zur eigenen Wohnung."
+      },
+      {
+        "heading": "Eine Alternative für untypische Tage mitdenken",
+        "text": "Was machst du, wenn das gewohnte Verkehrsmittel einmal ausfällt oder du früher nach Hause musst? Prüfe eine zweite Möglichkeit, bevor sie dringend wird. Frage bei der Besichtigung konkret nach Parkmöglichkeiten und danach, wo du ein Fahrrad abstellen kannst. Setze freie oder reservierte Stellplätze nicht ohne Absprache voraus. Wenn du mit schwerer Ausstattung unterwegs bist, gehört auch der Weg vom Ankommen bis zum Arbeitsplatz zu deinem Vergleich. Kläre dabei die Zugänglichkeit passend zu deinen persönlichen Anforderungen."
+      },
+      {
+        "heading": "AUFELD21 in Traun-Oedt kennenlernen",
+        "text": "AUFELD21 liegt in der Aufeldstraße 21, 4050 Traun. Julia und Roland zeigen dir die Coworking-Arbeitsplätze und möblierten Büros nach Terminvereinbarung. Nutze die Anfahrt zur Besichtigung für einen ersten Eindruck und prüfe bei Bedarf zusätzlich deinen üblichen Arbeitsweg. Der Zugang rund um die Uhr gilt für Mitglieder; für einen ersten Besuch vereinbarst du einen Termin. Welche Arbeitsplätze aktuell verfügbar sind und welche Nutzung zu deiner Woche passt, besprechen wir persönlich. Bring neben deinen Fragen zum Raum auch Fragen zur Ankunft und zum Zugang mit."
+      }
+    ]
+  },
+  {
     "slug": "coworking-zu-zweit-organisieren",
     "title": "Coworking zu zweit: Gemeinsame Arbeitstage sinnvoll organisieren",
     "category": "Zusammenarbeit im kleinen Team",
