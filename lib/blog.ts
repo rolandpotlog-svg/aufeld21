@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "coworking-angebote-vergleichen",
+    "title": "Coworking-Angebote vergleichen: Was gehört zur Monatsmiete?",
+    "category": "Angebote verstehen",
+    "description": "Coworking-Angebote sinnvoll vergleichen: enthaltene Leistungen, Meetingraum, Zusatzkosten und Nutzung prüfen. Mit einer Vergleichshilfe für deinen Arbeitsplatz in Traun.",
+    "date": "2026-10-21",
+    "sections": [
+      {
+        "heading": "Eine Monatszahl ist noch kein vollständiges Angebot",
+        "text": "Bei der Suche nach einem Coworking-Platz steht der monatliche Preis oft ganz oben. Für einen sinnvollen Vergleich brauchst du jedoch auch die Leistungen und Bedingungen dahinter. Ein Arbeitsplatz, den du regelmäßig nutzt, sollte zu deinen Aufgaben und deinem geplanten Nutzungsumfang passen. Lege deshalb zuerst fest, für wie viele Personen du suchst, an welchen Tagen ihr arbeiten möchtet und welche Ausstattung ihr tatsächlich braucht. Vergleiche anschließend Angebote für denselben Bedarf. Ein einzelner Schreibtisch und ein ganzes Büro sind unterschiedliche Leistungen, auch wenn beide mit einem Monatspreis beworben werden."
+      },
+      {
+        "heading": "Eine einfache Vergleichsliste anlegen",
+        "text": "Schreibe für jedes Angebot vier Spalten auf: Leistung, enthalten, zusätzlich zu bezahlen und noch zu klären. Beginne mit Arbeitsplatz, Internet, Möbeln, Zugang und Reinigung. Ergänze die Punkte, die für dich wichtig sind, etwa Besprechungsraum, Kaffee oder Aufbewahrung eigener Arbeitsmittel. Trage nur bestätigte Angaben ein. Wenn bei einem Angebot nichts zu Parkmöglichkeiten oder Stauraum steht, bedeutet das weder kostenlos noch nicht vorhanden. Es bleibt zunächst eine offene Frage. Diese Liste kannst du zur Besichtigung mitnehmen und danach anhand konkreter Antworten vervollständigen."
+      },
+      {
+        "heading": "Beim Preis immer dieselbe Einheit vergleichen",
+        "text": "Achte darauf, ob ein Betrag pro Person, pro Arbeitsplatz oder für den gesamten Raum gilt. Prüfe ebenso den Zeitraum: Eine Tagesnutzung lässt sich nicht ohne deinen tatsächlichen Bedarf mit einer Monatsvereinbarung vergleichen. Netto- und Bruttopreise gehören jeweils in getrennte Spalten, damit du nicht versehentlich unterschiedliche Preisangaben gegenüberstellst. Frage nach, wenn aus einem Angebot nicht klar hervorgeht, welcher Betrag berechnet wird. Für den Vergleich mehrerer Büroangebote ist außerdem entscheidend, wie viele Personen den jeweiligen Raum laut Vereinbarung nutzen dürfen."
+      },
+      {
+        "heading": "Meetingraum-Stunden passend zu deinen Terminen betrachten",
+        "text": "Ein enthaltenes Stundenkontingent ist vor allem dann nützlich, wenn es zu deinen Besprechungen passt. Notiere für einen typischen Monat, wie viele Termine du im separaten Raum planst und wie lange sie einschließlich Aufbau und Abschluss dauern. Kläre, ob das Kontingent je Person oder gemeinsam für ein Büro gilt, wie zusätzliche Zeit abgerechnet wird und ob ungenutzte Stunden verfallen. Ein Kontingent garantiert außerdem nicht automatisch einen bestimmten Wunschtermin: Informiere dich über die Reservierung und prüfe benötigte Zeiten frühzeitig. Dauerhafte Raumnutzung für tägliche lange Gespräche solltest du gesondert besprechen."
+      },
+      {
+        "heading": "Laufende Kosten und Kosten zum Start trennen",
+        "text": "Halte monatliche Leistungen und einmalige Ausgaben getrennt fest. Zu den Punkten, die du vor dem Start klären solltest, gehören beispielsweise eigene Geräte, benötigte Adapter, eine mögliche Einrichtungsgebühr oder eine vereinbarte Kaution. Das sind Prüffragen, keine Aussage darüber, dass ein bestimmter Anbieter diese Beträge verlangt. Notiere auch Laufzeit, Kündigungsfrist und mögliche Änderungen der Nutzerzahl. Das Wort flexibel kann sich allein auf die Platzwahl beziehen. Leite daraus keine tägliche Buchbarkeit oder kurzfristige Kündigung ab. Lass dir die maßgeblichen Bedingungen vor deiner Entscheidung schriftlich geben."
+      },
+      {
+        "heading": "Was du bei AUFELD21 in Traun vergleichen kannst",
+        "text": "Bei AUFELD21 gibt es Flexplätze mit freier Platzwahl, feste Schreibtische und möblierte Büros. Internet, Kaffee und die Reinigung der Gemeinschaftsflächen gehören zum Angebot; andere Getränke werden separat nach der Preisliste vor Ort verrechnet. Flex- und Fixplätze enthalten jeweils zwölf Meetingraumstunden pro Person und Monat. Bei einem Büro teilen dessen Nutzer zwölf Stunden pro Monat. Nicht genutzte Inklusivstunden verfallen am Monatsende. Mitglieder haben rund um die Uhr Zugang. Die aktuellen Preise findest du auf unserer Angebotsseite. Julia und Roland klären bei einer Besichtigung nach Vereinbarung, welche Lösung verfügbar ist und welche Bedingungen für deinen Bedarf gelten. Bring deine Vergleichsliste mit, damit die offenen Fragen konkret beantwortet werden können."
+      }
+    ]
+  },
+  {
     "slug": "arbeitsweg-coworking-traun",
     "title": "Passt der Arbeitsweg? So prüfst du einen Coworking-Standort in Traun",
     "category": "Standort & Alltag",
