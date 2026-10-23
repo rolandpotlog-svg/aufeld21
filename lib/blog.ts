@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "bueroarbeit-nach-aussenterminen",
+    "title": "Nach dem Außentermin: Büroarbeit sinnvoll bündeln",
+    "category": "Arbeitsorganisation",
+    "description": "Angebote, Notizen und Rückfragen nach Kundenterminen organisieren: So planst du feste Bürozeiten und prüfst, ob Coworking in Traun zu deinem Alltag passt.",
+    "date": "2026-10-23",
+    "sections": [
+      {
+        "heading": "Der Termin ist vorbei, die Arbeit noch nicht",
+        "text": "Wer bei Kunden vor Ort arbeitet, kennt den Wechsel zwischen unterwegs sein und Schreibtischarbeit. Nach einer Beratung, Besichtigung oder Projektbesprechung bleiben oft Notizen, Rückfragen und ein Angebot offen. Werden diese Aufgaben nur in zufällige Lücken geschoben, fehlt leicht der Überblick. Ein fester Büroblock kann helfen, die Nachbereitung bewusst einzuplanen. Entscheidend ist dabei nicht, möglichst viele Stunden am Schreibtisch zu verbringen, sondern mit einem klaren Ergebnis wieder aufzustehen."
+      },
+      {
+        "heading": "Direkt danach nur das Wesentliche festhalten",
+        "text": "Reserviere nach einem Außentermin einen kurzen Moment für eine strukturierte Notiz, sobald du sicher und ungestört arbeiten kannst. Halte drei Dinge fest: Was wurde vereinbart, welche Information fehlt noch und welcher nächste Schritt hat welchen Termin? Trenne bestätigte Absprachen von eigenen Ideen. Ein Wunsch des Kunden ist noch kein verbindlich erteilter Auftrag. Übertrage zugesagte Fristen in deinen Kalender, statt dich später auf die Erinnerung zu verlassen. Vertrauliche Inhalte gehören in deine dafür vorgesehene Arbeitsumgebung und nicht in offen herumliegende Notizen."
+      },
+      {
+        "heading": "Büroblöcke nach den anstehenden Ergebnissen planen",
+        "text": "Schau vor der Wochenplanung auf deine offenen Aufgaben. Plane zum Beispiel einen Block für ein konkretes Angebot und einen weiteren für Rückfragen zu laufenden Projekten. Formuliere das Ziel möglichst greifbar: Kalkulation für Projekt A fertigstellen ist eindeutiger als Büroarbeit erledigen. Bündle ähnliche Aufgaben, sofern ihre Fristen das zulassen. Eine dringende Rückmeldung sollte nicht bis zum nächsten Sammeltermin warten. Halte zwischen Außentermin und Büroblock außerdem Luft für den tatsächlichen Rückweg und mögliche Verzögerungen frei."
+      },
+      {
+        "heading": "Vor dem Schreiben fehlende Angaben erkennen",
+        "text": "Prüfe zu Beginn des Büroblocks, ob dir alle benötigten Informationen vorliegen. Fehlen Maße, Unterlagen oder Entscheidungen, notiere eine konkrete Rückfrage und wer sie beantworten kann. Bearbeite anschließend Aufgaben, die ohne diese Antwort möglich sind. So wird aus einer unklaren Erinnerung eine überschaubare Liste. Bewahre die Terminnotiz und die zugehörigen Dokumente an einem einheitlichen Ort auf. Ein nachvollziehbarer Dateiname mit Projekt und Datum hilft dir, beim nächsten Büroblock wieder einzusteigen."
+      },
+      {
+        "heading": "Den Arbeitsplatz nach deiner Nachbereitung auswählen",
+        "text": "Für konzentriertes Schreiben und Kalkulieren kann ein gemeinsamer Arbeitsbereich passen. Besteht die Nachbereitung überwiegend aus langen Telefonaten oder vertraulichen Gesprächen, kläre vorab die Möglichkeiten für einen separaten Raum oder ein eigenes Büro. Eine gelegentlich buchbare Besprechungsmöglichkeit ersetzt nicht automatisch einen dauerhaft verfügbaren Gesprächsraum. Prüfe außerdem, ob du mit deinem Laptop auskommst oder regelmäßig zusätzliche Unterlagen und Geräte brauchst. Stauraum, Geräte und gewünschte Nutzungszeiten solltest du vor einer Entscheidung konkret besprechen."
+      },
+      {
+        "heading": "Coworking in Traun mit deinem Terminplan abgleichen",
+        "text": "Bei AUFELD21 in Traun-Oedt gibt es Coworking-Plätze und möblierte Büros. Mitglieder haben rund um die Uhr Zugang. Das kann für Bürozeiten vor oder nach Außenterminen interessant sein; daraus ergibt sich jedoch keine Zusage für eine spontane Einzelbuchung. Bring zu einer Besichtigung nach Vereinbarung einen beispielhaften Wochenplan mit: Wie häufig möchtest du kommen, wie lange bleibst du und wie viel telefonierst du? Julia und Roland klären mit dir die aktuelle Verfügbarkeit und die passende Nutzungsvereinbarung. So lässt sich beurteilen, ob ein regelmäßiger Arbeitsplatz in der Aufeldstraße 21 zu deinem Arbeitsalltag passt."
+      }
+    ]
+  },
+  {
     "slug": "coworking-angebote-vergleichen",
     "title": "Coworking-Angebote vergleichen: Was gehört zur Monatsmiete?",
     "category": "Angebote verstehen",
