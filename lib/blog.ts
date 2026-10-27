@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "buero-wechsel-planen",
+    "title": "Das Büro wechseln: Den Umzug ohne offene Enden planen",
+    "category": "Bürowechsel",
+    "description": "Vom bisherigen Arbeitsplatz ins neue Büro: Aufgaben, Geräte, Unterlagen und Übergabe rechtzeitig planen. Eine praktische Hilfe für deinen Bürowechsel in Traun.",
+    "date": "2026-10-27",
+    "sections": [
+      {
+        "heading": "Der Bürowechsel beginnt vor dem Packen",
+        "text": "Ein neuer Raum ist gefunden, aber am bisherigen Arbeitsplatz laufen noch Projekte. Damit der Wechsel überschaubar bleibt, plane ihn als kleines eigenes Vorhaben. Notiere den letzten regulären Arbeitstag am alten Ort, den Transporttermin und den ersten geplanten Arbeitstag am neuen Standort. Lass zwischen diesen Schritten möglichst einen Puffer für Aufbau und offene Fragen. Bestätige den Zugang zum neuen Raum, bevor du Transporte oder Kundentermine darauf abstimmst. Ein gewünschter Einzugstermin allein bedeutet noch nicht, dass der Raum an diesem Tag bereitsteht."
+      },
+      {
+        "heading": "Eine Liste mit Zuständigkeit und Termin führen",
+        "text": "Sammle die Aufgaben in einer einzigen Liste. Zu jedem Punkt gehören eine zuständige Person, ein Termin und der aktuelle Stand. Trenne dabei Transport, technische Einrichtung und organisatorische Übergabe. Wenn du allein arbeitest, bist du möglicherweise für alles zuständig; trotzdem hilft die Trennung bei der Reihenfolge. Ein Beispiel: Zuerst klären, welche Möbel vorhanden sind, dann entscheiden, welche eigenen Möbel mitkommen, und erst danach den Transportumfang festlegen. So planst du nicht mit Gegenständen, für die am neuen Arbeitsplatz kein Platz vorgesehen ist."
+      },
+      {
+        "heading": "Mitnehmen, zurückgeben oder anders unterbringen",
+        "text": "Gehe Geräte, Kabel, Unterlagen und Möbel einzeln durch. Markiere, was dir gehört und was du am bisherigen Standort zurückgeben musst. Prüfe bei eigenen Geräten, welche Anschlüsse und Adapter du am neuen Platz brauchst. Beschrifte zusammengehörige Kabel und halte fest, welcher Karton sofort benötigt wird. Für den ersten Arbeitstag packst du eine eigene Tasche mit Laptop, Ladegerät und den Unterlagen für die wichtigste Aufgabe. Vertrauliche Dokumente transportierst du geschlossen und lässt sie nicht unbeaufsichtigt in gemeinschaftlichen Bereichen liegen."
+      },
+      {
+        "heading": "Laufende Arbeit während des Wechsels absichern",
+        "text": "Lege möglichst keine wichtige Präsentation direkt in die geplante Aufbauzeit. Prüfe vor dem Wechsel, ob du auf die aktuell benötigten Dateien und Arbeitsprogramme zugreifen kannst, und kontrolliere deine vorhandene Datensicherung. Besprich mit deinem IT-Ansprechpartner, wenn Anwendungen oder Geräte an den bisherigen Standort gebunden sind. Plane für den ersten Tag einen kurzen Funktionstest: Anmeldung, Internetverbindung, benötigte Programme und gegebenenfalls ein vereinbarter Bildschirmanschluss. Ein möblierter Raum bedeutet nicht automatisch, dass deine gesamte persönliche Technik bereits eingerichtet ist."
+      },
+      {
+        "heading": "Besucher und Übergabe bewusst organisieren",
+        "text": "Informiere Personen mit bereits vereinbarten Terminen darüber, an welchem Standort ihr euch trefft und wie die Ankunft abläuft. Prüfe wiederkehrende Kalendereinladungen auf alte Ortsangaben. Eine neue Arbeitsadresse solltest du erst als Besuchsadresse kommunizieren, wenn die Nutzung und der Empfang geklärt sind. Vereinbare am bisherigen Standort die Rückgabe von Schlüsseln oder Zugangsmitteln und dokumentiere die vereinbarte Übergabe. Prüfe auch, welche persönlichen Dinge noch in Schränken, gemeinschaftlichen Räumen oder bei gemeinsam genutzten Geräten liegen. Ein abschließender Rundgang hilft, solche offenen Punkte zu finden."
+      },
+      {
+        "heading": "Den Wechsel zu AUFELD21 in Traun vorbereiten",
+        "text": "Bei AUFELD21 gibt es möblierte Büros und Coworking-Arbeitsplätze. Julia und Roland besprechen bei einer Besichtigung nach Vereinbarung, welche Lösung aktuell verfügbar ist, welche Einrichtung dazugehört und wann ein Start möglich wäre. Bring deine Liste der eigenen Geräte, den benötigten Stauraum und deinen gewünschten Wechseltermin mit. Kläre die Übergabe des Zugangs und gegebenenfalls die Anlieferung größerer Gegenstände vorab. Der Zugang rund um die Uhr gilt für Mitglieder; der erste Besuch und die Einweisung werden persönlich vereinbart. So kannst du den Umzug auf bestätigte Absprachen aufbauen."
+      }
+    ]
+  },
+  {
     "slug": "bueroarbeit-nach-aussenterminen",
     "title": "Nach dem Außentermin: Büroarbeit sinnvoll bündeln",
     "category": "Arbeitsorganisation",
