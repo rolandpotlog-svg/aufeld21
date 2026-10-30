@@ -1,5 +1,42 @@
 export const blogPosts = [
   {
+    "slug": "konzentriert-arbeiten-coworking",
+    "title": "Konzentriert arbeiten im Coworking: Unterbrechungen bewusst steuern",
+    "category": "Konzentriertes Arbeiten",
+    "description": "Wie du Aufgaben, Rückfragen und Benachrichtigungen im Coworking organisierst – mit einer praktischen Methode für konzentrierte Arbeitsphasen in Traun.",
+    "date": "2026-10-30",
+    "sections": [
+      {
+        "heading": "Zuerst erkennen, was dich tatsächlich unterbricht",
+        "text": "Du sitzt am Schreibtisch, aber zwischen einer Nachricht, einer Rückfrage und einer neuen Idee bleibt die eigentliche Aufgabe liegen. Bevor du deinen Arbeitsort dafür verantwortlich machst, beobachte einen typischen Arbeitsblock. Notiere kurz, was dich herausgebracht hat: ein Gespräch im Raum, eine Benachrichtigung oder ein eigener Gedanke an eine andere Aufgabe. Dafür genügt eine Strichliste ohne Namen oder vertrauliche Inhalte. Die Ursachen brauchen unterschiedliche Antworten. Ein anderer Raum löst beispielsweise nicht automatisch das ständige Wechseln zwischen eigenen offenen Aufgaben."
+      },
+      {
+        "heading": "Ein Ergebnis statt einer vagen Aufgabe festlegen",
+        "text": "Wähle vor einer konzentrierten Arbeitsphase ein Ergebnis, das du in der verfügbaren Zeit erreichen möchtest. Statt heute am Angebot arbeiten könntest du festlegen: die drei Leistungspositionen ausformulieren und offene Mengenangaben markieren. Lege die benötigten Unterlagen bereit und prüfe, ob dir Informationen fehlen. Eine Frage, ohne deren Antwort du nicht weiterkommst, klärst du möglichst vorher. Ist das nicht möglich, wähle einen Teil der Aufgabe, den du eigenständig abschließen kannst. Die Arbeitsphase soll einen klaren Anfang und ein erkennbares Ende haben."
+      },
+      {
+        "heading": "Erreichbarkeit passend zu deinen Verpflichtungen organisieren",
+        "text": "Nicht jede Nachricht braucht dieselbe Reaktionszeit. Kläre mit den Menschen, die auf deine Rückmeldung angewiesen sind, wann du erreichbar bist und welcher vereinbarte Weg bei dringenden Anliegen gilt. Du kannst dann während eines passenden Arbeitsblocks nicht benötigte Benachrichtigungen ausschalten und anschließend bewusst nachsehen. Bestehende Bereitschaftszeiten oder zugesagte Rückmeldungen bleiben dabei maßgeblich. Entscheide also nicht pauschal, das Telefon den ganzen Vormittag zu ignorieren. Plane lieber einen überschaubaren Zeitraum, der zu deinen tatsächlichen Verpflichtungen passt."
+      },
+      {
+        "heading": "Neue Gedanken parken, ohne sofort die Aufgabe zu wechseln",
+        "text": "Während du schreibst, fällt dir vielleicht eine Rechnung oder eine Idee für ein anderes Projekt ein. Halte den Gedanken in einer kurzen separaten Liste fest und kehre zur aktuellen Aufgabe zurück. Trage dort nur so viel ein, dass du später weißt, was gemeint war. Prüfe diese Liste nach dem Arbeitsblock: Was braucht einen Termin, was gehört zu einem anderen Projekt und was ist bereits erledigt? So wird die Notiz zu einer bewussten Entscheidungshilfe. Sie sollte keine zweite, dauerhaft unbeachtete Aufgabenliste werden."
+      },
+      {
+        "heading": "Unterbrechungen mit einem Wiedereinstieg auffangen",
+        "text": "Auch mit guter Planung lässt sich nicht jedes Gespräch verschieben. Wenn du eine Aufgabe unterbrechen musst, notiere nach Möglichkeit den nächsten konkreten Schritt: etwa Absatz zu Lieferumfang ergänzen oder Zahl aus der Kalkulation prüfen. Speichere den aktuellen Stand und halte fest, welche Frage noch offen ist. Nach der Unterbrechung liest du zuerst diese Notiz, statt sämtliche Dokumente erneut zu durchsuchen. Für Gespräche im gemeinsamen Raum vereinbart ihr am besten verständliche Signale und fragt kurz, ob es gerade passt. Kopfhörer allein sind keine eindeutige Absprache und machen den Raum nicht still."
+      },
+      {
+        "heading": "Die Umgebung anhand deiner Arbeit beurteilen",
+        "text": "Ein offener Coworking-Bereich ist ein gemeinsam genutzter Arbeitsplatz. Wenn du längere Ruhephasen brauchst, besprich bei der Besichtigung die Geräuschkulisse, übliche Nutzung und Regeln für Gespräche. Ein eigenes Büro kann eine räumliche Abgrenzung bieten; absolute Stille oder Schallschutz solltest du daraus nicht ableiten. Prüfe auch, wie viele eigene Telefonate dein Tag enthält. Ein Meetingraum für einzelne Termine ist keine automatisch verfügbare Dauerlösung für tägliche Gesprächsblöcke. Entscheidend ist die konkrete Kombination aus deinen Aufgaben, den Räumen und den vereinbarten Nutzungsbedingungen."
+      },
+      {
+        "heading": "Deinen Arbeitsalltag bei AUFELD21 in Traun besprechen",
+        "text": "Bei AUFELD21 in Traun-Oedt gibt es Coworking-Arbeitsplätze und möblierte Büros. Bring zur Besichtigung eine typische Aufgabe und deinen Bedarf an ungestörter Zeit mit. Julia und Roland besprechen mit dir, welche Arbeitsumgebung aktuell verfügbar ist und wie gemeinsame Flächen genutzt werden. Mitglieder können den Meetingraum digital reservieren; Besichtigungen finden nach Vereinbarung statt. Nach einigen Arbeitstagen lohnt sich ein eigener Rückblick: Welche Unterbrechungen konntest du organisatorisch lösen, und welche Frage an die Arbeitsumgebung bleibt offen? So überprüfst du deine Entscheidung anhand konkreter Situationen."
+      }
+    ]
+  },
+  {
     "slug": "buero-wechsel-planen",
     "title": "Das Büro wechseln: Den Umzug ohne offene Enden planen",
     "category": "Bürowechsel",
