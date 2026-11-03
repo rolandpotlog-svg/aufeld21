@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "feedback-im-coworking",
+    "title": "Feedback im Coworking: Aus einer Idee eine konkrete Frage machen",
+    "category": "Austausch im Arbeitsalltag",
+    "description": "Wie du im Coworking hilfreiches Feedback einholst: passende Fragen stellen, Zeit abstimmen und Rückmeldungen einordnen. Praktische Beispiele für deinen Alltag.",
+    "date": "2026-11-03",
+    "sections": [
+      {
+        "heading": "Ein anderer Blick braucht eine klare Frage",
+        "text": "Du hast einen Entwurf fertig und möchtest wissen, ob er verständlich ist. Wer allein arbeitet, hat dafür nicht immer direkt ein Gegenüber. Ein gemeinsamer Arbeitsort kann Gelegenheiten für einen kurzen Austausch bieten. Daraus entsteht aber weder ein Anspruch auf Beratung noch automatisch die richtige Antwort. Entscheidend ist, was du prüfen möchtest. Die Frage Wie findest du das? lässt viel offen. Konkreter wäre: Kannst du nach dem ersten Absatz sagen, für wen dieses Angebot gedacht ist? So erfährt dein Gegenüber, worauf es achten soll."
+      },
+      {
+        "heading": "Erst Zeit und Interesse klären",
+        "text": "Frage vorab, ob die andere Person gerade Zeit und Lust hat, auf etwas zu schauen. Beschreibe den Umfang ehrlich: Geht es um zwei Sätze oder um eine längere Präsentation? Ein kurzer Moment in einer gemeinsamen Pause kann für eine kleine Frage passen. Wer gerade konzentriert arbeitet, darf ohne Erklärung ablehnen. Wird aus der Frage ein größeres Thema, vereinbart gegebenenfalls einen eigenen Termin und klärt, ob professionelle Unterstützung gefragt ist. Die gemeinsame Nutzung eines Arbeitsorts bedeutet nicht, dass die Arbeitszeit anderer kostenlos zur Verfügung steht."
+      },
+      {
+        "heading": "Den Entwurf passend zur Frage zeigen",
+        "text": "Zeige nur den Ausschnitt, zu dem du eine Rückmeldung brauchst. Für die Verständlichkeit einer Überschrift genügt meist die Überschrift mit etwas Kontext. Eine vollständige Kundenakte gehört nicht in ein beiläufiges Gespräch. Verwende für einen Austausch über Aufbau oder Sprache lieber einen selbst erstellten Beispieltext ohne vertrauliche Angaben. Sage auch, für wen der Entwurf gedacht ist und was diese Person damit tun können soll. Wenn du zuerst deine gesamte Idee erklärst, prüfst du möglicherweise deine Erklärung statt den Text, den spätere Leser tatsächlich sehen."
+      },
+      {
+        "heading": "Beobachtungen statt allgemeiner Zustimmung sammeln",
+        "text": "Bitte dein Gegenüber zunächst zu beschreiben, was angekommen ist. Bei einer Angebotsseite könntest du fragen: Welche Leistung würdest du hier erwarten? Welche Information fehlt dir für den nächsten Schritt? Bei einer kurzen Präsentation: Welche Aussage ist dir im Gedächtnis geblieben? Höre erst zu, bevor du den Entwurf verteidigst oder erklärst. Notiere die Rückmeldung möglichst konkret. Ein unklarer Begriff ist besser bearbeitbar als das pauschale Urteil, dass etwas noch nicht rund wirkt. Für Geschmacksfragen kannst du gezielt nach dem Grund einer Vorliebe fragen."
+      },
+      {
+        "heading": "Rückmeldungen prüfen und selbst entscheiden",
+        "text": "Eine einzelne Meinung ist ein Hinweis, kein Beweis dafür, wie alle Kunden reagieren werden. Unterscheide zwischen einem nachvollziehbaren Verständnisproblem, einer persönlichen Vorliebe und einer fachlichen Frage. Wenn jemand deine Leistung anders versteht als beabsichtigt, lohnt sich ein Blick auf die Formulierung. Eine andere Lieblingsfarbe muss dagegen keine Änderung auslösen. Fachliche Entscheidungen gehören bei Bedarf zu einer entsprechend qualifizierten Ansprechperson. Wähle anschließend eine konkrete Änderung, die du ausprobieren möchtest, und prüfe sie erneut mit der ursprünglichen Frage. Du bleibst für deinen Entwurf und deine Entscheidungen verantwortlich."
+      },
+      {
+        "heading": "Austausch bei AUFELD21 in Traun kennenlernen",
+        "text": "Bei AUFELD21 in Traun-Oedt gibt es Coworking-Arbeitsplätze, möblierte Büros und eine gemeinsame Küche. Julia und Roland führen den Standort persönlich. Ob und wie sich Gespräche ergeben, hängt von den anwesenden Menschen und ihrem Arbeitsalltag ab; Kontakte oder Aufträge sind damit nicht zugesagt. Wenn du einen regelmäßigen Arbeitsplatz suchst, an dem sowohl eigene Arbeit als auch gelegentlicher Austausch Platz haben, vereinbare eine Besichtigung. Besprich dabei deine Arbeitsweise, deinen Bedarf an Ruhe und die aktuelle Verfügbarkeit. So lernst du die Umgebung kennen, bevor du dich entscheidest."
+      }
+    ]
+  },
+  {
     "slug": "konzentriert-arbeiten-coworking",
     "title": "Konzentriert arbeiten im Coworking: Unterbrechungen bewusst steuern",
     "category": "Konzentriertes Arbeiten",
