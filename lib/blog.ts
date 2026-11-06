@@ -1,5 +1,38 @@
 export const blogPosts = [
   {
+    "slug": "hybride-besprechungen-moderieren",
+    "title": "Hybride Besprechungen: Alle am Gespräch beteiligen",
+    "category": "Zusammenarbeit & Meetings",
+    "description": "Ein Teil sitzt im Raum, andere sind zugeschaltet. So moderierst du hybride Besprechungen mit klaren Wortmeldungen, gemeinsamen Unterlagen und Ergebnissen.",
+    "date": "2026-11-06",
+    "sections": [
+      {
+        "heading": "Wer zugeschaltet ist, braucht einen Platz im Gespräch",
+        "text": "Drei Personen sitzen am Besprechungstisch, eine weitere nimmt per Video teil. Im Raum entsteht schnell ein kurzer Austausch, während die zugeschaltete Person erst eine Gelegenheit zum Einsteigen suchen muss. Plane deshalb bewusst, wie alle zu Wort kommen. Lege vor dem Termin fest, wer das Gespräch moderiert und welche Entscheidung ihr treffen möchtet. Bei einer kleinen Runde kann die einladende Person diese Aufgabe übernehmen. Sie achtet auf Wortmeldungen, fasst Zwischenergebnisse zusammen und behält auch die Menschen am Bildschirm im Blick."
+      },
+      {
+        "heading": "Eine gemeinsame Grundlage vorab bereitstellen",
+        "text": "Teile die Tagesordnung und benötigte Unterlagen rechtzeitig über den vereinbarten Arbeitskanal. Benenne die konkrete Version, die ihr besprecht, und prüfe die Zugriffsrechte der eingeladenen Personen. Ein zugeschalteter Gast sollte denselben Entwurf sehen können wie die Menschen am Tisch. Wenn du etwas auf Papier mitbringst, bereite einen passenden digitalen Ausschnitt vor. Überlege außerdem, was vor dem Termin gelesen werden kann und welche Fragen ihr gemeinsam klären müsst. So nutzt ihr die Gesprächszeit für die Punkte, bei denen ihr einander braucht."
+      },
+      {
+        "heading": "Den Gesprächsablauf zu Beginn vereinbaren",
+        "text": "Beginne mit einer kurzen Runde, in der alle Beteiligten etwas sagen und bestätigen können, dass sie die anderen verstehen. Erkläre dann, wie Wortmeldungen funktionieren sollen. Ihr könnt beispielsweise die Handhebefunktion der verwendeten Anwendung nutzen oder euch von der Moderation aufrufen lassen. Eine Person spricht jeweils zu Ende. Wenn am Tisch eine Nebenfrage entsteht, hole sie in die gemeinsame Runde. Wiederhole bei Bedarf eine leise gestellte Frage, damit die zugeschalteten Personen denselben Gesprächsstand haben. Bei mehreren Teilnehmern kann eine zweite Person zusätzlich auf den Chat achten."
+      },
+      {
+        "heading": "Skizzen und Entscheidungen für alle sichtbar machen",
+        "text": "Wenn ihr am Flipchart arbeitet, prüfe aus Sicht der zugeschalteten Person, ob Schrift und Zeichnungen tatsächlich erkennbar sind. Lies wichtige Begriffe vor und beschreibe, was du gerade markierst. Für längere gemeinsame Arbeit kann ein Dokument, das alle sehen, praktischer sein. Notiere darin Vorschläge und offene Fragen an einem vereinbarten Ort. Bei einer Entscheidung fasse die gewählte Lösung hörbar zusammen und frage ausdrücklich nach Ergänzungen aus der zugeschalteten Runde. Ein Nicken am Tisch lässt sich über die Kamera möglicherweise schwer erkennen."
+      },
+      {
+        "heading": "Bei Verständigungsproblemen kurz unterbrechen",
+        "text": "Vereinbart, dass jede Person einen Ton- oder Bildausfall sofort melden darf. Stoppe die Diskussion, wenn dadurch jemand den Anschluss verliert. Fasse nach der Wiederverbindung den letzten geklärten Punkt zusammen und prüfe, ob noch eine Frage offen ist. Wenn eine Entscheidung den Beitrag der abwesenden Person braucht, vereinbart einen neuen Zeitpunkt dafür. Halte zum Abschluss Ergebnis, zuständige Person und nächsten Termin schriftlich fest und teile die Notiz mit allen Beteiligten über den vereinbarten Kanal. So können auch Rückfragen nach dem Gespräch konkret an einer Entscheidung ansetzen."
+      },
+      {
+        "heading": "Besprechungen bei AUFELD21 in Traun planen",
+        "text": "Der Meetingraum von AUFELD21 in Traun-Oedt bietet sieben Personen bequem Platz. Fernseher, Kamera, Flipchart und ein elektrisches Samsung-Smartboard gehören zur Ausstattung. Mitglieder reservieren den Raum digital. Stimme die gewünschte Technik mit deinen eigenen Geräten ab und plane vor dem Termin Zeit für einen Probeanruf ein. Wenn du einen regelmäßigen Coworking-Platz oder ein möbliertes Büro mit Raum für solche Gespräche suchst, vereinbare eine Besichtigung mit Julia und Roland. Bringe mit, wie oft ihr euch trefft, wie viele Personen vor Ort sitzen und welche Anwendungen ihr nutzt. Die passende Nutzung und aktuelle Verfügbarkeit besprechen wir persönlich."
+      }
+    ]
+  },
+  {
     "slug": "feedback-im-coworking",
     "title": "Feedback im Coworking: Aus einer Idee eine konkrete Frage machen",
     "category": "Austausch im Arbeitsalltag",
