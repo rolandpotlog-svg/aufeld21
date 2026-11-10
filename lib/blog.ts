@@ -1,5 +1,34 @@
 export const blogPosts = [
   {
+    "slug": "vertrauliche-unterlagen-im-coworking",
+    "title": "Wohin mit vertraulichen Unterlagen im Coworking?",
+    "category": "Alltag am Arbeitsplatz",
+    "description": "Wer im Coworking mit Kundenunterlagen arbeitet, braucht eine Lösung für Papier, Bildschirm und Pausen. Ein Beispiel für deinen nächsten Bürotag.",
+    "date": "2026-11-10",
+    "sections": [
+      {
+        "heading": "Ein Angebot am gemeinsamen Schreibtisch bearbeiten",
+        "text": "Du möchtest ein Angebot kalkulieren. Dafür brauchst du eine Preisliste und die Maße aus einem Kundenauftrag. In der Projektmappe liegen außerdem Kontaktdaten, Rechnungen und Fotos. Überlege schon beim Packen, welche Seiten du für die Kalkulation tatsächlich brauchst. Wenn ein Auszug genügt, kannst du die übrige Mappe am vorgesehenen Aufbewahrungsort lassen. Prüfe vorher, welche Unterlagen du nach den Vereinbarungen mit deinem Auftraggeber oder Arbeitgeber an einem gemeinsam genutzten Arbeitsplatz bearbeiten darfst."
+      },
+      {
+        "heading": "Den Platz aus Sicht der anderen betrachten",
+        "text": "Setz dich hin und schau kurz, wo andere vorbeigehen. Zeigt dein Bildschirm zum Gang? Liegt die aufgeschlagene Mappe am Tischrand, direkt neben dem Nachbarplatz? Richte den Bildschirm so aus, dass Vorbeigehende möglichst wenig mitlesen können, und öffne nur die Unterlagen für deinen aktuellen Arbeitsschritt. Wenn der Platz dafür zu offen ist, verschiebe die vertrauliche Aufgabe an einen geeigneten Ort. Beim Ausdrucken an einem gemeinsam genutzten Gerät lohnt sich der direkte Weg zum Ausgabefach. Nimm auch Fehldrucke gleich mit."
+      },
+      {
+        "heading": "Vor der Kaffeepause eine Minute einplanen",
+        "text": "Gerade bei einer kurzen Unterbrechung bleibt schnell etwas liegen. Sperre deinen Bildschirm, schließe die Mappe und nimm sie mit oder verwahre sie an einem dafür vereinbarten sicheren Ort. Kläre vorab, ob es für deinen Arbeitsplatz eine geeignete Aufbewahrung gibt und wer darauf zugreifen kann. Eine zugeklappte Mappe verdeckt den Inhalt, lässt sich aber weiterhin mitnehmen."
+      },
+      {
+        "heading": "Am Ende des Tages die Unterlagen zusammenführen",
+        "text": "Geh beim Einpacken deine Arbeitsschritte durch. Hast du die Maße ausgedruckt, einen Preis auf einem losen Blatt notiert oder eine Korrektur auf der Rückseite einer Seite skizziert? Lege die gültige Fassung zum Auftrag, prüfe Tisch und Drucker und nimm übrige Ausdrucke zur vorgesehenen Aufbewahrung oder Vernichtung mit. Damit findest du beim nächsten Termin auch die handschriftliche Änderung wieder."
+      },
+      {
+        "heading": "Bei der Besichtigung den eigenen Ablauf durchspielen",
+        "text": "Wenn du regelmäßig mit vertraulichen Unterlagen arbeitest, bring zur Besichtigung eine leere Mustermappe mit. Setz dich an einen möglichen Platz und prüfe Sichtachsen, Ablage und den Weg, den deine Mappe in der Mittagspause nehmen würde. Bei AUFELD21 in Traun-Oedt zeigen dir Julia und Roland nach Vereinbarung Coworking-Plätze und möblierte Büros. Sprich an, was du täglich mitbringst und was über Nacht bleiben soll. So könnt ihr die passende Nutzung und die aktuelle Verfügbarkeit konkret besprechen."
+      }
+    ]
+  },
+  {
     "slug": "hybride-besprechungen-moderieren",
     "title": "Hybride Besprechungen: Alle am Gespräch beteiligen",
     "category": "Zusammenarbeit & Meetings",
