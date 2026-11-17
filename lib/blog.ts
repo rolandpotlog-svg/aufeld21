@@ -1,5 +1,34 @@
 export const blogPosts = [
   {
+    "slug": "coworking-mit-arbeitgeber-abstimmen",
+    "title": "Coworking statt Homeoffice: Was kläre ich mit meinem Arbeitgeber?",
+    "category": "Arbeitsort",
+    "description": "Du möchtest regelmäßig von einem Coworking-Platz in Traun arbeiten? So bereitest du das Gespräch mit deiner Führungskraft vor und klärst die Kosten vor der Buchung.",
+    "date": "2026-11-17",
+    "sections": [
+      {
+        "heading": "Mit einem konkreten Arbeitstag beginnen",
+        "text": "Stell dir vor, du möchtest jeden Mittwoch in Wohnortnähe arbeiten. Welche Aufgaben stehen an diesem Tag an? Für die Vorbereitung einer Präsentation brauchst du vielleicht nur deinen Firmenlaptop. Für ein Personalgespräch brauchst du einen Ort, an dem niemand mithört. Schreib beides auf. Mit einem Beispiel aus deinem Kalender kann deine Führungskraft leichter beurteilen, ob der Arbeitsplatz für deine Aufgaben passt."
+      },
+      {
+        "heading": "Arbeitsort und Technik getrennt klären",
+        "text": "Frag zuerst, ob du an den vorgesehenen Tagen von einem externen Arbeitsplatz aus arbeiten darfst. Eine Absprache fürs Homeoffice beantwortet die Frage nach einem gemeinsam genutzten Büro noch nicht. Kläre mit der zuständigen Person in eurem Betrieb, welche Geräte und Verbindungen du verwenden darfst, welche Unterlagen im Büro bleiben und für welche Gespräche du einen eigenen Raum brauchst. Diese Antworten bestimmen, worauf du bei der Besichtigung achtest."
+      },
+      {
+        "heading": "Wer bucht und wer bekommt die Rechnung?",
+        "text": "Auch wenn deine Führungskraft mit dem Arbeitsort einverstanden ist, kann die Kostenfreigabe bei jemand anderem liegen. Frag vor der Buchung, ob der Betrieb den Platz direkt anmietet oder ob eine Erstattung vorgesehen ist. Lass dir sagen, welche Angaben auf dem Angebot stehen sollen, an wen die Rechnung gehen würde und wer eine laufende Buchung freigeben darf."
+      },
+      {
+        "heading": "Eine Anfrage, auf die dein Team antworten kann",
+        "text": "Ein möglicher Einstieg lautet: „Ich möchte mittwochs in Traun arbeiten. Vormittags schreibe ich dort an den Projektdokumentationen. Das vertrauliche Teamgespräch würde ich weiterhin im Firmenbüro führen. Wäre dieser Arbeitsort für euch möglich, und bei wem kann ich ein Angebot zur Prüfung einreichen?“ Wenn ein befristeter Versuch vereinbart wird, legt gleich fest, wann ihr besprecht, wie Erreichbarkeit und Zusammenarbeit funktioniert haben."
+      },
+      {
+        "heading": "Die offenen Punkte zur Besichtigung mitbringen",
+        "text": "Bei AUFELD21 in Traun-Oedt kannst du Coworking-Plätze und möblierte Büros nach Vereinbarung besichtigen. Bring die Anforderungen deines Betriebs mit, etwa ob andere Personen deinen Bildschirm einsehen können oder ob du regelmäßig einen separaten Raum brauchst. Julia und Roland besprechen mit dir, welche Nutzung zum gewünschten Start möglich ist. So kannst du deinem Betrieb nach dem Besuch ein konkretes Angebot vorlegen."
+      }
+    ]
+  },
+  {
     "slug": "vertrauliche-unterlagen-im-coworking",
     "title": "Wohin mit vertraulichen Unterlagen im Coworking?",
     "category": "Alltag am Arbeitsplatz",
