@@ -28,6 +28,8 @@ import {
   KeyRound,
   LogOut,
   Plus,
+  Pencil,
+  GripVertical,
   Send,
   ShieldCheck,
   Snowflake,
@@ -59,6 +61,8 @@ import { WifiAccessCard } from "./wifi-access";
 import { hasUnlimitedMeeting, packages, extraMeetingHourNet, type MeetingUsage, type PackageId } from "@/lib/members/packages";
 import { isTeamMember, type Member, type ManagedMember } from "@/lib/members/directory";
 import { bookingCancellationError, cancelOwnBooking } from "@/lib/bookings/cancellation";
+import { bookingDraft, bookingEditError, bookingHoursInMonth, bookingSaveError, bookingValues, updateOwnBooking } from "@/lib/bookings/editing";
+import { BookingDropPreview, useBookingDrag } from "./use-booking-drag";
 
 const TZ = "Europe/Vienna";
 const SLOT_HEIGHT = 52;
@@ -210,6 +214,12 @@ function BookingApp({ demo }: { demo: boolean }) {
   const [bookings, setBookings] = useState<Booking[]>(() => (demo ? makeDemoBookings() : []));
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const savingBooking = useRef(false);
+  const bookingDrag = useBookingDrag<Booking>((booking, nextDraft) => {
+    const original = bookingDraft(booking);
+    if (original.date !== nextDraft.date || original.start !== nextDraft.start) openEditBooking(booking, nextDraft);
+  });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
@@ -384,7 +394,7 @@ function BookingApp({ demo }: { demo: boolean }) {
     };
   }, [session, sessionReady, supabase]);
 
-  useDialogFocus(Boolean(draft || selectedBooking || issueDraft || paymentDraft || contractDraft || inviteDraft || bonusTarget || billingMember || depositMember || accessMember));
+  useDialogFocus(Boolean(draft || selectedBooking || issueDraft || paymentDraft || contractDraft || inviteDraft || bonusTarget || billingMember || depositMember || accessMember), draft ? 'booking-form' : selectedBooking ? 'booking-details' : 'other');
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
@@ -399,6 +409,8 @@ function BookingApp({ demo }: { demo: boolean }) {
   const billableNet = (meetingUsage ? meetingUsage.billable : demo && member?.role !== 'employee') ? billableHours * extraMeetingHourNet : 0;
   const billingMembers = managedMembers.filter((item) => item.active && item.role !== "employee" && item.monthly_rent_net != null);
   const todayVienna = formatInTimeZone(new Date(), TZ, "yyyy-MM-dd");
+  const draftCurrentMonth = draft?.date.slice(0, 7) === todayVienna.slice(0, 7);
+  const draftRemainingHours = unlimitedMeeting ? Infinity : Math.max(availableHours - monthlyUsedHours + bookingHoursInMonth(editingBooking, todayVienna.slice(0, 7)), 0);
   const currentBillingMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM-01");
   const monthlyGrossTarget = billingMembers.reduce((sum, item) => sum + Number(item.monthly_rent_net ?? 0) * 1.2, 0);
   const paidThisMonthGross = invoices.filter((invoice) => invoice.status === "paid" && invoice.paid_at && formatInTimeZone(invoice.paid_at, TZ, "yyyy-MM") === currentBillingMonth.slice(0, 7)).reduce((sum, invoice) => sum + invoiceGross(invoice), 0);
@@ -658,6 +670,8 @@ function BookingApp({ demo }: { demo: boolean }) {
   }
 
   function openBooking(day: Date, time: string) {
+    if (bookingDrag.suppressClick()) return;
+    setEditingBooking(null);
     const [hour, minute] = time.split(":").map(Number);
     const endMinutes = Math.min(hour * 60 + minute + 60, END_HOUR * 60);
     setFormError("");
@@ -669,96 +683,87 @@ function BookingApp({ demo }: { demo: boolean }) {
     });
   }
 
+  function openEditBooking(booking: Booking, nextDraft = bookingDraft(booking)) {
+    const blocked = bookingEditError(booking, member);
+    if (blocked) { setToast(blocked); return; }
+    setSelectedBooking(null);
+    setConfirmCancellation(false);
+    setFormError("");
+    setEditingBooking(booking);
+    setDraft(nextDraft);
+  }
+
+  function closeBookingForm() {
+    if (savingBooking.current) return;
+    setDraft(null);
+    setEditingBooking(null);
+    setFormError("");
+  }
+
   async function saveBooking(event: React.FormEvent) {
     event.preventDefault();
-    if (!draft || !member) return;
+    if (!draft || !member || savingBooking.current) return;
+    savingBooking.current = true;
     setSaving(true);
     setFormError("");
-    const start = fromZonedTime(`${draft.date} ${draft.start}:00`, TZ);
-    const end = fromZonedTime(`${draft.date} ${draft.end}:00`, TZ);
-    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start <= new Date()) {
-      setFormError("Bitte wähle einen zukünftigen Zeitraum.");
-      setSaving(false);
-      return;
+    try {
+    if (editingBooking) {
+      const blocked = bookingEditError(editingBooking, member);
+      if (blocked) throw new Error(blocked);
     }
-    if (end <= start) {
-      setFormError("Die Endzeit muss nach der Startzeit liegen.");
-      setSaving(false);
-      return;
-    }
+    const values = bookingValues(draft);
+    const start = new Date(values.start_at);
+    const end = new Date(values.end_at);
     const requestedHours = (end.getTime() - start.getTime()) / 3_600_000;
     const bookingMonth = formatInTimeZone(start, TZ, "yyyy-MM");
     const currentMonth = formatInTimeZone(new Date(), TZ, "yyyy-MM");
-    if (!unlimitedMeeting && member.role === "employee" && (demo || meetingUsage) && bookingMonth === currentMonth && monthlyUsedHours + requestedHours > availableHours) {
-      setFormError(`Dein Monatskontingent reicht für diese Buchung nicht aus. Verfügbar sind noch ${remainingHours.toLocaleString("de-AT")} Stunden. Bitte wende dich für Bonusstunden an Roland.`);
-      setSaving(false);
-      return;
+    if (!unlimitedMeeting && member.role === "employee" && (demo || meetingUsage) && bookingMonth === currentMonth && monthlyUsedHours - bookingHoursInMonth(editingBooking, currentMonth) + requestedHours > availableHours) {
+      throw new Error(`Dein Monatskontingent reicht für diese Buchung nicht aus. Verfügbar sind noch ${draftRemainingHours.toLocaleString("de-AT")} Stunden. Bitte wende dich für Bonusstunden an Roland.`);
     }
+    let saved: Booking;
     if (!supabase) {
-      const booking: Booking = {
-        id: crypto.randomUUID(),
+      saved = {
+        id: editingBooking?.id ?? crypto.randomUUID(),
         member_id: member.id,
-        start_at: start.toISOString(),
-        end_at: end.toISOString(),
-        note: draft.note.trim() || null,
+        ...values,
         members: { name: member.name },
       };
       const overlaps = bookings.some(
-        (item) => new Date(item.start_at) < end && new Date(item.end_at) > start,
+        (item) => item.id !== editingBooking?.id && new Date(item.start_at) < end && new Date(item.end_at) > start,
       );
-      setSaving(false);
-      if (overlaps) {
-        setFormError("Der Raum ist in diesem Zeitraum schon gebucht.");
-        return;
-      }
-      setBookings((current) => [...current, booking].sort((a, b) => a.start_at.localeCompare(b.start_at)));
-      if (format(start, "yyyy-MM") === format(new Date(), "yyyy-MM")) {
-        setMonthlyUsedHours((current) => current + (end.getTime() - start.getTime()) / 3_600_000);
-      }
-      setWeekStart(startOfWeek(toZonedTime(start, TZ), { weekStartsOn: 1 }));
-      setMobileDayOffset((toZonedTime(start, TZ).getDay() + 6) % 7);
-      setView("calendar");
-      setDraft(null);
-      setToast("Demo-Buchung gespeichert.");
-      return;
-    }
-    const { data, error } = await supabase
+      if (overlaps) throw new Error("Der Raum ist in diesem Zeitraum schon gebucht.");
+      setMonthlyUsedHours((current) => Math.max(0, current - bookingHoursInMonth(editingBooking, currentMonth) + bookingHoursInMonth(saved, currentMonth)));
+    } else if (editingBooking) {
+      saved = await updateOwnBooking(supabase, editingBooking, member, draft);
+    } else {
+      const { data, error } = await supabase
       .from("bookings")
-      .insert({
-        member_id: member.id,
-        start_at: start.toISOString(),
-        end_at: end.toISOString(),
-        note: draft.note.trim() || null,
-      })
+      .insert({ member_id: member.id, ...values })
       .select("id,member_id,start_at,end_at,note,members(name)")
       .single();
-    setSaving(false);
-    if (error) {
-      const overlap =
-        error.code === "23P01" ||
-        error.message.toLowerCase().includes("bookings_no_overlap");
-      setFormError(
-        overlap
-          ? "Der Raum ist in diesem Zeitraum schon gebucht."
-          : error.message.includes("employee_quota_exceeded")
-            ? "Dein Monatskontingent ist ausgeschöpft. Bitte wende dich für Bonusstunden an Roland."
-          : error.message.includes('shared_account_inactive')
-            ? 'Das zugehörige Hauptkonto ist deaktiviert. Bitte wende dich an die Verwaltung.'
-          : "Die Buchung konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
-      );
-      return;
+      if (error) throw new Error(bookingSaveError(error));
+      saved = data as Booking;
     }
     setBookings((current) =>
-      [...current, data as Booking].sort((a, b) => a.start_at.localeCompare(b.start_at)),
+      [...current.filter(item => item.id !== saved.id), saved].sort((a, b) => a.start_at.localeCompare(b.start_at)),
     );
     setWeekStart(startOfWeek(toZonedTime(start, TZ), { weekStartsOn: 1 }));
     setMobileDayOffset((toZonedTime(start, TZ).getDay() + 6) % 7);
     setView("calendar");
     setDraft(null);
-    setToast("Der Raum ist gebucht.");
+    setEditingBooking(null);
+    setToast(editingBooking ? "Buchung geändert. Einträge in Google Kalender bitte separat aktualisieren." : "Der Raum ist gebucht.");
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Die Buchung konnte nicht gespeichert werden.");
+      refreshPortal();
+    } finally {
+      savingBooking.current = false;
+      setSaving(false);
+    }
   }
 
   function openBookingDetails(booking: Booking, confirm = false) {
+    if (bookingDrag.suppressClick()) return;
     setCancellationError("");
     setConfirmCancellation(confirm);
     setSelectedBooking(booking);
@@ -2084,7 +2089,7 @@ function BookingApp({ demo }: { demo: boolean }) {
           <section aria-labelledby="my-bookings-title" className="mb-5 rounded-2xl border border-emerald-200 bg-white p-4 sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-1">
               <h2 id="my-bookings-title" className="font-semibold text-emerald-950">Meine Buchungen</h2>
-              <p className="text-xs text-stone-500">In dieser Woche · bis zum Beginn stornierbar</p>
+              <p className="text-xs text-stone-500">In dieser Woche · bis zum Beginn änderbar</p>
             </div>
             <ul className="mt-3 divide-y divide-stone-100">
               {cancellableBookings.map((booking) => (
@@ -2101,7 +2106,7 @@ function BookingApp({ demo }: { demo: boolean }) {
             </ul>
           </section>
         )}
-        <p className="mb-3 text-sm text-stone-500">Termin antippen für Details. Eigene Buchungen kannst du vor Beginn stornieren.</p>
+        <p className="mb-3 text-sm text-stone-500">Eigene Termine ziehen und die Änderung bestätigen oder antippen und „Buchung ändern“ wählen. Am Handy den Ziehgriff verwenden; andere Tage über „Buchung ändern“ auswählen.</p>
 
         <section className="xl:hidden" aria-label="Tageskalender">
           <div className="mb-3 grid grid-cols-4 gap-1 rounded-2xl bg-stone-100 p-1 min-[400px]:grid-cols-7" aria-label="Tag auswählen">
@@ -2141,7 +2146,8 @@ function BookingApp({ demo }: { demo: boolean }) {
                   </div>
                 ))}
               </div>
-              <div className="relative" style={{ height: (END_HOUR - START_HOUR) * 2 * MOBILE_SLOT_HEIGHT }}>
+              <div className="relative" data-booking-day={format(mobileDay, 'yyyy-MM-dd')} data-slot-height={MOBILE_SLOT_HEIGHT} style={{ height: (END_HOUR - START_HOUR) * 2 * MOBILE_SLOT_HEIGHT }}>
+                {bookingDrag.preview?.date === format(mobileDay, 'yyyy-MM-dd') && <BookingDropPreview preview={bookingDrag.preview} />}
                 {times.slice(0, -1).map((time, index) => (
                   <button
                     key={time}
@@ -2158,12 +2164,12 @@ function BookingApp({ demo }: { demo: boolean }) {
                   const height = Math.max(((end.getTime() - start.getTime()) / 1_800_000) * MOBILE_SLOT_HEIGHT, 46);
                   const own = booking.member_id === member.id;
                   return (
+                    <div key={booking.id} data-booking-card className={`absolute left-1.5 right-1.5 z-10 ${bookingDrag.draggingId === booking.id ? 'opacity-40' : ''}`} style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 44) }}>
                     <button type="button"
-                      key={booking.id}
                       onClick={() => openBookingDetails(booking)}
+                      onPointerDown={(event) => { if (!bookingEditError(booking, member)) bookingDrag.start(event, booking); }}
                       aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
-                      className={`absolute left-1.5 right-1.5 z-10 overflow-hidden rounded-lg border px-2.5 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
-                      style={{ top: Math.max(top + 1, 1), height: Math.max(height - 2, 44) }}
+                      className={`h-full w-full select-none overflow-hidden rounded-lg border py-1 pl-2.5 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${!bookingEditError(booking, member) ? 'cursor-grab pr-12 active:cursor-grabbing' : 'pr-2.5'} ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</span>
@@ -2171,6 +2177,8 @@ function BookingApp({ demo }: { demo: boolean }) {
                       </span>
                       {height >= 68 && booking.note && <span className="mt-1 block truncate opacity-80">{booking.note}</span>}
                     </button>
+                    {!bookingEditError(booking, member) && <button type="button" aria-label="Buchung verschieben" title="Ziehen zum Verschieben oder antippen zum Ändern" onPointerDown={(event) => bookingDrag.start(event, booking, true)} onClick={() => { if (!bookingDrag.suppressClick()) openEditBooking(booking); }} className="absolute right-0 top-0 flex h-full max-h-12 min-h-11 w-11 touch-none items-center justify-center rounded-r-lg text-emerald-800 focus-visible:outline-2 focus-visible:outline-emerald-700"><GripVertical size={21} /></button>}
+                    </div>
                   );
                 })}
               </div>
@@ -2207,9 +2215,12 @@ function BookingApp({ demo }: { demo: boolean }) {
               return (
                 <div
                   key={day.toISOString()}
+                  data-booking-day={format(day, 'yyyy-MM-dd')}
+                  data-slot-height={SLOT_HEIGHT}
                   className="relative border-r border-t border-stone-200 last:border-r-0"
                   style={{ height: (END_HOUR - START_HOUR) * 2 * SLOT_HEIGHT }}
                 >
+                  {bookingDrag.preview?.date === format(day, 'yyyy-MM-dd') && <BookingDropPreview preview={bookingDrag.preview} />}
                   {times.slice(0, -1).map((time, index) => (
                     <button
                       key={time}
@@ -2228,9 +2239,11 @@ function BookingApp({ demo }: { demo: boolean }) {
                     return (
                       <button type="button"
                         key={booking.id}
+                        data-booking-card
                         onClick={() => openBookingDetails(booking)}
+                        onPointerDown={(event) => { if (!bookingEditError(booking, member)) bookingDrag.start(event, booking); }}
                         aria-label={`Buchung von ${memberName(booking)}, ${formatInTimeZone(booking.start_at, TZ, "dd.MM. HH:mm")} bis ${formatInTimeZone(booking.end_at, TZ, "HH:mm")} – Details öffnen`}
-                        className={`absolute left-1 right-1 z-10 overflow-hidden rounded-lg border px-2 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
+                        className={`absolute left-1 right-1 z-10 select-none overflow-hidden rounded-lg border px-2 py-1 text-left text-xs shadow-sm focus:outline-2 focus:outline-emerald-700 ${!bookingEditError(booking, member) ? 'cursor-grab active:cursor-grabbing' : ''} ${bookingDrag.draggingId === booking.id ? 'opacity-40' : ''} ${own ? "border-emerald-500 bg-emerald-100 text-emerald-950" : "border-sky-200 bg-sky-100 text-sky-950"}`}
                         style={{ top: Math.max(top + 2, 2), height: Math.max(height - 4, 40) }}
                       >
                         <span className="block truncate font-semibold">{memberName(booking)}{own ? " · Du" : ""}</span>
@@ -2269,8 +2282,9 @@ function BookingApp({ demo }: { demo: boolean }) {
               </div>
             ) : (
               <>
+                {!bookingEditError(selectedBooking, member) && <button type="button" onClick={() => openEditBooking(selectedBooking)} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 font-semibold text-emerald-900 hover:bg-emerald-100"><Pencil size={17} /> Buchung ändern</button>}
                 {selectedBooking.member_id === member.id && (!bookingCancellationError(selectedBooking, member)
-                  ? <button onClick={() => setConfirmCancellation(true)} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 font-semibold text-red-700 hover:bg-red-100"><Trash2 size={17} /> Buchung stornieren</button>
+                  ? <button onClick={() => setConfirmCancellation(true)} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 font-semibold text-red-700 hover:bg-red-100"><Trash2 size={17} /> Buchung stornieren</button>
                   : <p className="mt-4 text-sm leading-6 text-stone-500">Begonnene und vergangene Buchungen bleiben als Nachweis erhalten. Für Korrekturen bitte Roland kontaktieren.</p>)}
                 <a href={googleCalendarUrl(selectedBooking)} target="_blank" rel="noopener noreferrer" className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 font-semibold text-white"><CalendarPlus size={18} /> In Google Kalender</a>
               </>
@@ -2280,18 +2294,20 @@ function BookingApp({ demo }: { demo: boolean }) {
       )}
 
       {draft && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && setDraft(null)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/35 p-0 sm:items-center sm:p-5" onMouseDown={(event) => event.target === event.currentTarget && closeBookingForm()}>
           <section className="max-h-[90dvh] min-w-0 w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl [overflow-wrap:anywhere] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="booking-title">
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-emerald-700">Meetingraum</p>
-                <h2 id="booking-title" className="mt-1 text-2xl font-semibold tracking-tight">Buchen</h2>
+                <h2 id="booking-title" className="mt-1 text-2xl font-semibold tracking-tight">{editingBooking ? 'Buchung ändern' : 'Buchen'}</h2>
               </div>
-              <button onClick={() => setDraft(null)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 hover:bg-stone-200" aria-label="Schließen">
+              <button onClick={closeBookingForm} disabled={saving} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 hover:bg-stone-200 disabled:opacity-50" aria-label="Schließen">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={saveBooking} className="space-y-5">
+              {editingBooking && <p className="rounded-xl bg-stone-50 p-3 text-sm leading-6 text-stone-600">Bisher: {formatInTimeZone(editingBooking.start_at, TZ, 'dd.MM.yyyy · HH:mm')}–{formatInTimeZone(editingBooking.end_at, TZ, 'HH:mm')} Uhr. Erst „Änderung speichern“ übernimmt die neue Zeit. Google-Kalender-Einträge bitte separat anpassen.</p>}
+              <fieldset disabled={saving} className="space-y-5 disabled:opacity-60">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-stone-700">Datum</span>
                 <input type="date" required min={todayVienna} value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} className="h-13 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700 focus:ring-3 focus:ring-emerald-700/10" />
@@ -2314,22 +2330,24 @@ function BookingApp({ demo }: { demo: boolean }) {
                 <span className="mb-2 block text-sm font-medium text-stone-700">Notiz <span className="font-normal text-stone-400">optional</span></span>
                 <input maxLength={120} value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} placeholder="z. B. Kundentermin" className="h-13 w-full rounded-xl border border-stone-300 px-4 outline-none focus:border-emerald-700 focus:ring-3 focus:ring-emerald-700/10" />
               </label>
-              {draftDurationHours(draft) > 0 && (
-                <div className={`rounded-xl p-4 text-sm ${draftDurationHours(draft) > remainingHours ? "bg-amber-50 text-amber-950" : "bg-emerald-50 text-emerald-950"}`}>
+              </fieldset>
+              {draftDurationHours(draft) > 0 && (draftCurrentMonth && (demo || meetingUsage) ? (
+                <div className={`rounded-xl p-4 text-sm ${draftDurationHours(draft) > draftRemainingHours ? "bg-amber-50 text-amber-950" : "bg-emerald-50 text-emerald-950"}`}>
                   <p className="font-semibold">
                     {draftDurationHours(draft).toLocaleString("de-AT")} Stunden ·{" "}
-                    {unlimitedMeeting ? "kostenfrei · unbegrenzte Nutzung" : draftDurationHours(draft) > remainingHours
-                      ? `${((draftDurationHours(draft) - remainingHours) * 12).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} netto zusätzlich`
+                    {unlimitedMeeting ? "kostenfrei · unbegrenzte Nutzung" : draftDurationHours(draft) > draftRemainingHours
+                      ? member.role === 'employee' ? 'Monatskontingent nicht ausreichend' : `${((draftDurationHours(draft) - draftRemainingHours) * 12).toLocaleString("de-AT", { style: "currency", currency: "EUR" })} netto für diesen Termin außerhalb des Kontingents`
                       : "im Monatskontingent enthalten"}
                   </p>
-                  <p className="mt-1 opacity-70">{unlimitedMeeting ? 'Es entstehen keine Meetingraum-Zusatzkosten.' : `Nach der Buchung bleiben ${Math.max(remainingHours - draftDurationHours(draft), 0).toLocaleString("de-AT")} Freistunden.`}</p>
+                  <p className="mt-1 opacity-70">{unlimitedMeeting ? 'Es entstehen keine Meetingraum-Zusatzkosten.' : `Nach der Buchung bleiben ${Math.max(draftRemainingHours - draftDurationHours(draft), 0).toLocaleString("de-AT")} Freistunden.${editingBooking ? ' Der bisherige Termin ist dabei herausgerechnet.' : ''}`}</p>
                 </div>
-              )}
+              ) : <p className="rounded-xl bg-stone-50 p-4 text-sm text-stone-600">{draftDurationHours(draft).toLocaleString('de-AT')} Stunden · Es gelten die Konditionen des gewählten Monats. Das Kontingent wird beim Speichern geprüft.</p>)}
               {formError && <p className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800" role="alert">{formError}</p>}
               <button disabled={saving} className="flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
                 <Clock3 size={18} />
-                {saving ? "Wird gespeichert …" : "Raum buchen"}
+                {saving ? "Wird gespeichert …" : editingBooking ? "Änderung speichern" : "Raum buchen"}
               </button>
+              {editingBooking && <button type="button" disabled={saving} onClick={closeBookingForm} className="min-h-12 w-full rounded-xl border border-stone-200 px-4 font-medium disabled:opacity-50">Abbrechen</button>}
             </form>
           </section>
         </div>

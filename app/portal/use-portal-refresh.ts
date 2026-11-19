@@ -28,7 +28,7 @@ export function usePortalRefresh(enabled: boolean) {
 }
 
 // Existing portal dialogs share focus trapping, Escape and background scroll lock.
-export function useDialogFocus(open: boolean) {
+export function useDialogFocus(open: boolean, dialogKey = '') {
   useEffect(() => {
     if (!open) return;
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
@@ -55,5 +55,5 @@ export function useDialogFocus(open: boolean) {
       document.removeEventListener("keydown", onKey);
       if (previous?.isConnected) previous.focus();
     };
-  }, [open]);
+  }, [open, dialogKey]);
 }
