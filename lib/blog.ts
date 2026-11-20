@@ -1,4 +1,37 @@
 export const blogPosts = [
+{
+  "slug": "vom-coworking-ins-eigene-buero",
+  "title": "Vom Coworking ins eigene Büro: Wann lohnt sich der Wechsel?",
+  "category": "Arbeitsplatz weiterentwickeln",
+  "description": "Mehr Telefonate, ein wachsendes Team oder Material am Arbeitsplatz: So prüfst du, ob dein Coworking-Platz noch passt oder ein eigenes Büro sinnvoll wird.",
+  "date": "2026-11-20",
+  "sections": [
+    {
+      "heading": "Was hat sich an deiner Arbeit verändert?",
+      "text": "Der Arbeitsplatz, mit dem du gestartet bist, muss nicht für jede spätere Projektphase passen. Vielleicht arbeitest du inzwischen mit einer zweiten Person, führst täglich längere Gespräche oder brauchst Muster, die du bisher immer mitgebracht hast. Notiere für zwei typische Arbeitswochen die Situationen, in denen dir dein bisheriger Platz nicht ausreicht. Eine einzelne volle Woche vor einer Abgabe ist dabei etwas anderes als ein dauerhaft veränderter Ablauf."
+    },
+    {
+      "heading": "Einen Engpass genau beschreiben",
+      "text": "„Ich brauche mehr Platz“ lässt mehrere Lösungen offen. Konkreter ist: „An drei Tagen pro Woche bearbeite ich gleichzeitig Pläne und Materialmuster, die neben meinem Laptop nicht auf den Tisch passen.“ Bei Gesprächen helfen Uhrzeit, Dauer und Vertraulichkeit als Angaben. Bei einem Team zählt, wie viele Personen tatsächlich gleichzeitig arbeiten. Mit diesen Beobachtungen lässt sich prüfen, ob eine andere Anordnung, eine vereinbarte Ablage, ein reservierter Besprechungsraum oder ein separates Büro die passende Lösung ist."
+    },
+    {
+      "heading": "Den möglichen neuen Raum im Alltag prüfen",
+      "text": "Ein eigenes Büro löst nicht automatisch jeden Engpass. Wenn du ungestört telefonieren möchtest, prüfe vor Ort, wie Gespräche aus dem Raum nach außen zu hören sind. Wenn Material liegen bleiben soll, kläre die vorgesehene Aufbewahrung und den Zugang. Zeichne für ein kleines Team ein, wo die Schreibtische stehen würden und wie alle an ihren Platz kommen. Lass dir erklären, welche Einrichtung zum Angebot gehört und welche Anpassungen vorher vereinbart werden müssten."
+    },
+    {
+      "heading": "Die laufende Nutzung mit dem Angebot abgleichen",
+      "text": "Vergleiche für beide Möglichkeiten dieselbe typische Monatsplanung: die Zahl der gleichzeitig benötigten Arbeitsplätze, wiederkehrende Besprechungen und zusätzliche Ausstattung. Lass dir dafür ein konkretes Angebot geben und kläre enthaltene Leistungen, zusätzliche Kosten und Laufzeit. Ein größerer Raum kann sinnvoll sein, wenn er regelmäßig gebraucht wird. Wenn dein Bedarf nur an einzelnen Tagen steigt, frag zuerst nach einer dafür verfügbaren Lösung. Verlass dich bei beiden Varianten auf bestätigte Möglichkeiten und Konditionen."
+    },
+    {
+      "heading": "Den Wechsel erst nach einer konkreten Zusage planen",
+      "text": "Kläre vor der Umstellung, welcher Raum ab welchem Datum verfügbar ist, wann du ihn einrichten kannst und wie der bisherige Platz übergeben wird. Vereinbare auch, ob du eigene Geräte vorab aufstellen darfst. Plane den ersten Tag im neuen Büro möglichst ohne eng getaktete Kundentermine. Dann bleibt Zeit, Arbeitsplätze und Anschlüsse einzurichten und Fragen zum Zugang zu klären."
+    },
+    {
+      "heading": "Deinen nächsten Schritt bei AUFELD21 besprechen",
+      "text": "Bei AUFELD21 in Traun-Oedt gibt es Coworking-Plätze und möblierte Büros. Bring zur Besichtigung nach Vereinbarung deine zwei typischen Arbeitswochen und die konkreten Engpässe mit. Julia und Roland besprechen mit dir, welche Nutzung und welcher Raum aktuell infrage kommen. Ob ein separates Büro zu deinem gewünschten Termin möglich ist, klärt ihr auf Anfrage. So entscheidest du anhand deiner Arbeit und eines konkreten Angebots."
+    }
+  ]
+},
   {
     "slug": "coworking-mit-arbeitgeber-abstimmen",
     "title": "Coworking statt Homeoffice: Was kläre ich mit meinem Arbeitgeber?",
