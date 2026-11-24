@@ -1,5 +1,38 @@
 export const blogPosts = [
 {
+  "slug": "mittagspause-im-coworking",
+  "title": "Mittagspause im Coworking: Wie organisiere ich sie im Büroalltag?",
+  "category": "Coworking im Alltag",
+  "description": "Mitgebrachtes Essen, gemeinsame Küche und Termine am Nachmittag: So planst du deine Mittagspause im Coworking, ohne die Abläufe anderer vorauszusetzen.",
+  "date": "2026-11-24",
+  "sections": [
+    {
+      "heading": "Die Pause zwischen zwei Terminen mitplanen",
+      "text": "Zwischen einem Kundengespräch und der nächsten Videokonferenz bleibt eine halbe Stunde. Wenn du erst dann überlegst, wo du etwas zu essen bekommst, wird die Pause schnell zur nächsten Organisationsaufgabe. Schau morgens in deinen Kalender und entscheide, ob du etwas mitbringst oder unterwegs essen möchtest. Berücksichtige dabei den Weg, mögliche Wartezeit und die Vorbereitung für den nächsten Termin. Plane einen Zeitraum, den du tatsächlich nutzen kannst."
+    },
+    {
+      "heading": "Vor dem Mitbringen nach der Küchennutzung fragen",
+      "text": "Eine gemeinsame Küche bedeutet nicht automatisch, dass jede Ausstattung oder beliebig viel Lagerfläche verfügbar ist. Frage bei deinem Start, welche Geräte du benutzen kannst, wo Lebensmittel aufbewahrt werden dürfen und wie gemeinsam genutzte Flächen hinterlassen werden sollen. Kläre auch, ob Geschirr vorhanden ist oder du eine eigene Dose und Besteck brauchst. Wer diese wenigen Punkte vorher kennt, kann sein Mittagessen passend vorbereiten."
+    },
+    {
+      "heading": "Den Platz für die nächste Person freimachen",
+      "text": "Wenn mehrere Menschen ungefähr gleichzeitig Pause machen, helfen kleine Absprachen. Belege die Arbeitsfläche nur so lange wie nötig, räume Verpackungen weg und kümmere dich nach dem Essen um dein Geschirr nach den Regeln vor Ort. Wenn du Lebensmittel lagern darfst, kennzeichne sie so, dass niemand sie für Gemeinschaftsvorräte hält. Nimm Reste rechtzeitig wieder mit. Frage kurz nach, bevor du etwas verwendest, dessen Zuordnung unklar ist."
+    },
+    {
+      "heading": "Gemeinsam essen darf freiwillig bleiben",
+      "text": "Die Mittagspause kann eine Gelegenheit für ein Gespräch sein. Ein einfaches „Darf ich mich dazusetzen?“ reicht als Einstieg. Manche möchten lieber allein essen oder kurz nach draußen gehen. Beides passt zu einem gemeinsamen Arbeitsort. Wenn aus einem Gespräch eine ausführliche Projektbesprechung wird, vereinbart dafür einen eigenen Zeitpunkt. So bleibt die Pause für alle nutzbar, auch wenn die Arbeitszeiten und Interessen unterschiedlich sind."
+    },
+    {
+      "heading": "Den Wiedereinstieg vor der Pause festlegen",
+      "text": "Bevor du aufstehst, speichere deinen Arbeitsstand und notiere einen konkreten nächsten Schritt. Zum Beispiel: die Rückmeldung zum Entwurf einarbeiten oder die offenen Maße im Angebot prüfen. Räume Unterlagen weg und sperre deinen Bildschirm. Nach der Pause kannst du an dieser Notiz ansetzen. Falls direkt danach ein Gespräch beginnt, lege die benötigten Unterlagen vorher bereit und plane Zeit für die Technik ein."
+    },
+    {
+      "heading": "Die gemeinsame Küche bei AUFELD21 kennenlernen",
+      "text": "Bei AUFELD21 in Traun-Oedt gehören die Nutzung der gemeinsamen Küche und Kaffee zum Angebot. Andere Getränke werden separat nach der Preisliste vor Ort verrechnet. Wenn du einen regelmäßigen Coworking-Platz oder ein möbliertes Büro suchst, zeigen dir Julia und Roland bei einer Besichtigung nach Vereinbarung auch die Gemeinschaftsflächen. Frag dabei nach den konkreten Küchenabläufen und besprich, welcher Arbeitsplatz aktuell zu deinem Alltag passt."
+    }
+  ]
+},
+{
   "slug": "vom-coworking-ins-eigene-buero",
   "title": "Vom Coworking ins eigene Büro: Wann lohnt sich der Wechsel?",
   "category": "Arbeitsplatz weiterentwickeln",
