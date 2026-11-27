@@ -1,5 +1,38 @@
 export const blogPosts = [
 {
+  "slug": "coworking-anfrage-formulieren",
+  "title": "Coworking oder Büro anfragen: Welche Angaben helfen beim Angebot?",
+  "category": "Arbeitsplatz finden",
+  "description": "Starttermin, Nutzerzahl und Arbeitsweise: Mit diesen Angaben wird aus einer allgemeinen Bürosuche eine konkrete Anfrage für deinen Arbeitsplatz in Traun.",
+  "date": "2026-11-27",
+  "sections": [
+    {
+      "heading": "Mit dem gewünschten Start beginnen",
+      "text": "„Habt ihr noch einen Platz?“ ist ein verständlicher Einstieg. Für eine konkrete Antwort hilft zusätzlich, ab wann du ihn brauchst. Nenne einen Wunschtermin und schreibe dazu, ob du zeitlich Spielraum hast. Wenn du zunächst nur Möglichkeiten für einen späteren Wechsel sammelst, sag auch das. So lässt sich unterscheiden, ob ein kurzfristiger Start geprüft oder erst eine Besichtigung zur Orientierung vereinbart werden soll."
+    },
+    {
+      "heading": "Personen und gleichzeitige Nutzung unterscheiden",
+      "text": "Schreibe, ob du allein arbeitest oder für ein Team suchst. Bei mehreren Personen ist wichtig, wie viele gleichzeitig vor Ort sein werden. Ein Beispiel: Ihr seid zu dritt, arbeitet meist versetzt und braucht einmal pro Woche alle einen Schreibtisch. Damit kann der Anbieter gezielt nachfragen, welche Nutzung möglich ist. Leite aus freien Schreibtischen nicht automatisch ab, dass beliebig viele Personen sie abwechselnd nutzen dürfen. Die Nutzerzahl gehört ins konkrete Angebot."
+    },
+    {
+      "heading": "Den Arbeitsalltag in zwei Sätzen beschreiben",
+      "text": "Du musst keine Kundennamen oder Projektunterlagen schicken. Beschreibe stattdessen, was du am Platz tun möchtest: hauptsächlich am Laptop schreiben, regelmäßig telefonieren oder gemeinsam an Entwürfen arbeiten. Nenne wiederkehrende Gespräche und ob du dafür einen separaten Raum brauchst. Wenn ein zusätzlicher Bildschirm oder Material vor Ort bleiben soll, gehört das ebenfalls in die Anfrage. Diese Angaben helfen mehr als eine lange allgemeine Beschreibung deines Unternehmens."
+    },
+    {
+      "heading": "Unverzichtbares von Wünschen trennen",
+      "text": "Markiere die Punkte, ohne die der Arbeitsplatz nicht infrage kommt. Vielleicht brauchst du einen persönlichen Schreibtisch, während dir dessen Lage im Raum weniger wichtig ist. Oder ein abschließbares Büro ist entscheidend, die genaue Einrichtung aber noch offen. Nenne bei Bedarf einen monatlichen Budgetrahmen und schreibe ausdrücklich dazu, ob du netto oder inklusive Umsatzsteuer meinst. Bitte darum, enthaltene Leistungen und mögliche Zusatzkosten im Angebot getrennt darzustellen."
+    },
+    {
+      "heading": "Eine kurze Anfrage als Vorlage",
+      "text": "„Hallo, ich suche ab [Datum] einen regelmäßigen Arbeitsplatz für [Anzahl] Personen. Gleichzeitig wären meist [Anzahl] von uns da. Wir arbeiten hauptsächlich an [Tätigkeit] und brauchen für [Art und Häufigkeit der Gespräche] einen geeigneten Raum. Wichtig sind uns [Anforderungen]. Bei [Wunsch] sind wir flexibel. Welche Möglichkeit ist aktuell verfügbar, welche Leistungen umfasst das Angebot und wann könnten wir die Räume besichtigen?“ Ergänze nur die Angaben, die du bereits kennst. Offene Fragen darfst du ausdrücklich als offen kennzeichnen."
+    },
+    {
+      "heading": "Die Antwort für den nächsten Schritt nutzen",
+      "text": "Prüfe, ob sich die Antwort auf deinen gewünschten Start und deine tatsächliche Nutzung bezieht. Wenn nur eine allgemeine Preisliste kommt, frage nach der passenden Variante und den noch ungeklärten Punkten. Bestätige einen Besichtigungstermin erst, wenn Datum und Treffpunkt klar sind. Bei AUFELD21 in Traun-Oedt zeigen dir Julia und Roland Coworking-Plätze und möblierte Büros nach Vereinbarung. Aktuelle Verfügbarkeit und eine passende Nutzung klären wir anhand deiner Anfrage persönlich."
+    }
+  ]
+},
+{
   "slug": "mittagspause-im-coworking",
   "title": "Mittagspause im Coworking: Wie organisiere ich sie im Büroalltag?",
   "category": "Coworking im Alltag",
